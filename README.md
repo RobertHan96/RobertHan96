@@ -4,10 +4,10 @@
 
 *** 
 
-### 🎫   [자기소개와 이력서]()
+### 🎫   [자기소개와 이력서](https://github.com/RobertHan96/RobertHan96/blob/main/resume.md)
 
 *** 
 
-### 💼 [포트폴리오]()
+### 💼 [포트폴리오](https://github.com/RobertHan96/RobertHan96/blob/main/portfolio.md)
 
 ***

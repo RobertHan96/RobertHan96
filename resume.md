@@ -76,15 +76,20 @@ QA로서 개발 일정의 마지막까지 완성도를 위해 여러 예외사�
 - 2018년 : JIRA + Confluence 기반, 게임QA 가이드 문서화TF 진행
 - 2019년 6월 : 더조은컴퓨터학원 파이썬 기초 과정 수료
 - 2020년 4월: 더조은컴퓨터학원 iOS 앱개발, AOS 앱개발 기초 과정 수료
-- 2020년 : 자격증 취득 : 정보처리기사, 리눅스마스터 2급
 - 2020년 : 1인 개발 소규모 앱 출시 
   - 기억왕 계산기 : [앱스토어](https://apps.apple.com/us/app/timelinecalculator/id1522422450)
   - 탐정후추 : 구글비전 API를 이용한 사진 분석, 카메라 필터 앱  [앱스토어](https://apps.apple.com/us/app/%ED%83%90%EC%A0%95%ED%9B%84%EC%B6%94/id1540598497)
-- 2021 : 소프트스퀘어드 개발자 양성 과정 [라이징프로그래머스](https://apply.softsquared.com/class.html) 수료 
-- 2021 : [Grip앱 클론](https://youtu.be/uIGzuXO5dCA) 개발 프로젝트 참여 (iOS클라이언트)
-- 2021 : [한양사이버대학교 컴퓨터공학](https://www.hycu.ac.kr/user/maSnEx/goMain/30003/loadMap.do), 해킹보안학 학사 (복수 전공) 취득
-- 2021 : 앱런칭 동아리 [메이커스](https://www.makeus.in/) 개발자로 참여 중 
+- 2021년 2월 : 소프트스퀘어드 개발자 양성 과정 [라이징프로그래머스](https://apply.softsquared.com/class.html) 수료 
+- 2021년 2월 : [Grip앱 클론](https://youtu.be/uIGzuXO5dCA) 개발 프로젝트 참여 (iOS클라이언트)
+- 2021년 2월 : [한양사이버대학교 컴퓨터공학](https://www.hycu.ac.kr/user/maSnEx/goMain/30003/loadMap.do), 해킹보안학 학사 (복수 전공) 취득
+- 2021년 : 앱런칭 동아리 [메이커스](https://www.makeus.in/) 개발자로 참여 중 
 
+*** 
+
+# 자격 
+- 2017년 : ISTQB 소프트웨어 테스팅 전문가 자격증 취득
+- 2020년 : 리눅스마스터 2급 취득
+- 2020년 : 정보처리기사 취득 취득
 ***
 
 # Dev 기술 스택
