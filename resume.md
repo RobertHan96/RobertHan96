@@ -66,18 +66,12 @@ QA로서 개발 일정의 마지막까지 완성도를 위해 여러 예외사�
 # 개인 이력
 - 2014년 11월 : 넥슨네트웍스 게임QA / 모바일 직군 입사
 - 2015년 2월 : 덕수상업고등학교 디지털콘텐츠(정보처리)과 졸업 
-- 2015년 6월 : [게임] 해킹, 보안 취약점 검수QA : 메모리 변조, 네트워크 패킷 변조 검사
+- 2015년 6월 : [게임] 해킹, 보안 취약점 검수QA 담당 (메모리 변조, 네트워크 패킷 변조 검사)
 - 2015년 8월 : [게임] [도미네이션즈](https://namu.wiki/w/%EB%8F%84%EB%AF%B8%EB%84%A4%EC%9D%B4%EC%85%98%EC%A6%88) 메인QA
 - 2015년 12월 : 넥슨네트웍스 QA부문 [우수신입사원상](http://www.nexon-networks.com/NetworksPeople/NWInterviewView.aspx?str=1HJiXFZHSDRffwU7zQxDooLm5jZXCqV30ZHDQVhU5pDwV24LBiOrquPwCyabh9fJ69J9zyr0xttytHtd2IIG8AR44xbvv6x23N5oWDMFit8=) 수상
-- 2017년 11월 : Nexon Service Conference 연사 [발표 주제 : 해외 개발사와의 협업과 QA 가이드]
 - 2017년 12월 : 넥슨네트웍스 QA부문 [우수사원상](http://www.nexon-networks.com/NetworksPeople/NWInterviewView.aspx?str=a1LHyqvTSQFNo/Z47ERY0DoGYIbkXYS58+vjnrLlPmy2P5fSUZ7uRhqDak6VemyUCWUpxhWROnUwn02C2CDCeJiHCcfvNsb7hrJq1TOgV5c=) 수상 
 - 2017년 12월 : [게임] [오버히트](https://namu.wiki/w/%EC%98%A4%EB%B2%84%ED%9E%88%ED%8A%B8(%EA%B2%8C%EC%9E%84)?from=OVERHIT) 서브QA
-- 2018년 : 넥슨네트웍스 신입사원 멘토
-- 2018년 : JIRA + Confluence 기반, 게임QA 가이드 문서화TF 진행
-- 2019년 6월 : 더조은컴퓨터학원 파이썬 기초 과정 수료
-- 2020년 4월: 더조은컴퓨터학원 iOS 앱개발, AOS 앱개발 기초 과정 수료
-- 2020년 : 1인 개발 소규모 앱 출시 
-  - 기억왕 계산기 : [앱스토어](https://apps.apple.com/us/app/timelinecalculator/id1522422450)
+- 2020년 : 1인 개발 앱 출시 
   - 탐정후추 : 구글비전 API를 이용한 사진 분석, 카메라 필터 앱  [앱스토어](https://apps.apple.com/us/app/%ED%83%90%EC%A0%95%ED%9B%84%EC%B6%94/id1540598497)
 - 2021년 2월 : 소프트스퀘어드 개발자 양성 과정 [라이징프로그래머스](https://apply.softsquared.com/class.html) 수료 
 - 2021년 2월 : [Grip앱 클론](https://youtu.be/uIGzuXO5dCA) 개발 프로젝트 참여 (iOS클라이언트)
@@ -97,7 +91,7 @@ QA로서 개발 일정의 마지막까지 완성도를 위해 여러 예외사�
 - Coumpter Science : 학부 수준의 자료구조론, OS, 알고리즘에 대한 이해
 - SQL : 데이터 조회, 생성에 필요한 주요 SQL문 활용 가능
 - Linux : OS 구조에 대한 개념과, 기본 명령어 활용 가능 
-- Git : 버전 기록, 협업을 위한 기초적인 명령어 활용 (CLI, 소스트리 환경)  
+- Git : 버전 기록, 협업을 위한 기초적인 명령어 활용 
 
 ## iOS
 - Swift 기반 개발 가능
@@ -129,6 +123,6 @@ QA로서 개발 일정의 마지막까지 완성도를 위해 여러 예외사�
 
 ## Python
 - Flask를 이용한 기초적인 서버 기능 개발 
-- selenium을 이용한 웹테스트 모듈 개발
+- selenium을 이용한 웹테스트
 - bs4, selenium을 이용한 웹 크롤링
 - 외부 오픈 소스를 이용한 개발
