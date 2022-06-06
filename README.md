@@ -8,10 +8,6 @@
 
 *** 
 
-### 💼 [개발 포트폴리오](https://github.com/RobertHan96/RobertHan96/blob/main/202105_%ED%8F%AC%ED%8A%B8%ED%8F%B4%EB%A6%AC%EC%98%A4_%ED%95%9C%EC%98%81%EC%8B%A0.pdf)
-
-***
-
-### 🕵🏻‍♂️ [QA엔지니어 기간 경력](https://github.com/RobertHan96/RobertHan96/blob/main/2022_01_QA%ED%8F%AC%ED%8A%B8%ED%8F%B4%EB%A6%AC%EC%98%A4_%ED%95%9C%EC%98%81%EC%8B%A0.pdf)
+### 💼 [포트폴리오](https://github.com/RobertHan96/RobertHan96/blob/main/2022.06_%EA%B0%9C%EB%B0%9C%EC%9E%90%20%ED%8F%AC%ED%8A%B8%ED%8F%B4%EB%A6%AC%EC%98%A4_%ED%95%9C%EC%98%81%EC%8B%A0.pdf)
 
 ***
