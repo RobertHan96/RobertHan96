@@ -1,0 +1,108 @@
+baseURL = 'https://roberthan96.github.io/RobertHan96/'
+languageCode = 'ko'
+defaultContentLanguage = 'ko'
+title = 'AI Engineer Blog | 한영신'
+theme = 'PaperMod'
+[pagination]
+  pagerSize = 10
+
+# SEO: sitemap 자동 생성
+enableRobotsTXT = true
+buildDrafts = false
+buildFuture = false
+
+[params]
+  env = "production"
+  author = "한영신"
+  description = "AI Agent 시스템 엔지니어의 기술 블로그 — LLM, RAG, On-Device AI, MLOps"
+  keywords = ["AI", "LLM", "RAG", "MLOps", "AI Agent", "vLLM", "QA 자동화", "기술블로그"]
+  defaultTheme = "auto"
+  ShowReadingTime = true
+  ShowShareButtons = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  ShowWordCount = true
+  ShowRssButtonInSectionTermList = true
+  UseHugoToc = true
+  disableSpecial1stPost = false
+  disableScrollToTop = false
+  comments = true
+  hidemeta = false
+  hideSummary = false
+  showtoc = true
+
+  [params.homeInfoParams]
+    Title = "AI Engineer Blog"
+    Content = """
+AI Agent 시스템을 설계하고 운영하는 엔지니어 한영신입니다.
+LLM, RAG, On-Device AI, 테스트 자동화 등 실무 경험을 공유합니다.
+"""
+
+  [[params.socialIcons]]
+    name = "github"
+    url = "https://github.com/RobertHan96"
+
+  [[params.socialIcons]]
+    name = "email"
+    url = "mailto:yshan4329@gmail.com"
+
+  # SEO: Open Graph / Twitter Card
+  [params.cover]
+    linkFullImages = true
+    responsiveImages = true
+
+  [params.fuseOpts]
+    isCaseSensitive = false
+    shouldSort = true
+    location = 0
+    distance = 1000
+    threshold = 0.4
+    minMatchCharLength = 0
+    keys = ["title", "permalink", "summary", "content"]
+
+# SEO: sitemap 설정
+[sitemap]
+  changefreq = "weekly"
+  filename = "sitemap.xml"
+  priority = 0.5
+
+# SEO: 검색엔진이 읽을 수 있는 출력 포맷
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
+
+# 마크다운 렌더링
+[markup]
+  [markup.highlight]
+    codeFences = true
+    guessSyntax = true
+    lineNos = true
+    style = "monokai"
+  [markup.goldmark.renderer]
+    unsafe = true
+
+# 메뉴
+[menu]
+  [[menu.main]]
+    identifier = "search"
+    name = "검색"
+    url = "/search/"
+    weight = 1
+
+  [[menu.main]]
+    identifier = "tags"
+    name = "태그"
+    url = "/tags/"
+    weight = 2
+
+  [[menu.main]]
+    identifier = "archives"
+    name = "아카이브"
+    url = "/archives/"
+    weight = 3
+
+  [[menu.main]]
+    identifier = "about"
+    name = "About"
+    url = "/about/"
+    weight = 4
