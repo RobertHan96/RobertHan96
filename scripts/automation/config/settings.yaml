@@ -1,0 +1,45 @@
+# 자동화 태스크 설정 파일
+# 환경변수: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID 필요
+
+telegram:
+  # GitHub Secrets에서 관리
+  # TELEGRAM_BOT_TOKEN: 봇 토큰
+  # TELEGRAM_CHAT_ID: 수신할 채팅 ID
+
+# 태스크1: 관심 종목 뉴스 모니터링
+stock_news:
+  keywords:
+    - "삼성전자"
+    - "SK하이닉스"
+    - "NVIDIA"
+    - "Tesla"
+    # TODO: 관심 종목 추가
+
+# 태스크2: 종목 가격 변동 알림
+stock_price:
+  threshold_pct: 3.0
+  kr_stocks:
+    - { symbol: "005930", name: "삼성전자" }
+    - { symbol: "000660", name: "SK하이닉스" }
+    # TODO: 관심 종목 추가
+  us_stocks:
+    - { symbol: "NVDA", name: "NVIDIA" }
+    - { symbol: "TSLA", name: "Tesla" }
+    # TODO: 관심 종목 추가
+
+# 태스크3: 기술 뉴스
+tech_news:
+  sources:
+    - { name: "PyTorch", url: "https://pytorch.org/blog/feed.xml" }
+    - { name: "GeekNews", url: "https://news.hada.io/rss" }
+    # 하다(hada.io)는 GeekNews의 한국어 버전
+
+# 태스크6: 생일 알림
+birthdays:
+  # data/birthdays.yaml에서 관리
+
+# 태스크7: 채용공고 모니터링
+job_monitor:
+  sources:
+    - { name: "wanted", keywords: ["AI 엔지니어", "ML 엔지니어", "LLM"] }
+    - { name: "hada", keywords: ["AI Engineer", "ML Engineer"] }

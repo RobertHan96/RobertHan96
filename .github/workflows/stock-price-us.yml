@@ -1,0 +1,27 @@
+name: "태스크2-1: 미국장 가격 변동 알림"
+
+on:
+  schedule:
+    # 새벽 1회 (00:00 KST 화~토 = UTC 15:00 월~금)
+    - cron: "0 15 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  stock-price-us:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/automation/requirements.txt
+
+      - name: Check US stock prices
+        working-directory: scripts/automation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python stock_price.py --market us

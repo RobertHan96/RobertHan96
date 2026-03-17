@@ -1,0 +1,27 @@
+name: "태스크2: 한국장 가격 변동 알림"
+
+on:
+  schedule:
+    # 장중 5분마다 (09:00~15:30 KST 평일 = UTC 00:00~06:30 화~토)
+    - cron: "*/5 0-6 * * 2-6"
+  workflow_dispatch:
+
+jobs:
+  stock-price-kr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/automation/requirements.txt
+
+      - name: Check KR stock prices
+        working-directory: scripts/automation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python stock_price.py --market kr

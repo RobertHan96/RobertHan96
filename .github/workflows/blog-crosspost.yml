@@ -1,0 +1,30 @@
+name: "태스크8: 블로그 크로스포스팅"
+
+on:
+  schedule:
+    # 매주 월요일 09:00 KST = UTC 00:00
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  blog-crosspost:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 전체 히스토리 필요
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/automation/requirements.txt
+
+      - name: Run blog crosspost
+        working-directory: scripts/automation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MEDIUM_TOKEN: ${{ secrets.MEDIUM_TOKEN }}
+        run: python blog_crosspost.py

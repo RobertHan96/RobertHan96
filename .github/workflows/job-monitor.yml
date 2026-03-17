@@ -1,0 +1,27 @@
+name: "태스크7: 채용공고 모니터링"
+
+on:
+  schedule:
+    # 매일 10:00 KST = UTC 01:00
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  job-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/automation/requirements.txt
+
+      - name: Run job monitor
+        working-directory: scripts/automation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python job_monitor.py

@@ -1,0 +1,27 @@
+name: "태스크6: 생일 알림"
+
+on:
+  schedule:
+    # 매일 08:00 KST = UTC 23:00 (전일)
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+jobs:
+  birthday-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/automation/requirements.txt
+
+      - name: Run birthday alert
+        working-directory: scripts/automation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python birthday_alert.py
