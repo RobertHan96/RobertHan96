@@ -1,0 +1,74 @@
+name: "블로그 글 작성"
+description: "Issue Form으로 Hugo 블로그 글을 생성합니다."
+title: "[블로그 작성] "
+labels:
+  - blog-post
+body:
+  - type: input
+    id: post_title
+    attributes:
+      label: 글 제목
+      description: "Hugo 포스트 제목으로 사용됩니다."
+      placeholder: "예: RAG 시스템 운영에서 배운 점"
+    validations:
+      required: true
+
+  - type: input
+    id: slug
+    attributes:
+      label: 슬러그
+      description: "선택 사항입니다. 비우면 제목 기준으로 자동 생성됩니다."
+      placeholder: "예: rag-production-lessons"
+    validations:
+      required: false
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 한 줄 요약
+      description: "front matter의 summary로 저장됩니다."
+      placeholder: "예: 운영 환경에서 RAG 품질과 비용을 함께 관리한 경험을 정리합니다."
+    validations:
+      required: true
+
+  - type: input
+    id: tags
+    attributes:
+      label: 태그
+      description: "쉼표로 구분해 주세요."
+      placeholder: "예: RAG, LLM, MLOps"
+    validations:
+      required: false
+
+  - type: input
+    id: categories
+    attributes:
+      label: 카테고리
+      description: "쉼표로 구분해 주세요. 비우면 AI Engineering으로 저장됩니다."
+      placeholder: "예: AI Engineering, Backend"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: publish_mode
+    attributes:
+      label: 발행 방식
+      description: "즉시 발행 또는 초안 저장 중 하나를 선택해 주세요."
+      options:
+        - 초안으로 저장
+        - 즉시 발행
+    validations:
+      required: true
+
+  - type: textarea
+    id: body
+    attributes:
+      label: 본문
+      description: "Markdown으로 작성하면 그대로 포스트 본문으로 저장됩니다."
+      placeholder: |
+        ## 들어가며
+
+        글 본문을 Markdown으로 작성해 주세요.
+      render: markdown
+    validations:
+      required: true

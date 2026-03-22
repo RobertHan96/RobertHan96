@@ -8,9 +8,10 @@
 
 import json
 import os
-import urllib.request
 import urllib.parse
+import urllib.request
 from datetime import datetime, timezone, timedelta
+from html import escape
 from html.parser import HTMLParser
 
 from config.loader import load_config
@@ -174,13 +175,15 @@ def build_message(results: dict[str, list]) -> str:
         if not entries:
             continue
         has_news = True
-        lines.append(f"<b>▸ {source}</b>")
+        lines.append(f"<b>▸ {escape(source)}</b>")
         for e in entries[:7]:
-            title_line = f"  • <a href=\"{e['link']}\">{e['title']}</a>"
+            safe_link = escape(e["link"], quote=True)
+            safe_title = escape(e["title"])
+            title_line = f"  • <a href=\"{safe_link}\">{safe_title}</a>"
             lines.append(title_line)
             summary = e.get("summary", "")
             if summary:
-                lines.append(f"    → {summary}")
+                lines.append(f"    → {escape(summary)}")
         lines.append("")
 
     if not has_news:

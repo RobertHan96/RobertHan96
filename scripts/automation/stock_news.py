@@ -6,10 +6,11 @@
 - 텔레그램으로 발송
 """
 
+import html
 import json
 import os
-import urllib.request
 import urllib.parse
+import urllib.request
 from datetime import datetime
 
 from config.loader import load_config
@@ -53,11 +54,12 @@ def build_message(results: dict[str, list]) -> str:
     for keyword, articles in results.items():
         if not articles:
             continue
-        lines.append(f"<b>▸ {keyword}</b>")
+        lines.append(f"<b>▸ {html.escape(keyword)}</b>")
         for a in articles:
-            title = clean_html(a["title"])
+            title = html.escape(clean_html(a["title"]))
             link = a["originallink"] or a["link"]
-            lines.append(f"  • <a href=\"{link}\">{title}</a>")
+            safe_link = html.escape(link, quote=True)
+            lines.append(f"  • <a href=\"{safe_link}\">{title}</a>")
         lines.append("")
 
     if len(lines) <= 1:

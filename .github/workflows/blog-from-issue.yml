@@ -1,0 +1,125 @@
+name: "Issue Form -> Hugo 포스트 생성"
+
+on:
+  issues:
+    types: [opened, edited, reopened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+
+jobs:
+  create-post:
+    if: >
+      contains(github.event.issue.labels.*.name, 'blog-post') &&
+      contains(fromJson('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/automation/requirements.txt
+
+      - name: Generate Hugo post from issue
+        id: generate
+        run: python scripts/automation/blog_from_issue.py --event-path "$GITHUB_EVENT_PATH"
+
+      - name: Commit generated post
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- content/posts; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git add content/posts
+          git commit -m "Add blog post from issue #${{ github.event.issue.number }}"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger Pages deploy
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -d @- <<EOF
+          {
+            "event_type": "content-updated",
+            "client_payload": {
+              "source": "blog-issue",
+              "issue_number": ${{ github.event.issue.number }},
+              "post_path": "${{ steps.generate.outputs.post_path }}"
+            }
+          }
+          EOF
+
+      - name: Comment success
+        if: success()
+        uses: actions/github-script@v8
+        env:
+          CHANGED: ${{ steps.commit.outputs.changed }}
+          DRAFT: ${{ steps.generate.outputs.draft }}
+          POST_PATH: ${{ steps.generate.outputs.post_path }}
+          POST_TITLE: ${{ steps.generate.outputs.title }}
+        with:
+          script: |
+            const changed = process.env.CHANGED === 'true';
+            const draft = process.env.DRAFT === 'true';
+            const path = process.env.POST_PATH;
+            const title = process.env.POST_TITLE;
+            const statusText = draft ? '초안으로 저장' : '즉시 발행';
+            const changeText = changed ? '커밋 및 배포 트리거까지 완료했습니다.' : '기존 포스트와 차이가 없어 새 커밋은 만들지 않았습니다.';
+            const body = [
+              `Hugo 포스트를 처리했습니다.`,
+              ``,
+              `- 제목: ${title}`,
+              `- 상태: ${statusText}`,
+              `- 파일: \`${path}\``,
+              `- 결과: ${changeText}`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Comment failure
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const body = [
+              `Hugo 포스트 생성 중 오류가 발생했습니다.`,
+              ``,
+              `- workflow: ${context.workflow}`,
+              `- run id: ${context.runId}`,
+              `- 확인: Actions 탭에서 해당 실행 로그를 확인해 주세요.`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

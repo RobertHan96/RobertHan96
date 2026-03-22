@@ -6,8 +6,8 @@
 """
 
 import argparse
+import html
 import json
-import os
 import urllib.request
 from datetime import datetime
 
@@ -104,7 +104,7 @@ def build_message(market: str, alerts: list[dict]) -> str:
     for a in alerts:
         emoji = "📈" if a["change_pct"] > 0 else "📉"
         lines.append(
-            f"{emoji} <b>{a['name']}</b> ({a['symbol']})\n"
+            f"{emoji} <b>{html.escape(a['name'])}</b> ({html.escape(a['symbol'])})\n"
             f"   현재가: {a['price']:,.0f} | 변동: {a['change_pct']:+.2f}%"
         )
 
