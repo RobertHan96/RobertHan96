@@ -3,3 +3,5 @@ requests>=2.31
 feedparser>=6.0
 yfinance>=0.2
 openai>=1.0
+fastapi>=0.115
+uvicorn>=0.30

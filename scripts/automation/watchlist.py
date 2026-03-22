@@ -9,7 +9,10 @@ import os
 import urllib.request
 from pathlib import Path
 
-from config.loader import load_config
+try:
+    from .config.loader import load_config
+except ImportError:
+    from config.loader import load_config
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DEFAULT_WATCHLIST_PATH = ROOT_DIR / "data" / "watchlist.csv"

@@ -97,3 +97,53 @@ TSLA,Tesla,us,true,true,true,3.0,twelvedata,TSLA,marketaux,TSLA,us,en
 - 미국 종목은 `Twelve Data + Marketaux` 조합을 기본으로 사용합니다.
 - 한국 종목은 현재 free tier 한계 때문에 가격은 `legacy_naver` fallback 을 유지하고 있습니다.
 - 샘플 CSV는 [watchlist.csv](/Users/han/Desktop/Dev/RobertHan96/data/watchlist.csv) 에 남겨두었습니다.
+
+***
+
+### 🧠 투자자료 RAG 가이드
+
+투자 관련 PDF, 메모, 이미지 자료를 계속 쌓아두고 Telegram에서 질문하면, OpenAI File Search 기반으로 관련 자료를 검색해 답변하도록 확장할 수 있습니다.  
+별도 벡터 DB 서버를 두지 않고, OpenAI Vector Store를 그대로 사용합니다.
+
+#### 현재 포함된 구성
+
+- 수동/자동 자료 동기화 스크립트: [investment_rag_sync.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/investment_rag_sync.py)
+- OpenAI Vector Store 공통 모듈: [investment_rag.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/investment_rag.py)
+- 일일 투자 브리프 생성기: [investment_digest.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/investment_digest.py)
+- Telegram webhook 앱: [telegram_rag_app.py](/Users/han/Desktop/Dev/RobertHan96/services/telegram_rag_app.py)
+- 일일 동기화 workflow: [investment-rag-sync.yml](/Users/han/Desktop/Dev/RobertHan96/.github/workflows/investment-rag-sync.yml)
+
+#### 자료 적재 방식
+
+- 직접 넣고 싶은 자료는 [investment_docs](/Users/han/Desktop/Dev/RobertHan96/data/investment_docs) 에 둡니다.
+- 매일 workflow가 워치리스트 가격/뉴스를 요약한 markdown 문서를 생성해 [investment_rag](/Users/han/Desktop/Dev/RobertHan96/data/investment_rag) 아래에 누적합니다.
+- PDF, TXT, MD, JSON, HTML, DOCX, PPTX는 바로 적재합니다.
+- 이미지(`png/jpg/jpeg/webp`)는 OCR 후 markdown으로 변환해서 적재합니다.
+
+#### 필요한 환경변수
+
+- `OPENAI_API_KEY`
+- `MARKETAUX_API_TOKEN`
+- `TWELVE_DATA_API_KEY`
+- `WATCHLIST_PUBLISHED_CSV_URL`
+- `INVESTMENT_VECTOR_STORE_NAME`
+- `INVESTMENT_VECTOR_STORE_ID`  
+  처음엔 없어도 되지만, 한 번 생성된 store id를 여기에 넣어두면 GitHub Actions와 webhook 앱이 항상 같은 Vector Store를 안정적으로 재사용합니다.
+- `INVESTMENT_RAG_MODEL`
+- `INVESTMENT_OCR_MODEL`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_SECRET_TOKEN`
+
+#### Telegram 질의응답 방식
+
+- Telegram은 상시 서버 대신 webhook 방식으로 받습니다.
+- 앱 엔트리포인트는 [telegram_rag_app.py](/Users/han/Desktop/Dev/RobertHan96/services/telegram_rag_app.py) 입니다.
+- Cloud Run, Vercel, Functions 같은 serverless HTTPS 환경에 배포한 뒤 Telegram `setWebhook` 으로 `/telegram/webhook` URL을 연결하면 됩니다.
+- 텍스트 메시지는 RAG 질의응답, PDF/문서는 즉시 적재, 이미지는 OCR 후 적재합니다.
+
+#### 로컬 실행 예시
+
+```bash
+uvicorn services.telegram_rag_app:app --host 0.0.0.0 --port 8000
+python3 scripts/automation/investment_rag_sync.py --generate-digest
+```

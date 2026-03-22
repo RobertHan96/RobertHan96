@@ -16,8 +16,12 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-from notify import send_telegram
-from watchlist import get_price_watchlist
+try:
+    from .notify import send_telegram
+    from .watchlist import get_price_watchlist
+except ImportError:
+    from notify import send_telegram
+    from watchlist import get_price_watchlist
 
 KST = timezone(timedelta(hours=9))
 TWELVE_DATA_API_KEY = os.environ.get("TWELVE_DATA_API_KEY", "")
