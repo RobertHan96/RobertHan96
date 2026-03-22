@@ -6,26 +6,29 @@ telegram:
   # TELEGRAM_BOT_TOKEN: 봇 토큰
   # TELEGRAM_CHAT_ID: 수신할 채팅 ID
 
+# 워치리스트
+watchlist:
+  # 기본 운영은 Google Sheets "웹에 게시" CSV 링크 사용
+  # local_csv 또는 published_csv
+  source_type: "published_csv"
+  # GitHub Actions env / local shell env 에서 읽을 변수명
+  published_csv_env_var: "WATCHLIST_PUBLISHED_CSV_URL"
+  # 필요하면 로컬 설정값으로도 넣을 수 있지만, 운영은 env 사용 권장
+  published_csv_url: ""
+  # source_type=local_csv 일 때만 사용하는 경로 (repo root 기준)
+  local_csv_path: "data/watchlist.csv"
+
 # 태스크1: 관심 종목 뉴스 모니터링
 stock_news:
-  keywords:
-    - "삼성전자"
-    - "SK하이닉스"
-    - "NVIDIA"
-    - "Tesla"
-    # TODO: 관심 종목 추가
+  # Marketaux 기반 최근 뉴스 조회 시간 범위
+  lookback_hours: 3
 
 # 태스크2: 종목 가격 변동 알림
 stock_price:
-  threshold_pct: 3.0
-  kr_stocks:
-    - { symbol: "005930", name: "삼성전자" }
-    - { symbol: "000660", name: "SK하이닉스" }
-    # TODO: 관심 종목 추가
-  us_stocks:
-    - { symbol: "NVDA", name: "NVIDIA" }
-    - { symbol: "TSLA", name: "Tesla" }
-    # TODO: 관심 종목 추가
+  # watchlist 개별 종목에 threshold가 없을 때 쓰는 기본값
+  default_threshold_pct: 3.0
+  # TWELVE_DATA_API_KEY: Twelve Data API 키
+  # 일부 한국 종목은 무료 플랜에서 제한될 수 있어 row 단위 provider 선택을 권장
 
 # 태스크3: 기술 뉴스 (LLM 요약)
 tech_news:

@@ -1,0 +1,87 @@
+symbol,name,market,enabled,price_enabled,news_enabled,price_threshold_pct,price_provider,price_symbol,news_provider,news_symbol,countries,language
+ORN,오라이언 그룹 홀딩스,us,true,true,true,3.0,twelvedata,ORN,marketaux,ORN,us,en
+DDOG,데이터독,us,true,true,true,3.0,twelvedata,DDOG,marketaux,DDOG,us,en
+PSLV,SPROTT PHYSICAL SILVER TRUST,us,true,true,true,3.0,twelvedata,PSLV,marketaux,PSLV,us,en
+CPNG,쿠팡,us,true,true,true,3.0,twelvedata,CPNG,marketaux,CPNG,us,en
+KLAC,KLA,us,true,true,true,3.0,twelvedata,KLAC,marketaux,KLAC,us,en
+PLTR,팔란티어 테크,us,true,true,true,3.0,twelvedata,PLTR,marketaux,PLTR,us,en
+RKLB,로켓 랩,us,true,true,true,3.0,twelvedata,RKLB,marketaux,RKLB,us,en
+SNDK,샌디스크,us,true,true,true,3.0,twelvedata,SNDK,marketaux,SNDK,us,en
+XOM,엑슨 모빌,us,true,true,true,3.0,twelvedata,XOM,marketaux,XOM,us,en
+ASML,ASML 홀딩,us,true,true,true,3.0,twelvedata,ASML,marketaux,ASML,us,en
+V,비자,us,true,true,true,3.0,twelvedata,V,marketaux,V,us,en
+GLD,SPDR GOLD SHARES TRUST,us,true,true,true,3.0,twelvedata,GLD,marketaux,GLD,us,en
+TTWO,테이크투 인터랙티브,us,true,true,true,3.0,twelvedata,TTWO,marketaux,TTWO,us,en
+DLTR,달러 트리,us,true,true,true,3.0,twelvedata,DLTR,marketaux,DLTR,us,en
+NVDA,엔비디아,us,true,true,true,3.0,twelvedata,NVDA,marketaux,NVDA,us,en
+GOOG,알파벳 C,us,true,true,true,3.0,twelvedata,GOOG,marketaux,GOOG,us,en
+GOOGL,알파벳 A,us,true,true,true,3.0,twelvedata,GOOGL,marketaux,GOOGL,us,en
+JMIA,주미아 테크놀로지,us,true,true,true,3.0,twelvedata,JMIA,marketaux,JMIA,us,en
+SYM,심보틱,us,true,true,true,3.0,twelvedata,SYM,marketaux,SYM,us,en
+NFLX,넷플릭스,us,true,true,true,3.0,twelvedata,NFLX,marketaux,NFLX,us,en
+PFE,화이자,us,true,true,true,3.0,twelvedata,PFE,marketaux,PFE,us,en
+TSLA,테슬라,us,true,true,true,3.0,twelvedata,TSLA,marketaux,TSLA,us,en
+MSFT,마이크로소프트,us,true,true,true,3.0,twelvedata,MSFT,marketaux,MSFT,us,en
+AMD,AMD,us,true,true,true,3.0,twelvedata,AMD,marketaux,AMD,us,en
+AAPL,애플,us,true,true,true,3.0,twelvedata,AAPL,marketaux,AAPL,us,en
+INTC,인텔,us,true,true,true,3.0,twelvedata,INTC,marketaux,INTC,us,en
+NIU,NIU 테크놀로지,us,true,true,true,3.0,twelvedata,NIU,marketaux,NIU,us,en
+CRM,세일즈포스,us,true,true,true,3.0,twelvedata,CRM,marketaux,CRM,us,en
+META,메타 플랫폼스,us,true,true,true,3.0,twelvedata,META,marketaux,META,us,en
+U,유니티 소프트웨어,us,true,true,true,3.0,twelvedata,U,marketaux,U,us,en
+MDLZ,몬델리즈 인터내셔널,us,true,true,true,3.0,twelvedata,MDLZ,marketaux,MDLZ,us,en
+COST,코스트코,us,true,true,true,3.0,twelvedata,COST,marketaux,COST,us,en
+MRNA,모더나,us,true,true,true,3.0,twelvedata,MRNA,marketaux,MRNA,us,en
+NBIS,네비우스 그룹,us,true,true,true,3.0,twelvedata,NBIS,marketaux,NBIS,us,en
+PM,필립 모리스 인터내셔널,us,true,true,true,3.0,twelvedata,PM,marketaux,PM,us,en
+NET,클라우드플레어,us,true,true,true,3.0,twelvedata,NET,marketaux,NET,us,en
+CRWD,크라우드스트라이크,us,true,true,true,3.0,twelvedata,CRWD,marketaux,CRWD,us,en
+LNG,세니어 에너지,us,true,true,true,3.0,twelvedata,LNG,marketaux,LNG,us,en
+JPM,JP모건 체이스,us,true,true,true,3.0,twelvedata,JPM,marketaux,JPM,us,en
+KO,코카콜라,us,true,true,true,3.0,twelvedata,KO,marketaux,KO,us,en
+MU,마이크론 테크놀로지,us,true,true,true,3.0,twelvedata,MU,marketaux,MU,us,en
+TNXP,토닉스 파마슈티컬,us,true,true,true,3.0,twelvedata,TNXP,marketaux,TNXP,us,en
+000660,SK하이닉스,kr,true,true,false,3.0,legacy_naver,000660,marketaux,000660,kr,ko
+089590,제주항공,kr,true,true,false,3.0,legacy_naver,089590,marketaux,089590,kr,ko
+067160,SOOP,kr,true,true,false,3.0,legacy_naver,067160,marketaux,067160,kr,ko
+000120,CJ대한통운,kr,true,true,false,3.0,legacy_naver,000120,marketaux,000120,kr,ko
+192820,코스맥스,kr,true,true,false,3.0,legacy_naver,192820,marketaux,192820,kr,ko
+028260,삼성물산,kr,true,true,false,3.0,legacy_naver,028260,marketaux,028260,kr,ko
+055550,신한지주,kr,true,true,false,3.0,legacy_naver,055550,marketaux,055550,kr,ko
+010120,LS ELECTRIC,kr,true,true,false,3.0,legacy_naver,010120,marketaux,010120,kr,ko
+035420,NAVER,kr,true,true,false,3.0,legacy_naver,035420,marketaux,035420,kr,ko
+081660,미스토홀딩스,kr,true,true,false,3.0,legacy_naver,081660,marketaux,081660,kr,ko
+011200,HMM,kr,true,true,false,3.0,legacy_naver,011200,marketaux,011200,kr,ko
+028670,팬오션,kr,true,true,false,3.0,legacy_naver,028670,marketaux,028670,kr,ko
+298040,효성중공업,kr,true,true,false,3.0,legacy_naver,298040,marketaux,298040,kr,ko
+082740,한화엔진,kr,true,true,false,3.0,legacy_naver,082740,marketaux,082740,kr,ko
+024110,기업은행,kr,true,true,false,3.0,legacy_naver,024110,marketaux,024110,kr,ko
+078930,GS,kr,true,true,false,3.0,legacy_naver,078930,marketaux,078930,kr,ko
+058470,리노공업,kr,true,true,false,3.0,legacy_naver,058470,marketaux,058470,kr,ko
+005380,현대차,kr,true,true,false,3.0,legacy_naver,005380,marketaux,005380,kr,ko
+064350,현대로템,kr,true,true,false,3.0,legacy_naver,064350,marketaux,064350,kr,ko
+017670,SK텔레콤,kr,true,true,false,3.0,legacy_naver,017670,marketaux,017670,kr,ko
+316140,우리금융지주,kr,true,true,false,3.0,legacy_naver,316140,marketaux,316140,kr,ko
+086790,하나금융지주,kr,true,true,false,3.0,legacy_naver,086790,marketaux,086790,kr,ko
+032640,LG유플러스,kr,true,true,false,3.0,legacy_naver,032640,marketaux,032640,kr,ko
+033780,KT&G,kr,true,true,false,3.0,legacy_naver,033780,marketaux,033780,kr,ko
+036570,엔씨소프트,kr,true,true,false,3.0,legacy_naver,036570,marketaux,036570,kr,ko
+035900,JYP Ent,kr,true,true,false,3.0,legacy_naver,035900,marketaux,035900,kr,ko
+018880,한온시스템,kr,true,true,false,3.0,legacy_naver,018880,marketaux,018880,kr,ko
+005935,삼성전자우,kr,true,true,false,3.0,legacy_naver,005935,marketaux,005935,kr,ko
+225570,넥슨게임즈,kr,true,true,false,3.0,legacy_naver,225570,marketaux,225570,kr,ko
+194480,데브시스터즈,kr,true,true,false,3.0,legacy_naver,194480,marketaux,194480,kr,ko
+123420,위메이드플레이,kr,true,true,false,3.0,legacy_naver,123420,marketaux,123420,kr,ko
+091700,파트론,kr,true,true,false,3.0,legacy_naver,091700,marketaux,091700,kr,ko
+204320,HL만도,kr,true,true,false,3.0,legacy_naver,204320,marketaux,204320,kr,ko
+037270,YG PLUS,kr,true,true,false,3.0,legacy_naver,037270,marketaux,037270,kr,ko
+603993,낙양몰리브덴,cn,false,false,false,3.0,twelvedata,603993,marketaux,603993,cn,zh
+688169,스터우스지테크,cn,false,false,false,3.0,twelvedata,688169,marketaux,688169,cn,zh
+603486,커위스로보틱스,cn,false,false,false,3.0,twelvedata,603486,marketaux,603486,cn,zh
+0700,텐센트,hk,false,false,false,3.0,twelvedata,0700,marketaux,0700,hk,zh
+0981,SMIC,hk,false,false,false,3.0,twelvedata,0981,marketaux,0981,hk,zh
+BABA,알리바바,us,true,true,true,3.0,twelvedata,BABA,marketaux,BABA,us,en
+9988,알리바바 그룹,hk,false,false,false,3.0,twelvedata,9988,marketaux,9988,hk,zh
+1810,샤오미,hk,false,false,false,3.0,twelvedata,1810,marketaux,1810,hk,zh
+3659,넥슨 일본,jp,false,false,false,3.0,twelvedata,3659,marketaux,3659,jp,ja
+8058,미쓰비시,jp,false,false,false,3.0,twelvedata,8058,marketaux,8058,jp,ja

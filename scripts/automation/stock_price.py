@@ -1,22 +1,30 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 """
 태스크2/2-1: 종목 가격 변동 알림
-- 한국장: 장중 5분마다, 전일 종가 대비 3% 이상 변동 시 알림
-- 미국장: 새벽 1회, 전일 종가 대비 3% 이상 변동 시 알림
+- watchlist 기반으로 종목 목록을 읽음
+- Twelve Data 공식 API를 기본 price provider로 사용
+- 한국 종목은 기존 네이버 금융 비공식 API fallback 유지
 """
 
 import argparse
 import html
 import json
+import os
+import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
-from config.loader import load_config
 from notify import send_telegram
+from watchlist import get_price_watchlist
+
+KST = timezone(timedelta(hours=9))
+TWELVE_DATA_API_KEY = os.environ.get("TWELVE_DATA_API_KEY", "")
 
 
-def get_kr_stock_price(symbol: str) -> dict | None:
-    """한국 주식 현재가 조회 (네이버 금융 비공식 API)"""
+def get_legacy_kr_stock_price(symbol: str) -> dict | None:
+    """한국 주식 현재가 조회 (네이버 금융 비공식 API fallback)"""
     url = f"https://m.stock.naver.com/api/stock/{symbol}/basic"
     req = urllib.request.Request(url)
     req.add_header("User-Agent", "Mozilla/5.0")
@@ -34,8 +42,8 @@ def get_kr_stock_price(symbol: str) -> dict | None:
         return None
 
 
-def get_us_stock_price(symbol: str) -> dict | None:
-    """미국 주식 현재가 조회 (Yahoo Finance 비공식 API)"""
+def get_legacy_us_stock_price(symbol: str) -> dict | None:
+    """미국 주식 현재가 조회 (Yahoo Finance 비공식 API fallback)"""
     url = (
         f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
         f"?interval=1d&range=2d"
@@ -61,31 +69,68 @@ def get_us_stock_price(symbol: str) -> dict | None:
         return None
 
 
+def get_twelvedata_stock_price(symbol: str) -> dict | None:
+    """Twelve Data 공식 quote API 조회"""
+    if not TWELVE_DATA_API_KEY:
+        raise RuntimeError("TWELVE_DATA_API_KEY 가 설정되지 않았습니다.")
+
+    url = (
+        "https://api.twelvedata.com/quote?"
+        + urllib.parse.urlencode({
+            "symbol": symbol,
+            "apikey": TWELVE_DATA_API_KEY,
+        })
+    )
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "Mozilla/5.0")
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+            if "code" in data:
+                raise RuntimeError(f"{data.get('code')}: {data.get('message')}")
+            return {
+                "price": float(data["close"]),
+                "prev_close": float(data["previous_close"]),
+                "change_pct": round(float(data["percent_change"]), 2),
+            }
+    except Exception as e:
+        print(f"[TD:{symbol}] 조회 실패: {e}")
+        return None
+
+
+PRICE_PROVIDERS = {
+    "twelvedata": get_twelvedata_stock_price,
+    "legacy_naver": get_legacy_kr_stock_price,
+    "legacy_yahoo": get_legacy_us_stock_price,
+}
+
+
 def check_stocks(market: str) -> list[dict]:
-    """설정 파일에서 종목 목록을 읽고 가격 변동 체크"""
-    config = load_config()
-    threshold = config["stock_price"]["threshold_pct"]
-
-    if market == "kr":
-        stocks = config["stock_price"]["kr_stocks"]
-        get_price = get_kr_stock_price
-    else:
-        stocks = config["stock_price"]["us_stocks"]
-        get_price = get_us_stock_price
-
+    """watchlist에서 종목 목록을 읽고 가격 변동 체크"""
+    stocks = get_price_watchlist(market)
     alerts = []
+
     for stock in stocks:
-        data = get_price(stock["symbol"])
+        provider = stock["price_provider"]
+        get_price = PRICE_PROVIDERS.get(provider)
+        if get_price is None:
+            print(f"[{stock['name']}] 지원하지 않는 price provider: {provider}")
+            continue
+
+        data = get_price(stock["price_symbol"])
         if data is None:
             continue
 
         pct = data["change_pct"]
+        threshold = stock["price_threshold_pct"]
         if abs(pct) >= threshold:
             alerts.append({
                 "name": stock["name"],
                 "symbol": stock["symbol"],
                 "price": data["price"],
                 "change_pct": pct,
+                "threshold": threshold,
             })
             print(f"[ALERT] {stock['name']} ({stock['symbol']}): {pct:+.2f}%")
         else:
@@ -97,15 +142,16 @@ def check_stocks(market: str) -> list[dict]:
 def build_message(market: str, alerts: list[dict]) -> str:
     """알림 메시지 생성"""
     market_label = "🇰🇷 한국장" if market == "kr" else "🇺🇸 미국장"
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now = datetime.now(KST).strftime("%Y-%m-%d %H:%M")
 
     lines = [f"<b>🚨 {market_label} 가격 변동 알림</b> ({now})\n"]
 
-    for a in alerts:
-        emoji = "📈" if a["change_pct"] > 0 else "📉"
+    for alert in alerts:
+        emoji = "📈" if alert["change_pct"] > 0 else "📉"
         lines.append(
-            f"{emoji} <b>{html.escape(a['name'])}</b> ({html.escape(a['symbol'])})\n"
-            f"   현재가: {a['price']:,.0f} | 변동: {a['change_pct']:+.2f}%"
+            f"{emoji} <b>{html.escape(alert['name'])}</b> ({html.escape(alert['symbol'])})\n"
+            f"   현재가: {alert['price']:,.2f} | 변동: {alert['change_pct']:+.2f}% "
+            f"(기준 {alert['threshold']:.2f}%)"
         )
 
     return "\n".join(lines)
