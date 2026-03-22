@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-태스크8: 블로깅 봇 - Hugo → 미디움 크로스포스팅
+태스크8: 블로깅 봇 - Hugo -> Dev.to 크로스포스팅
 - 최근 7일 내 새로 추가된 Hugo 포스트 감지
-- 미디움 API로 자동 게시
+- Dev.to API로 draft 게시
 - 주 1회 월요일 09:00 KST
 """
 
 import json
 import os
-import subprocess
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -19,6 +18,10 @@ from notify import send_telegram
 
 KST = timezone(timedelta(hours=9))
 BLOG_ROOT = Path(__file__).resolve().parent.parent.parent
+DEVTO_API_KEY = os.environ.get("DEVTO_API_KEY", "")
+
+# Hugo 블로그의 GitHub Pages URL (canonical URL용)
+BLOG_BASE_URL = os.environ.get("BLOG_BASE_URL", "")
 
 
 def get_recent_posts(days: int = 7) -> list[dict]:
@@ -56,6 +59,7 @@ def get_recent_posts(days: int = 7) -> list[dict]:
                 "tags": front_matter.get("tags", []),
                 "body": body,
                 "slug": post_dir.name,
+                "description": front_matter.get("description", ""),
             })
 
     return recent
@@ -74,37 +78,44 @@ def extract_front_matter(content: str) -> dict | None:
         return None
 
 
-def post_to_medium(title: str, body: str, tags: list[str]) -> str | None:
-    """미디움 API로 글 게시, 게시된 URL 반환"""
-    token = os.environ["MEDIUM_TOKEN"]
+def post_to_devto(title: str, body: str, tags: list[str],
+                  description: str = "", canonical_url: str = "") -> str | None:
+    """Dev.to API로 글 게시 (draft), 게시된 URL 반환"""
+    # Dev.to 태그: 소문자, 영숫자+하이픈만, 최대 4개
+    clean_tags = []
+    for tag in tags[:4]:
+        cleaned = tag.lower().replace(" ", "").replace("_", "")
+        if cleaned:
+            clean_tags.append(cleaned)
 
-    # 1. 사용자 ID 조회
-    user_req = urllib.request.Request("https://api.medium.com/v1/me")
-    user_req.add_header("Authorization", f"Bearer {token}")
-    with urllib.request.urlopen(user_req, timeout=10) as resp:
-        user_data = json.loads(resp.read())
-        user_id = user_data["data"]["id"]
+    article_data = {
+        "article": {
+            "title": title,
+            "body_markdown": body,
+            "published": False,  # draft로 게시
+            "tags": clean_tags,
+        }
+    }
 
-    # 2. 글 게시
-    post_data = json.dumps({
-        "title": title,
-        "contentFormat": "markdown",
-        "content": f"# {title}\n\n{body}",
-        "tags": tags[:5],  # 미디움 최대 5개 태그
-        "publishStatus": "draft",  # 초안으로 게시 (검수 후 public으로 변경)
-    }).encode()
+    if description:
+        article_data["article"]["description"] = description[:150]
+    if canonical_url:
+        article_data["article"]["canonical_url"] = canonical_url
 
-    post_req = urllib.request.Request(
-        f"https://api.medium.com/v1/users/{user_id}/posts",
-        data=post_data,
+    data = json.dumps(article_data).encode()
+
+    req = urllib.request.Request(
+        "https://dev.to/api/articles",
+        data=data,
         method="POST",
     )
-    post_req.add_header("Authorization", f"Bearer {token}")
-    post_req.add_header("Content-Type", "application/json")
+    req.add_header("api-key", DEVTO_API_KEY)
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/vnd.forem.api-v1+json")
 
-    with urllib.request.urlopen(post_req, timeout=15) as resp:
+    with urllib.request.urlopen(req, timeout=15) as resp:
         result = json.loads(resp.read())
-        return result["data"].get("url")
+        return result.get("url")
 
 
 def build_message(posted: list[dict]) -> str:
@@ -112,8 +123,8 @@ def build_message(posted: list[dict]) -> str:
     lines = ["<b>✍️ 블로그 크로스포스팅 완료</b>\n"]
     for p in posted:
         lines.append(f"  • <b>{p['title']}</b>")
-        if p.get("medium_url"):
-            lines.append(f"    미디움: {p['medium_url']} (draft)")
+        if p.get("devto_url"):
+            lines.append(f"    Dev.to: {p['devto_url']} (draft)")
     return "\n".join(lines)
 
 
@@ -131,14 +142,26 @@ def main():
     for post in posts:
         result = {"title": post["title"]}
 
-        # 미디움
-        if os.environ.get("MEDIUM_TOKEN"):
+        if DEVTO_API_KEY:
+            # canonical URL: Hugo 블로그 원본 링크
+            canonical = ""
+            if BLOG_BASE_URL:
+                canonical = f"{BLOG_BASE_URL.rstrip('/')}/posts/{post['slug']}/"
+
             try:
-                url = post_to_medium(post["title"], post["body"], post["tags"])
-                result["medium_url"] = url
-                print(f"[미디움] {post['title']} → {url}")
+                url = post_to_devto(
+                    title=post["title"],
+                    body=post["body"],
+                    tags=post["tags"],
+                    description=post["description"],
+                    canonical_url=canonical,
+                )
+                result["devto_url"] = url
+                print(f"[Dev.to] {post['title']} -> {url}")
             except Exception as e:
-                print(f"[미디움] {post['title']} 실패: {e}")
+                print(f"[Dev.to] {post['title']} 실패: {e}")
+        else:
+            print("[Dev.to] DEVTO_API_KEY가 설정되지 않음, 건너뜀")
 
         posted.append(result)
 

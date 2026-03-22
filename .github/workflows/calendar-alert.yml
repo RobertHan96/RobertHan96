@@ -1,4 +1,4 @@
-name: "태스크5: 캘린더 일정 알림"
+name: "태스크5: 오늘의 할일 알림 (Todoist)"
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  calendar-alert:
+  todoist-alert:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,11 +19,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r scripts/automation/requirements.txt
 
-      - name: Run calendar alert
+      - name: Run Todoist daily alert
         working-directory: scripts/automation
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
-          GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
         run: python calendar_alert.py

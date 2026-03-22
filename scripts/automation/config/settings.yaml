@@ -27,12 +27,16 @@ stock_price:
     - { symbol: "TSLA", name: "Tesla" }
     # TODO: 관심 종목 추가
 
-# 태스크3: 기술 뉴스
+# 태스크3: 기술 뉴스 (LLM 요약)
 tech_news:
   sources:
-    - { name: "PyTorch", url: "https://pytorch.org/blog/feed.xml" }
-    - { name: "GeekNews", url: "https://news.hada.io/rss" }
-    # 하다(hada.io)는 GeekNews의 한국어 버전
+    - { name: "GeekNews", url: "https://news.hada.io/new" }
+    - { name: "PyTorch Korea", url: "https://discuss.pytorch.kr/c/news/14" }
+
+# 태스크5: 오늘의 할일 알림 (Todoist)
+todoist:
+  # TODOIST_API_TOKEN: Todoist 설정 > 연동 > API 토큰
+  # GitHub Secrets에서 관리
 
 # 태스크6: 생일 알림
 birthdays:
@@ -43,3 +47,8 @@ job_monitor:
   sources:
     - { name: "wanted", keywords: ["AI 엔지니어", "ML 엔지니어", "LLM"] }
     - { name: "hada", keywords: ["AI Engineer", "ML Engineer"] }
+
+# 태스크8: 블로그 크로스포스팅 (Dev.to)
+blog_crosspost:
+  # DEVTO_API_KEY: Dev.to 설정 > Extensions > DEV Community API Keys
+  # BLOG_BASE_URL: Hugo 블로그 URL (canonical URL용, GitHub vars에서 관리)

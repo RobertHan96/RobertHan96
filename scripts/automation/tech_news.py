@@ -1,24 +1,52 @@
 #!/usr/bin/env python3
 """
-태스크3: 기술 뉴스 알림 (파이토치, 하다/긱뉴스)
-- RSS 피드에서 최근 24시간 이내 글 수집
+태스크3: 기술 뉴스 알림 (GeekNews, PyTorch Korea)
+- 각 사이트에서 최근 24시간 이내 새 글 수집
+- OpenAI GPT로 요약 후 텔레그램 발송
 - 매일 아침 08:00 KST 1회 발송
 """
 
-import time
+import json
+import os
+import urllib.request
+import urllib.parse
 from datetime import datetime, timezone, timedelta
-
-import feedparser
+from html.parser import HTMLParser
 
 from config.loader import load_config
 from notify import send_telegram
 
 KST = timezone(timedelta(hours=9))
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
-def fetch_recent_entries(feed_url: str, hours: int = 24) -> list[dict]:
-    """RSS 피드에서 최근 N시간 이내 글 수집"""
-    feed = feedparser.parse(feed_url)
+class TextExtractor(HTMLParser):
+    """HTML에서 텍스트만 추출"""
+
+    def __init__(self):
+        super().__init__()
+        self.texts = []
+
+    def handle_data(self, data):
+        self.texts.append(data.strip())
+
+    def get_text(self):
+        return " ".join(t for t in self.texts if t)
+
+
+def html_to_text(html: str) -> str:
+    extractor = TextExtractor()
+    extractor.feed(html)
+    return extractor.get_text()
+
+
+def fetch_hada_new(hours: int = 24) -> list[dict]:
+    """GeekNews (hada.io) /new 페이지에서 최근 글 수집 via RSS"""
+    import feedparser
+
+    feed = feedparser.parse("https://news.hada.io/rss")
+    import time
+
     cutoff = time.time() - (hours * 3600)
 
     entries = []
@@ -29,13 +57,109 @@ def fetch_recent_entries(feed_url: str, hours: int = 24) -> list[dict]:
             if entry_time < cutoff:
                 continue
 
+        description = entry.get("summary", "") or entry.get("description", "")
         entries.append({
             "title": entry.get("title", "제목 없음"),
             "link": entry.get("link", ""),
-            "published": datetime.fromtimestamp(
-                time.mktime(published), tz=KST
-            ).strftime("%m/%d %H:%M") if published else "",
+            "content": html_to_text(description)[:500],
         })
+
+    return entries
+
+
+def fetch_pytorch_kr(hours: int = 24) -> list[dict]:
+    """PyTorch Korea Discourse 포럼에서 최근 뉴스 글 수집 (JSON API)"""
+    url = "https://discuss.pytorch.kr/c/news/14.json"
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "Mozilla/5.0")
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+    except Exception as e:
+        print(f"PyTorch Korea 수집 실패: {e}")
+        return []
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    entries = []
+
+    for topic in data.get("topic_list", {}).get("topics", [])[:20]:
+        created = topic.get("created_at", "")
+        if not created:
+            continue
+
+        created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        if created_dt < cutoff:
+            continue
+
+        topic_id = topic.get("id", "")
+        excerpt = topic.get("excerpt", "") or ""
+
+        entries.append({
+            "title": topic.get("title", "제목 없음"),
+            "link": f"https://discuss.pytorch.kr/t/{topic.get('slug', '')}/{topic_id}",
+            "content": html_to_text(excerpt)[:500],
+        })
+
+    return entries
+
+
+def summarize_with_openai(entries: list[dict]) -> list[dict]:
+    """OpenAI GPT로 각 글 한줄 요약"""
+    if not OPENAI_API_KEY or not entries:
+        return entries
+
+    texts = []
+    for i, e in enumerate(entries):
+        texts.append(f"[{i+1}] 제목: {e['title']}\n내용: {e['content']}")
+
+    prompt = (
+        "아래 기술 뉴스 목록을 각각 한국어 1~2문장으로 핵심만 요약해줘.\n"
+        "형식: [번호] 요약내용\n\n"
+        + "\n\n".join(texts)
+    )
+
+    body = json.dumps({
+        "model": "gpt-4o-mini",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.3,
+        "max_tokens": 1024,
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/chat/completions",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read())
+            content = result["choices"][0]["message"]["content"]
+
+        summaries = {}
+        for line in content.strip().split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            # [1] 요약... 형태 파싱
+            if line.startswith("[") and "]" in line:
+                idx_str = line[1:line.index("]")]
+                try:
+                    idx = int(idx_str) - 1
+                    summaries[idx] = line[line.index("]") + 1:].strip()
+                except ValueError:
+                    pass
+
+        for i, e in enumerate(entries):
+            if i in summaries:
+                e["summary"] = summaries[i]
+
+    except Exception as e:
+        print(f"OpenAI 요약 실패: {e}")
 
     return entries
 
@@ -51,8 +175,12 @@ def build_message(results: dict[str, list]) -> str:
             continue
         has_news = True
         lines.append(f"<b>▸ {source}</b>")
-        for e in entries[:5]:
-            lines.append(f"  • <a href=\"{e['link']}\">{e['title']}</a>")
+        for e in entries[:7]:
+            title_line = f"  • <a href=\"{e['link']}\">{e['title']}</a>"
+            lines.append(title_line)
+            summary = e.get("summary", "")
+            if summary:
+                lines.append(f"    → {summary}")
         lines.append("")
 
     if not has_news:
@@ -61,19 +189,32 @@ def build_message(results: dict[str, list]) -> str:
     return "\n".join(lines)
 
 
+FETCHERS = {
+    "GeekNews": fetch_hada_new,
+    "PyTorch Korea": fetch_pytorch_kr,
+}
+
+
 def main():
     config = load_config()
     sources = config["tech_news"]["sources"]
 
     results = {}
     for src in sources:
+        name = src["name"]
+        fetcher = FETCHERS.get(name)
+        if not fetcher:
+            print(f"[{name}] 알 수 없는 소스, 건너뜀")
+            continue
+
         try:
-            entries = fetch_recent_entries(src["url"])
-            results[src["name"]] = entries
-            print(f"[{src['name']}] {len(entries)}건 수집")
+            entries = fetcher()
+            entries = summarize_with_openai(entries)
+            results[name] = entries
+            print(f"[{name}] {len(entries)}건 수집 + 요약 완료")
         except Exception as e:
-            print(f"[{src['name']}] RSS 수집 실패: {e}")
-            results[src["name"]] = []
+            print(f"[{name}] 수집 실패: {e}")
+            results[name] = []
 
     message = build_message(results)
     if message:

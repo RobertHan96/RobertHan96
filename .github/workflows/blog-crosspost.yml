@@ -1,4 +1,4 @@
-name: "태스크8: 블로그 크로스포스팅"
+name: "태스크8: 블로그 크로스포스팅 (Dev.to)"
 
 on:
   schedule:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 전체 히스토리 필요
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -26,5 +26,6 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          MEDIUM_TOKEN: ${{ secrets.MEDIUM_TOKEN }}
+          DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+          BLOG_BASE_URL: ${{ vars.BLOG_BASE_URL }}
         run: python blog_crosspost.py
