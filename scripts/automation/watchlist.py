@@ -47,6 +47,13 @@ def load_watchlist_csv() -> str:
     config = load_config()
     watchlist_config = config.get("watchlist", {})
     source_type = watchlist_config.get("source_type", "published_csv")
+    source_path = watchlist_config.get("local_csv_path", "data/watchlist.csv")
+    local_path = ROOT_DIR / source_path
+
+    def load_local_csv() -> str:
+        if not local_path.exists():
+            raise FileNotFoundError(f"watchlist CSV를 찾을 수 없습니다: {local_path}")
+        return local_path.read_text(encoding="utf-8-sig")
 
     if source_type == "published_csv":
         env_var_name = watchlist_config.get(
@@ -57,21 +64,23 @@ def load_watchlist_csv() -> str:
         if not source_url:
             source_url = watchlist_config.get("published_csv_url", "").strip()
         if not source_url:
-            raise ValueError(
-                f"watchlist published CSV URL이 없습니다. "
-                f"환경변수 {env_var_name} 또는 watchlist.published_csv_url 을 설정해 주세요."
+            print(
+                f"watchlist published CSV URL이 없어 로컬 CSV로 fallback 합니다: {local_path}"
             )
+            return load_local_csv()
 
         req = urllib.request.Request(source_url)
         req.add_header("User-Agent", "Mozilla/5.0")
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.read().decode("utf-8-sig")
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                return resp.read().decode("utf-8-sig")
+        except Exception as exc:
+            print(
+                f"watchlist published CSV 조회 실패로 로컬 CSV fallback 합니다: {exc}"
+            )
+            return load_local_csv()
 
-    source_path = watchlist_config.get("local_csv_path", "data/watchlist.csv")
-    path = ROOT_DIR / source_path
-    if not path.exists():
-        raise FileNotFoundError(f"watchlist CSV를 찾을 수 없습니다: {path}")
-    return path.read_text(encoding="utf-8-sig")
+    return load_local_csv()
 
 
 def load_watchlist() -> list[dict]:
