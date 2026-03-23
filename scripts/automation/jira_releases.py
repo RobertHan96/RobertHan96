@@ -12,6 +12,7 @@ import base64
 import html
 import json
 import os
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -21,11 +22,19 @@ KST = timezone(timedelta(hours=9))
 ISSUE_PREVIEW_LIMIT = 5
 
 
+def get_required_env(name: str) -> str:
+    """필수 환경변수 로드"""
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"{name} 환경변수가 비어 있습니다.")
+    return value
+
+
 def jira_request(path: str, method: str = "GET", payload: dict | None = None) -> list | dict:
     """Jira Cloud REST API 호출"""
-    base_url = os.environ["JIRA_BASE_URL"]  # e.g. https://your-domain.atlassian.net
-    email = os.environ["JIRA_EMAIL"]
-    token = os.environ["JIRA_API_TOKEN"]
+    base_url = get_required_env("JIRA_BASE_URL").rstrip("/")
+    email = get_required_env("JIRA_EMAIL")
+    token = get_required_env("JIRA_API_TOKEN")
 
     url = f"{base_url}/rest/api/3/{path}"
     credentials = base64.b64encode(f"{email}:{token}".encode()).decode()
@@ -37,8 +46,14 @@ def jira_request(path: str, method: str = "GET", payload: dict | None = None) ->
     if payload is not None:
         req.add_header("Content-Type", "application/json")
 
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"Jira API 요청 실패 [{exc.code}] {method} {path}: {body}"
+        ) from exc
 
 
 def escape_jql_value(value: str) -> str:
@@ -158,7 +173,7 @@ def build_message(project_key: str, versions: list[dict]) -> str:
 
 
 def main():
-    project_key = os.environ.get("JIRA_PROJECT_KEY", "PROJ")
+    project_key = os.environ.get("JIRA_PROJECT_KEY", "").strip() or "PROJ"
 
     print(f"Jira 프로젝트 [{project_key}] 릴리즈 조회 중...")
     versions = get_upcoming_versions(project_key)
