@@ -1,9 +1,13 @@
 """텔레그램 알림 공통 모듈"""
 
 import json
-import os
 import urllib.parse
 import urllib.request
+
+try:
+    from .runtime import get_required_env
+except ImportError:
+    from runtime import get_required_env
 
 TELEGRAM_MESSAGE_LIMIT = 3800
 
@@ -53,8 +57,8 @@ def _send_single_telegram(
     fail_on_error: bool,
 ) -> bool:
     """단일 텔레그램 메시지 발송"""
-    token = os.environ["TELEGRAM_BOT_TOKEN"]
-    chat_id = os.environ["TELEGRAM_CHAT_ID"]
+    token = get_required_env("TELEGRAM_BOT_TOKEN")
+    chat_id = get_required_env("TELEGRAM_CHAT_ID")
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     data = urllib.parse.urlencode({

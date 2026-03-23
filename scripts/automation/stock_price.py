@@ -110,20 +110,23 @@ PRICE_PROVIDERS = {
 }
 
 
-def check_stocks(market: str) -> list[dict]:
+def check_stocks(market: str) -> tuple[list[dict], int, int]:
     """watchlist에서 종목 목록을 읽고 가격 변동 체크"""
     stocks = get_price_watchlist(market)
     alerts = []
+    failures = 0
 
     for stock in stocks:
         provider = stock["price_provider"]
         get_price = PRICE_PROVIDERS.get(provider)
         if get_price is None:
             print(f"[{stock['name']}] 지원하지 않는 price provider: {provider}")
+            failures += 1
             continue
 
         data = get_price(stock["price_symbol"])
         if data is None:
+            failures += 1
             continue
 
         pct = data["change_pct"]
@@ -140,7 +143,7 @@ def check_stocks(market: str) -> list[dict]:
         else:
             print(f"[OK] {stock['name']} ({stock['symbol']}): {pct:+.2f}%")
 
-    return alerts
+    return alerts, len(stocks), failures
 
 
 def build_message(market: str, alerts: list[dict]) -> str:
@@ -166,7 +169,10 @@ def main():
     parser.add_argument("--market", choices=["kr", "us"], required=True)
     args = parser.parse_args()
 
-    alerts = check_stocks(args.market)
+    alerts, attempted, failures = check_stocks(args.market)
+    if attempted and failures == attempted:
+        raise RuntimeError(f"{args.market} 종목 가격 조회가 모두 실패했습니다.")
+
     if alerts:
         message = build_message(args.market, alerts)
         send_telegram(message)

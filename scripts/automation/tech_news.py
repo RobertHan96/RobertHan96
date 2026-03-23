@@ -203,11 +203,13 @@ def main():
     sources = config["tech_news"]["sources"]
 
     results = {}
+    failures = 0
     for src in sources:
         name = src["name"]
         fetcher = FETCHERS.get(name)
         if not fetcher:
             print(f"[{name}] 알 수 없는 소스, 건너뜀")
+            failures += 1
             continue
 
         try:
@@ -218,6 +220,10 @@ def main():
         except Exception as e:
             print(f"[{name}] 수집 실패: {e}")
             results[name] = []
+            failures += 1
+
+    if sources and failures == len(sources):
+        raise RuntimeError("기술 뉴스 소스 조회가 모두 실패했습니다.")
 
     message = build_message(results)
     if message:

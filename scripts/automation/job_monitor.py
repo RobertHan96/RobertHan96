@@ -9,24 +9,25 @@ from __future__ import annotations
 """
 
 import html
-import json
 import urllib.parse
-import urllib.request
 from datetime import datetime, timedelta, timezone
 
 from config.loader import load_config
 from notify import send_telegram
+from runtime import request_json
 
 KST = timezone(timedelta(hours=9))
 
 
 def wanted_request(url: str) -> dict:
     """Wanted API 요청"""
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "Mozilla/5.0")
-
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read())
+    data = request_json(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=10,
+        label="Wanted API 요청",
+    )
+    return data if isinstance(data, dict) else {}
 
 
 def clean_lines(text: str) -> list[str]:
@@ -89,23 +90,19 @@ def search_wanted_jobs(keyword: str, limit: int = 5) -> list[dict]:
         "country": "kr",
     })
 
-    try:
-        data = wanted_request(url)
-        jobs = []
-        for item in data.get("data", []):
-            job_id = item.get("id", "")
-            detail = fetch_wanted_job_detail(job_id)
-            jobs.append({
-                "id": job_id,
-                "title": item.get("position", ""),
-                "company": item.get("company", {}).get("name", ""),
-                "link": f"https://www.wanted.co.kr/wd/{job_id}",
-                "summary": summarize_job_detail(detail),
-            })
-        return jobs
-    except Exception as e:
-        print(f"원티드 검색 실패 [{keyword}]: {e}")
-        return []
+    data = wanted_request(url)
+    jobs = []
+    for item in data.get("data", []):
+        job_id = item.get("id", "")
+        detail = fetch_wanted_job_detail(job_id)
+        jobs.append({
+            "id": job_id,
+            "title": item.get("position", ""),
+            "company": item.get("company", {}).get("name", ""),
+            "link": f"https://www.wanted.co.kr/wd/{job_id}",
+            "summary": summarize_job_detail(detail),
+        })
+    return jobs
 
 
 def build_message(results: dict[str, list]) -> str:
@@ -139,11 +136,22 @@ def main():
     sources = config["job_monitor"]["sources"]
 
     results = {}
+    attempted = 0
+    failures = 0
     for src in sources:
         for keyword in src.get("keywords", []):
-            jobs = search_wanted_jobs(keyword)
-            results[keyword] = jobs
-            print(f"[{keyword}] {len(jobs)}건")
+            attempted += 1
+            try:
+                jobs = search_wanted_jobs(keyword)
+                results[keyword] = jobs
+                print(f"[{keyword}] {len(jobs)}건")
+            except Exception as e:
+                print(f"원티드 검색 실패 [{keyword}]: {e}")
+                results[keyword] = []
+                failures += 1
+
+    if attempted and failures == attempted:
+        raise RuntimeError("채용공고 검색이 모두 실패했습니다.")
 
     message = build_message(results)
     if message:

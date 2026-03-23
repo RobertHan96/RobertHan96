@@ -15,6 +15,7 @@ from pathlib import Path
 import yaml
 
 from notify import send_telegram
+from runtime import get_required_env
 
 KST = timezone(timedelta(hours=9))
 BLOG_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -78,8 +79,14 @@ def extract_front_matter(content: str) -> dict | None:
         return None
 
 
-def post_to_devto(title: str, body: str, tags: list[str],
-                  description: str = "", canonical_url: str = "") -> str | None:
+def post_to_devto(
+    title: str,
+    body: str,
+    tags: list[str],
+    api_key: str,
+    description: str = "",
+    canonical_url: str = "",
+) -> str | None:
     """Dev.to API로 글 게시 (draft), 게시된 URL 반환"""
     # Dev.to 태그: 소문자, 영숫자+하이픈만, 최대 4개
     clean_tags = []
@@ -109,7 +116,7 @@ def post_to_devto(title: str, body: str, tags: list[str],
         data=data,
         method="POST",
     )
-    req.add_header("api-key", DEVTO_API_KEY)
+    req.add_header("api-key", api_key)
     req.add_header("Content-Type", "application/json")
     req.add_header("Accept", "application/vnd.forem.api-v1+json")
 
@@ -137,33 +144,35 @@ def main():
         return
 
     print(f"{len(posts)}개 새 포스트 발견")
+    api_key = get_required_env("DEVTO_API_KEY")
 
     posted = []
+    failures = 0
     for post in posts:
-        result = {"title": post["title"]}
+        canonical = ""
+        if BLOG_BASE_URL:
+            canonical = f"{BLOG_BASE_URL.rstrip('/')}/posts/{post['slug']}/"
 
-        if DEVTO_API_KEY:
-            # canonical URL: Hugo 블로그 원본 링크
-            canonical = ""
-            if BLOG_BASE_URL:
-                canonical = f"{BLOG_BASE_URL.rstrip('/')}/posts/{post['slug']}/"
+        try:
+            url = post_to_devto(
+                title=post["title"],
+                body=post["body"],
+                tags=post["tags"],
+                api_key=api_key,
+                description=post["description"],
+                canonical_url=canonical,
+            )
+            posted.append({
+                "title": post["title"],
+                "devto_url": url,
+            })
+            print(f"[Dev.to] {post['title']} -> {url}")
+        except Exception as e:
+            print(f"[Dev.to] {post['title']} 실패: {e}")
+            failures += 1
 
-            try:
-                url = post_to_devto(
-                    title=post["title"],
-                    body=post["body"],
-                    tags=post["tags"],
-                    description=post["description"],
-                    canonical_url=canonical,
-                )
-                result["devto_url"] = url
-                print(f"[Dev.to] {post['title']} -> {url}")
-            except Exception as e:
-                print(f"[Dev.to] {post['title']} 실패: {e}")
-        else:
-            print("[Dev.to] DEVTO_API_KEY가 설정되지 않음, 건너뜀")
-
-        posted.append(result)
+    if posts and failures == len(posts):
+        raise RuntimeError("Dev.to 게시가 모두 실패했습니다.")
 
     if posted:
         message = build_message(posted)

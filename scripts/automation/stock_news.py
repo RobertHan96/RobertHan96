@@ -11,17 +11,16 @@ from __future__ import annotations
 
 import html
 import json
-import os
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
 from config.loader import load_config
 from notify import send_telegram
+from runtime import get_required_env, request_json
 from watchlist import get_news_watchlist
 
 KST = timezone(timedelta(hours=9))
-MARKETAUX_API_TOKEN = os.environ["MARKETAUX_API_TOKEN"]
 
 
 def fetch_marketaux_news(symbol: str, country: str = "", language: str = "en", limit: int = 3) -> list[dict]:
@@ -33,7 +32,7 @@ def fetch_marketaux_news(symbol: str, country: str = "", language: str = "en", l
     ).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     params = {
-        "api_token": MARKETAUX_API_TOKEN,
+        "api_token": get_required_env("MARKETAUX_API_TOKEN"),
         "symbols": symbol,
         "filter_entities": "true",
         "language": language or "en",
@@ -44,12 +43,13 @@ def fetch_marketaux_news(symbol: str, country: str = "", language: str = "en", l
         params["countries"] = country
 
     url = "https://api.marketaux.com/v1/news/all?" + urllib.parse.urlencode(params)
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "Mozilla/5.0")
-
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        data = json.loads(resp.read())
-        return data.get("data", [])
+    data = request_json(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=15,
+        label=f"Marketaux 뉴스 조회 [{symbol}]",
+    )
+    return data.get("data", [])
 
 
 def shorten_text(text: str, limit: int = 100) -> str:
@@ -91,11 +91,13 @@ def build_message(results: dict[str, list]) -> str:
 def main():
     watchlist = get_news_watchlist()
     results = {}
+    failures = 0
 
     for item in watchlist:
         provider = item["news_provider"]
         if provider != "marketaux":
             print(f"[{item['name']}] 지원하지 않는 뉴스 provider: {provider}")
+            failures += 1
             continue
 
         try:
@@ -109,6 +111,10 @@ def main():
         except Exception as e:
             print(f"[{item['name']}] 뉴스 조회 실패: {e}")
             results[item["name"]] = []
+            failures += 1
+
+    if watchlist and failures == len(watchlist):
+        raise RuntimeError("관심 종목 뉴스 조회가 모두 실패했습니다.")
 
     message = build_message(results)
     if message:

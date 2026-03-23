@@ -9,27 +9,26 @@ from __future__ import annotations
 """
 
 import html
-import json
-import os
-import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
 from notify import send_telegram
+from runtime import get_required_env, request_json
 
 KST = timezone(timedelta(hours=9))
 WINDOW_DAYS = 7
 WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"]
-TODOIST_API_TOKEN = os.environ["TODOIST_API_TOKEN"]
 API_BASE = "https://api.todoist.com/rest/v2"
 BIRTHDAY_KEYWORD = "생일"
 
 
 def todoist_get(endpoint: str) -> list | dict:
     """Todoist REST API GET 요청"""
-    req = urllib.request.Request(f"{API_BASE}/{endpoint}")
-    req.add_header("Authorization", f"Bearer {TODOIST_API_TOKEN}")
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read())
+    return request_json(
+        f"{API_BASE}/{endpoint}",
+        headers={"Authorization": f"Bearer {get_required_env('TODOIST_API_TOKEN')}"},
+        timeout=10,
+        label=f"Todoist API 요청 [{endpoint}]",
+    )
 
 
 def parse_due_date(task: dict) -> date | None:

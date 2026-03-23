@@ -6,13 +6,17 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import os
 import tempfile
 import time
 from pathlib import Path
 from typing import Any
 
 from openai import OpenAI
+
+try:
+    from .runtime import get_required_env
+except ImportError:
+    from runtime import get_required_env
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 RAG_DATA_DIR = ROOT_DIR / "data" / "investment_rag"
@@ -30,7 +34,7 @@ SUPPORTED_DIRECT_EXTENSIONS = {
 }
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+OPENAI_API_KEY = get_required_env("OPENAI_API_KEY")
 INVESTMENT_RAG_MODEL = os.environ.get("INVESTMENT_RAG_MODEL", "gpt-5-mini")
 INVESTMENT_OCR_MODEL = os.environ.get("INVESTMENT_OCR_MODEL", "gpt-5-mini")
 INVESTMENT_VECTOR_STORE_ID = os.environ.get("INVESTMENT_VECTOR_STORE_ID", "").strip()
