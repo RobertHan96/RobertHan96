@@ -3,18 +3,18 @@ from __future__ import annotations
 
 """워치리스트/뉴스 기반 투자 브리프 생성"""
 
-import json
 import os
 import urllib.parse
-import urllib.request
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 try:
+    from .runtime import request_json
     from .stock_price import PRICE_PROVIDERS
     from .watchlist import get_news_watchlist, get_price_watchlist
 except ImportError:
+    from runtime import request_json
     from stock_price import PRICE_PROVIDERS
     from watchlist import get_news_watchlist, get_price_watchlist
 
@@ -30,14 +30,17 @@ def chunked(items: list[str], size: int) -> list[list[str]]:
     return [items[index:index + size] for index in range(0, len(items), size)]
 
 
+def format_marketaux_datetime(target: datetime) -> str:
+    """Marketaux가 지원하는 naive datetime 문자열로 변환"""
+    return target.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+
+
 def fetch_marketaux_batch_news(symbols: list[str], country: str, language: str, limit: int = 3) -> list[dict]:
     """국가별 종목 묶음 뉴스 조회"""
     if not MARKETAUX_API_TOKEN or not symbols:
         return []
 
-    published_after = (
-        datetime.now(KST) - timedelta(days=1)
-    ).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    published_after = format_marketaux_datetime(datetime.now(KST) - timedelta(days=1))
     params = {
         "api_token": MARKETAUX_API_TOKEN,
         "symbols": ",".join(symbols),
@@ -52,11 +55,13 @@ def fetch_marketaux_batch_news(symbols: list[str], country: str, language: str, 
         params["language"] = language
 
     url = "https://api.marketaux.com/v1/news/all?" + urllib.parse.urlencode(params)
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "Mozilla/5.0")
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        data = json.loads(resp.read())
-        return data.get("data", [])
+    data = request_json(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=15,
+        label=f"Marketaux 뉴스 배치 조회 [{','.join(symbols)}]",
+    )
+    return data.get("data", [])
 
 
 def build_price_section(market: str, limit: int = 20) -> list[str]:

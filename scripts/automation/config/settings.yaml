@@ -22,6 +22,12 @@ watchlist:
 stock_news:
   # Marketaux 기반 최근 뉴스 조회 시간 범위
   lookback_hours: 3
+  # 무료 플랜 사용량을 아끼기 위해 여러 종목을 배치 조회
+  batch_size: 20
+  # 종목별로 메시지에 보여줄 최대 기사 수
+  per_symbol_article_limit: 2
+  # Marketaux 배치 요청당 최대 기사 수
+  max_articles_per_batch: 50
 
 # 태스크2: 종목 가격 변동 알림
 stock_price:
