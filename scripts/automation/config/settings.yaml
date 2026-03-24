@@ -56,6 +56,17 @@ job_monitor:
   sources:
     - { name: "wanted", keywords: ["AI 엔지니어", "ML 엔지니어", "LLM"] }
     - { name: "hada", keywords: ["AI Engineer", "ML Engineer"] }
+    - name: "zighang"
+      label: "직행 AI/LLM"
+      page: 0
+      size: 20
+      max_results: 5
+      depth_twos: ["LLM", "RAG", "생성형AI", "NLP", "AI서비스기획", "기타AI_데이터"]
+      career_min: 0
+      career_max: 10
+      include_career_open: true
+      sort_condition: "VIEWS"
+      order_condition: "DESC"
 
 # 태스크8: 블로그 크로스포스팅 (Dev.to)
 blog_crosspost:
