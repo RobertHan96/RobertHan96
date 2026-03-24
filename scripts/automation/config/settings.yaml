@@ -68,6 +68,15 @@ job_monitor:
       include_career_open: true
       sort_condition: "LATEST"
       order_condition: "DESC"
+    - name: "cleaneye"
+      label: "클린아이 공공채용"
+      ent_recruit_list: ["700020"]
+      today_only: true
+      max_results: 5
+      yearincome: ""
+      status: ""
+      pub_end_date: ""
+      ent_name: ""
 
 # 태스크8: 블로그 크로스포스팅 (Dev.to)
 blog_crosspost:

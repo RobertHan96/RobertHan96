@@ -10,6 +10,7 @@ from __future__ import annotations
 """
 
 import html
+import math
 import re
 import urllib.parse
 import urllib.request
@@ -22,6 +23,11 @@ from runtime import request_json
 KST = timezone(timedelta(hours=9))
 ZIGHANG_BASE_URL = "https://api.zighang.com/api"
 WANTED_JOB_URL = "https://www.wanted.co.kr/wd/{job_id}"
+CLEANEYE_LIST_URL = "https://job.cleaneye.go.kr/user/selectYpRecruitment.do"
+CLEANEYE_DETAIL_URL = (
+    "https://job.cleaneye.go.kr/user/ypCareersData.do"
+    "?empyear={empyear}&ypEntId={yp_ent_id}&entSeq={ent_seq}"
+)
 
 
 def wanted_request(url: str) -> dict:
@@ -61,6 +67,23 @@ def zighang_request(path: str, query: list[tuple[str, str]] | None = None) -> di
     return data if isinstance(data, dict) else {}
 
 
+def cleaneye_request(payload: list[tuple[str, str]]) -> dict:
+    """클린아이 채용 API 요청"""
+    data = request_json(
+        CLEANEYE_LIST_URL,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        method="POST",
+        data=urllib.parse.urlencode(payload).encode(),
+        timeout=15,
+        label="클린아이 API 요청",
+    )
+    return data if isinstance(data, dict) else {}
+
+
 def clean_lines(text: str) -> list[str]:
     """본문 텍스트를 줄 단위로 정리"""
     cleaned = []
@@ -77,6 +100,12 @@ def shorten_text(text: str, limit: int = 120) -> str:
     if len(collapsed) <= limit:
         return collapsed
     return collapsed[: limit - 3].rstrip() + "..."
+
+
+def strip_html_tags(text: str) -> str:
+    """HTML 태그 제거 후 공백 정리"""
+    without_tags = re.sub(r"<[^>]+>", " ", text or "")
+    return " ".join(html.unescape(without_tags).split()).strip()
 
 
 def dedupe_preserve_order(items: list[str]) -> list[str]:
@@ -124,6 +153,16 @@ def parse_iso_date_to_kst(value: str) -> datetime | None:
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=KST)
     return parsed.astimezone(KST)
+
+
+def parse_cleaneye_date(value: str) -> datetime | None:
+    """클린아이 날짜 문자열을 KST datetime으로 변환"""
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=KST)
+    except ValueError:
+        return None
 
 
 def fetch_wanted_posted_date(job_id: int | str) -> datetime | None:
@@ -330,6 +369,76 @@ def fetch_zighang_job_detail(job_id: str) -> dict:
     return data.get("data") or {}
 
 
+def fetch_cleaneye_job_detail(empyear: str, yp_ent_id: str, ent_seq: str) -> str:
+    """클린아이 상세 페이지 HTML 조회"""
+    url = CLEANEYE_DETAIL_URL.format(
+        empyear=urllib.parse.quote(empyear),
+        yp_ent_id=urllib.parse.quote(yp_ent_id),
+        ent_seq=urllib.parse.quote(ent_seq),
+    )
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "Mozilla/5.0")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read().decode("utf-8", errors="ignore")
+    except Exception as exc:
+        raise RuntimeError(f"클린아이 상세 조회 실패 [{empyear}/{yp_ent_id}/{ent_seq}]: {exc}") from exc
+
+
+def extract_cleaneye_field(html_text: str, field_id: str) -> str:
+    """클린아이 상세 HTML에서 특정 id 필드 추출"""
+    pattern = rf'<dd id="{re.escape(field_id)}">(.*?)</dd>'
+    match = re.search(pattern, html_text, re.S)
+    if not match:
+        return ""
+    return strip_html_tags(match.group(1))
+
+
+def summarize_cleaneye_job_detail(item: dict, detail_html: str) -> str:
+    """클린아이 상세 HTML을 주요 업무 중심 요약으로 변환"""
+    duty_detail = extract_cleaneye_field(detail_html, "dutyDetail")
+    work_place = extract_cleaneye_field(detail_html, "workPlace")
+    yearincome = extract_cleaneye_field(detail_html, "yearincome")
+    office_hours = extract_cleaneye_field(detail_html, "officeHours")
+    local_yn = extract_cleaneye_field(detail_html, "localYn")
+    local_reason = extract_cleaneye_field(detail_html, "localReason")
+    ent_license = extract_cleaneye_field(detail_html, "entLicense")
+    special_item = extract_cleaneye_field(detail_html, "specialItem")
+
+    summary_parts = []
+    if duty_detail:
+        summary_parts.append("주요 업무: " + shorten_text(duty_detail, 100))
+
+    requirement_bits = dedupe_preserve_order([
+        text
+        for text in [ent_license, special_item, local_reason]
+        if text and text != "해당 없음"
+    ])
+    if requirement_bits:
+        summary_parts.append("요건: " + ", ".join(requirement_bits[:2]))
+
+    info_bits = dedupe_preserve_order([
+        item.get("localName") or "",
+        work_place,
+        yearincome,
+        office_hours,
+        f"{item.get('pubDate', '')} ~ {item.get('pubEndDate', '')}".strip(" ~"),
+    ])
+    info_bits = [bit for bit in info_bits if bit and bit != "해당 없음"]
+    if info_bits:
+        summary_parts.append("기본 정보: " + ", ".join(info_bits[:3]))
+
+    if not summary_parts:
+        summary_parts.append(
+            "기본 정보: "
+            + ", ".join(
+                bit for bit in [item.get("entName", ""), item.get("pubDate", ""), item.get("pubEndDate", "")] if bit
+            )
+        )
+
+    return shorten_text(" / ".join(summary_parts), 220)
+
+
 def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
     """직행 채용공고 검색"""
     label = source.get("label") or "직행 AI 채용"
@@ -390,6 +499,86 @@ def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
     return label, jobs
 
 
+def search_cleaneye_jobs(source: dict) -> tuple[str, list[dict]]:
+    """클린아이 공공기관 채용 조회"""
+    label = source.get("label") or "클린아이 공공채용"
+    today_only = bool(source.get("today_only", True))
+    today = datetime.now(KST).date()
+    today_str = today.strftime("%Y-%m-%d")
+    ent_recruit_list = source.get("ent_recruit_list") or ["700020"]
+    max_results = int(source.get("max_results", 5))
+
+    base_payload: list[tuple[str, str]] = []
+    for code in ent_recruit_list:
+        base_payload.append(("entRecruitList[]", str(code)))
+    base_payload.extend([
+        ("yearincome", str(source.get("yearincome", ""))),
+        ("status", str(source.get("status", ""))),
+        ("pubDate", today_str if today_only else str(source.get("pub_date", ""))),
+        ("pubEndDate", str(source.get("pub_end_date", ""))),
+        ("entName", str(source.get("ent_name", ""))),
+    ])
+
+    first_page = cleaneye_request(base_payload + [("pageIndex", "1")])
+    pagination = first_page.get("paginationInfo") or {}
+    per_page = int(pagination.get("recordCountPerPage") or len(first_page.get("list", [])) or 10)
+    total_count = int(pagination.get("totalRecordCount") or first_page.get("cnt") or 0)
+    total_pages = max(1, math.ceil(total_count / max(per_page, 1))) if total_count else 1
+
+    items = list(first_page.get("list", []))
+    for page_index in range(2, total_pages + 1):
+        page_data = cleaneye_request(base_payload + [("pageIndex", str(page_index))])
+        items.extend(page_data.get("list", []))
+
+    if today_only:
+        items = [
+            item for item in items
+            if (parse_cleaneye_date(item.get("pubDate", "")) or datetime.min.replace(tzinfo=KST)).date() == today
+        ]
+
+    deduped = []
+    seen = set()
+    for item in items:
+        dedupe_key = (item.get("entName", ""), item.get("entTitle", ""), item.get("pubDate", ""))
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        deduped.append(item)
+
+    deduped.sort(
+        key=lambda item: (
+            item.get("pubDate", ""),
+            item.get("pubEndDate", ""),
+            item.get("entName", ""),
+            item.get("entTitle", ""),
+        ),
+        reverse=True,
+    )
+
+    jobs = []
+    for item in deduped:
+        empyear = str(item.get("empyear", ""))
+        yp_ent_id = str(item.get("ypEntId", ""))
+        ent_seq = str(item.get("entSeq", ""))
+        detail_html = fetch_cleaneye_job_detail(empyear, yp_ent_id, ent_seq)
+        jobs.append({
+            "id": f"{yp_ent_id}:{ent_seq}",
+            "source": "클린아이",
+            "title": item.get("entTitle", ""),
+            "company": item.get("entName", ""),
+            "link": CLEANEYE_DETAIL_URL.format(
+                empyear=urllib.parse.quote(empyear),
+                yp_ent_id=urllib.parse.quote(yp_ent_id),
+                ent_seq=urllib.parse.quote(ent_seq),
+            ),
+            "summary": summarize_cleaneye_job_detail(item, detail_html),
+        })
+        if len(jobs) >= max_results:
+            break
+
+    return label, jobs
+
+
 def build_message(results: dict[str, list]) -> str:
     """텔레그램 메시지 생성"""
     now = datetime.now(KST).strftime("%Y-%m-%d")
@@ -436,6 +625,19 @@ def main():
                 print(f"[{result_label}] {len(jobs)}건")
             except Exception as e:
                 print(f"직행 검색 실패 [{label}]: {e}")
+                results[label] = []
+                failures += 1
+            continue
+
+        if source_name == "cleaneye":
+            attempted += 1
+            label = src.get("label") or "클린아이 공공채용"
+            try:
+                result_label, jobs = search_cleaneye_jobs(src)
+                results[result_label] = jobs
+                print(f"[{result_label}] {len(jobs)}건")
+            except Exception as e:
+                print(f"클린아이 검색 실패 [{label}]: {e}")
                 results[label] = []
                 failures += 1
             continue
