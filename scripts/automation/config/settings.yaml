@@ -54,7 +54,7 @@ birthdays:
 # 태스크7: 채용공고 모니터링
 job_monitor:
   sources:
-    - { name: "wanted", keywords: ["AI 엔지니어", "ML 엔지니어", "LLM"] }
+    - { name: "wanted", keywords: ["AI 엔지니어", "ML 엔지니어", "LLM"], size: 20, max_results: 5, sort: "latest", today_only: true }
     - { name: "hada", keywords: ["AI Engineer", "ML Engineer"] }
     - name: "zighang"
       label: "직행 AI/LLM"

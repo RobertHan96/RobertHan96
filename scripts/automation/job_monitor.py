@@ -10,7 +10,9 @@ from __future__ import annotations
 """
 
 import html
+import re
 import urllib.parse
+import urllib.request
 from datetime import datetime, timedelta, timezone
 
 from config.loader import load_config
@@ -19,6 +21,7 @@ from runtime import request_json
 
 KST = timezone(timedelta(hours=9))
 ZIGHANG_BASE_URL = "https://api.zighang.com/api"
+WANTED_JOB_URL = "https://www.wanted.co.kr/wd/{job_id}"
 
 
 def wanted_request(url: str) -> dict:
@@ -30,6 +33,17 @@ def wanted_request(url: str) -> dict:
         label="Wanted API 요청",
     )
     return data if isinstance(data, dict) else {}
+
+
+def wanted_html_request(url: str) -> str:
+    """Wanted 웹 페이지 HTML 요청"""
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "Mozilla/5.0")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read().decode("utf-8", errors="ignore")
+    except Exception as exc:
+        raise RuntimeError(f"Wanted 페이지 요청 실패 [{url}]: {exc}") from exc
 
 
 def zighang_request(path: str, query: list[tuple[str, str]] | None = None) -> dict:
@@ -96,6 +110,32 @@ def summarize_job_detail(job_detail: dict) -> str:
         return "본문 요약 정보가 없습니다."
 
     return shorten_text(" / ".join(summary_parts), 180)
+
+
+def parse_iso_date_to_kst(value: str) -> datetime | None:
+    """ISO 날짜/시간 문자열을 KST datetime으로 변환"""
+    if not value:
+        return None
+    normalized = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=KST)
+    return parsed.astimezone(KST)
+
+
+def fetch_wanted_posted_date(job_id: int | str) -> datetime | None:
+    """Wanted 공고 페이지에서 datePosted 추출"""
+    html_text = wanted_html_request(WANTED_JOB_URL.format(job_id=job_id))
+    match = re.search(r'"datePosted":"([0-9]{4}-[0-9]{2}-[0-9]{2})"', html_text)
+    if not match:
+        confirm_match = re.search(r'"confirm_time":"([0-9]{4}-[0-9]{2}-[0-9]{2})"', html_text)
+        if not confirm_match:
+            return None
+        return parse_iso_date_to_kst(confirm_match.group(1))
+    return parse_iso_date_to_kst(match.group(1))
 
 
 def extract_rich_text(node: dict | list | None) -> str:
@@ -241,28 +281,44 @@ def fetch_wanted_job_detail(job_id: int | str) -> dict:
         return {}
 
 
-def search_wanted_jobs(keyword: str, limit: int = 5) -> list[dict]:
+def search_wanted_jobs(
+    keyword: str,
+    *,
+    limit: int = 5,
+    size: int = 20,
+    sort: str = "latest",
+    today_only: bool = True,
+) -> list[dict]:
     """원티드 채용공고 검색 (비공식 API)"""
     url = "https://www.wanted.co.kr/api/v4/jobs?" + urllib.parse.urlencode({
         "query": keyword,
-        "limit": limit,
+        "limit": size,
         "offset": 0,
         "country": "kr",
+        "sort": sort,
     })
 
     data = wanted_request(url)
     jobs = []
+    today = datetime.now(KST).date()
     for item in data.get("data", []):
-            job_id = item.get("id", "")
-            detail = fetch_wanted_job_detail(job_id)
-            jobs.append({
-                "id": job_id,
-                "source": "Wanted",
-                "title": item.get("position", ""),
-                "company": item.get("company", {}).get("name", ""),
-                "link": f"https://www.wanted.co.kr/wd/{job_id}",
-                "summary": summarize_job_detail(detail),
-            })
+        job_id = item.get("id", "")
+        if today_only:
+            posted_at = fetch_wanted_posted_date(job_id)
+            if posted_at is None or posted_at.date() != today:
+                continue
+
+        detail = fetch_wanted_job_detail(job_id)
+        jobs.append({
+            "id": job_id,
+            "source": "Wanted",
+            "title": item.get("position", ""),
+            "company": item.get("company", {}).get("name", ""),
+            "link": WANTED_JOB_URL.format(job_id=job_id),
+            "summary": summarize_job_detail(detail),
+        })
+        if len(jobs) >= limit:
+            break
     return jobs
 
 
@@ -387,7 +443,13 @@ def main():
         for keyword in src.get("keywords", []):
             attempted += 1
             try:
-                jobs = search_wanted_jobs(keyword)
+                jobs = search_wanted_jobs(
+                    keyword,
+                    limit=int(src.get("max_results", 5)),
+                    size=int(src.get("size", 20)),
+                    sort=str(src.get("sort", "latest")),
+                    today_only=bool(src.get("today_only", True)),
+                )
                 results[keyword] = jobs
                 print(f"[{keyword}] {len(jobs)}건")
             except Exception as e:
