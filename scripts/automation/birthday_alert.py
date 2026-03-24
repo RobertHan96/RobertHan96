@@ -12,23 +12,12 @@ import html
 from datetime import date, datetime, timedelta, timezone
 
 from notify import send_telegram
-from runtime import get_required_env, request_json
+from todoist_client import get_active_tasks
 
 KST = timezone(timedelta(hours=9))
 WINDOW_DAYS = 7
 WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"]
-API_BASE = "https://api.todoist.com/rest/v2"
 BIRTHDAY_KEYWORD = "생일"
-
-
-def todoist_get(endpoint: str) -> list | dict:
-    """Todoist REST API GET 요청"""
-    return request_json(
-        f"{API_BASE}/{endpoint}",
-        headers={"Authorization": f"Bearer {get_required_env('TODOIST_API_TOKEN')}"},
-        timeout=10,
-        label=f"Todoist API 요청 [{endpoint}]",
-    )
 
 
 def parse_due_date(task: dict) -> date | None:
@@ -64,7 +53,7 @@ def get_upcoming_birthdays(window_days: int = WINDOW_DAYS) -> list[dict]:
     """Todoist에서 향후 생일 태스크 조회"""
     today = datetime.now(KST).date()
     cutoff = today + timedelta(days=window_days)
-    tasks = todoist_get("tasks")
+    tasks = get_active_tasks()
     results = []
 
     for task in tasks:

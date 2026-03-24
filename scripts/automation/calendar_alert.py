@@ -12,22 +12,11 @@ from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
 
 from notify import send_telegram
-from runtime import get_required_env, request_json
+from todoist_client import get_active_tasks
 
 KST = timezone(timedelta(hours=9))
-API_BASE = "https://api.todoist.com/rest/v2"
 WINDOW_DAYS = 7
 WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"]
-
-
-def todoist_get(endpoint: str) -> list | dict:
-    """Todoist REST API GET 요청"""
-    return request_json(
-        f"{API_BASE}/{endpoint}",
-        headers={"Authorization": f"Bearer {get_required_env('TODOIST_API_TOKEN')}"},
-        timeout=10,
-        label=f"Todoist API 요청 [{endpoint}]",
-    )
 
 
 def parse_due(task: dict) -> dict | None:
@@ -74,7 +63,7 @@ def normalize_task(task: dict) -> dict | None:
 
 def get_tasks_for_window(window_days: int = WINDOW_DAYS) -> tuple[list[dict], list[dict]]:
     """오늘부터 지정 기간까지의 일정과 기한 지난 태스크를 조회"""
-    tasks = todoist_get("tasks")
+    tasks = get_active_tasks()
     today = datetime.now(KST).date()
     cutoff = today + timedelta(days=window_days)
 
