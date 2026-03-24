@@ -77,7 +77,7 @@ def get_version_issues(project_key: str, version_name: str) -> tuple[int, list[d
         "ORDER BY priority DESC, updated DESC"
     )
     data = jira_request(
-        "search",
+        "search/jql",
         method="POST",
         payload={
             "jql": jql,
@@ -96,7 +96,10 @@ def get_version_issues(project_key: str, version_name: str) -> tuple[int, list[d
             "issue_type": (fields.get("issuetype") or {}).get("name", ""),
         })
 
-    return data.get("total", len(issues)), issues
+    total = data.get("total")
+    if total is None:
+        total = len(data.get("issues", []))
+    return total, issues
 
 
 def get_upcoming_versions(project_key: str) -> list[dict]:
