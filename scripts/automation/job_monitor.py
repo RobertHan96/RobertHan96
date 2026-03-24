@@ -667,7 +667,12 @@ def main():
         send_telegram(message)
         print("채용공고 알림 발송 완료")
     else:
-        print("새 채용공고 없음")
+        no_jobs_message = (
+            f"<b>💼 채용공고 모니터링</b> ({datetime.now(KST).strftime('%Y-%m-%d')})\n\n"
+            "오늘 등록된 새 채용공고가 없습니다."
+        )
+        send_telegram(no_jobs_message)
+        print("새 채용공고 없음 알림 발송 완료")
 
 
 if __name__ == "__main__":
