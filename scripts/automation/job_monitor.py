@@ -165,6 +165,22 @@ def format_career_range(career_min: int | None, career_max: int | None) -> str:
     return f"{min_value}~{max_value}년"
 
 
+def parse_zighang_created_at(value: str) -> datetime | None:
+    """직행 createdAt 문자열을 KST datetime으로 변환"""
+    if not value:
+        return None
+
+    normalized = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=KST)
+    return parsed.astimezone(KST)
+
+
 def summarize_zighang_job_detail(job_detail: dict, fallback_item: dict) -> str:
     """직행 채용 상세를 주요 업무 중심으로 요약"""
     summary_doc = job_detail.get("summary") or fallback_item.get("summary")
@@ -264,6 +280,7 @@ def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
     page = int(source.get("page", 0))
     size = int(source.get("size", 20))
     max_results = int(source.get("max_results", 5))
+    today_only = bool(source.get("today_only", False))
     depth_twos = source.get("depth_twos") or []
 
     query: list[tuple[str, str]] = [
@@ -272,7 +289,7 @@ def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
         ("careerMin", str(source.get("career_min", 0))),
         ("careerMax", str(source.get("career_max", 10))),
         ("includeCareerOpen", str(source.get("include_career_open", True)).lower()),
-        ("sortCondition", str(source.get("sort_condition", "VIEWS"))),
+        ("sortCondition", str(source.get("sort_condition", "LATEST"))),
         ("orderCondition", str(source.get("order_condition", "DESC"))),
     ]
     for depth_two in depth_twos:
@@ -282,10 +299,15 @@ def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
     if data.get("success") is False and not data.get("data"):
         raise RuntimeError(data.get("message") or "직행 채용공고 조회 실패")
 
-    content = ((data.get("data") or {}).get("content") or [])[:max_results]
+    content = (data.get("data") or {}).get("content") or []
+    today = datetime.now(KST).date()
+
     jobs = []
     for item in content:
         job_id = item.get("id", "")
+        created_at = parse_zighang_created_at(str(item.get("createdAt") or ""))
+        if today_only and (created_at is None or created_at.date() != today):
+            continue
         detail = fetch_zighang_job_detail(job_id) if job_id else {}
         company = (item.get("company") or {}).get("name", "")
         career_label = format_career_range(item.get("careerMin"), item.get("careerMax"))
@@ -306,6 +328,8 @@ def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
             "link": item.get("redirectUrl") or f"https://zighang.com/recruitment/{job_id}",
             "summary": summary,
         })
+        if len(jobs) >= max_results:
+            break
 
     return label, jobs
 

@@ -61,11 +61,12 @@ job_monitor:
       page: 0
       size: 20
       max_results: 5
+      today_only: true
       depth_twos: ["LLM", "RAG", "생성형AI", "NLP", "AI서비스기획", "기타AI_데이터"]
       career_min: 0
       career_max: 10
       include_career_open: true
-      sort_condition: "VIEWS"
+      sort_condition: "LATEST"
       order_condition: "DESC"
 
 # 태스크8: 블로그 크로스포스팅 (Dev.to)
