@@ -257,6 +257,64 @@ def search_documents(query: str, limit: int = 8) -> list[dict[str, Any]]:
     return results
 
 
+def search_bridge_logs(
+    query: str,
+    *,
+    limit: int = 8,
+    lookback_days: int = 2,
+) -> list[dict[str, Any]]:
+    if not bridge_is_configured():
+        return []
+
+    fts_terms = re.findall(r"[0-9A-Za-z가-힣_]+", query or "")
+    normalized_terms = [term.lower() for term in fts_terms if len(term.strip()) >= 2]
+    if not normalized_terms:
+        return []
+
+    matches: list[dict[str, Any]] = []
+    seen_keys: set[str] = set()
+    today = now_kst().date()
+
+    for offset in range(lookback_days):
+        target_date = today - timedelta(days=offset)
+        for kind in ("inbox", "outbox"):
+            rows = fetch_bridge_logs(kind, target_date)
+            for row in rows:
+                if kind == "inbox":
+                    title = collapse_text(str(row.get("text", "")), 100) or "Telegram inbox"
+                    body = str(row.get("text", ""))
+                    created_at = row.get("received_at", "")
+                else:
+                    title = collapse_text(collapse_outbox_message(row, 100), 100) or "Telegram outbox"
+                    body = collapse_outbox_message(row, 1000)
+                    created_at = row.get("sent_at", "")
+
+                haystack = f"{title}\n{body}".lower()
+                match_count = sum(1 for term in normalized_terms if term in haystack)
+                if match_count == 0:
+                    continue
+
+                dedupe_key = f"{kind}:{created_at}:{title}"
+                if dedupe_key in seen_keys:
+                    continue
+                seen_keys.add(dedupe_key)
+
+                matches.append({
+                    "doc_id": dedupe_key,
+                    "kind": f"bridge_{kind}",
+                    "source": row.get("source", "telegram-bridge") if kind == "outbox" else "telegram-user",
+                    "title": title,
+                    "body": body,
+                    "path": f"worker://{kind}/{target_date.isoformat()}",
+                    "created_at": created_at,
+                    "score": -match_count,
+                    "metadata": row,
+                })
+
+    matches.sort(key=lambda item: (item.get("score", 0), item.get("created_at", "")))
+    return matches[:limit]
+
+
 def build_query_context(results: list[dict[str, Any]], limit_chars: int = 5000) -> str:
     chunks = []
     total = 0
@@ -276,7 +334,20 @@ def build_query_context(results: list[dict[str, Any]], limit_chars: int = 5000) 
 
 
 def answer_query(query: str, *, limit: int = 8) -> tuple[str, list[dict[str, Any]]]:
-    results = search_documents(query, limit=limit)
+    persisted_results = search_documents(query, limit=limit)
+    bridge_results = search_bridge_logs(query, limit=limit)
+    results = []
+    seen_doc_ids: set[str] = set()
+
+    for item in bridge_results + persisted_results:
+        doc_id = item.get("doc_id")
+        if doc_id in seen_doc_ids:
+            continue
+        seen_doc_ids.add(doc_id)
+        results.append(item)
+        if len(results) >= limit:
+            break
+
     if not results:
         return "저장된 메모/자료에서 관련 내용을 찾지 못했습니다.", []
 
