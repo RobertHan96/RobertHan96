@@ -48,6 +48,15 @@ DOCX_EXTENSIONS = {".docx"}
 SUPPORTED_UPLOAD_EXTENSIONS = (
     TEXT_EXTENSIONS | HTML_EXTENSIONS | JSON_EXTENSIONS | PDF_EXTENSIONS | DOCX_EXTENSIONS
 )
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+
+
+def resolve_openai_model(*env_names: str, default: str = DEFAULT_OPENAI_MODEL) -> str:
+    for env_name in env_names:
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            return value
+    return default
 
 
 class TextExtractor(HTMLParser):
@@ -279,7 +288,7 @@ def answer_query(query: str, *, limit: int = 8) -> tuple[str, list[dict[str, Any
         return "\n".join(lines), results
 
     client = OpenAI(api_key=api_key)
-    model = os.environ.get("TELEGRAM_MEMORY_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+    model = resolve_openai_model("OPENAI_MODEL", "TELEGRAM_MEMORY_MODEL")
     context = build_query_context(results)
     response = client.chat.completions.create(
         model=model,
@@ -607,7 +616,7 @@ def summarize_daily_rows(
         return fallback_daily_summary(target_date, inbox_rows, outbox_rows)
 
     client = OpenAI(api_key=api_key)
-    model = os.environ.get("TELEGRAM_MEMORY_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+    model = resolve_openai_model("OPENAI_MODEL", "TELEGRAM_MEMORY_MODEL")
 
     inbox_payload_lines = []
     for row in inbox_rows[:60]:

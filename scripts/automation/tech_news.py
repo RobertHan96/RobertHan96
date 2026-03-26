@@ -18,7 +18,11 @@ from notify import send_telegram
 
 KST = timezone(timedelta(hours=9))
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-TECH_NEWS_MODEL = os.environ.get("TECH_NEWS_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+TECH_NEWS_MODEL = (
+    os.environ.get("OPENAI_MODEL", "").strip()
+    or os.environ.get("TECH_NEWS_MODEL", "").strip()
+    or "gpt-4o-mini"
+)
 
 
 class TextExtractor(HTMLParser):

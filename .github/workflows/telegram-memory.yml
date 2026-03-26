@@ -28,7 +28,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          TELEGRAM_MEMORY_MODEL: ${{ vars.TELEGRAM_MEMORY_MODEL }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
         run: python telegram_memory_event.py
 
       - name: Commit telegram memory

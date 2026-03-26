@@ -128,8 +128,10 @@ TSLA,Tesla,us,true,true,true,3.0,twelvedata,TSLA,marketaux,TSLA,us,en
 - `INVESTMENT_VECTOR_STORE_NAME`
 - `INVESTMENT_VECTOR_STORE_ID`  
   처음엔 없어도 되지만, 한 번 생성된 store id를 여기에 넣어두면 수동 실행과 webhook 앱이 항상 같은 Vector Store를 안정적으로 재사용합니다.
-- `INVESTMENT_RAG_MODEL`
-- `INVESTMENT_OCR_MODEL`
+- `OPENAI_MODEL`  
+  공통 OpenAI 모델명. 설정하면 투자자료 RAG/텔레그램 메모리/기술 뉴스 요약까지 모두 이 값을 우선 사용합니다.
+- `INVESTMENT_RAG_MODEL` 선택 사항
+- `INVESTMENT_OCR_MODEL` 선택 사항
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_WEBHOOK_SECRET_TOKEN`
 
@@ -205,8 +207,7 @@ curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
   - `OPENAI_API_KEY`
   - `TELEGRAM_MEMORY_BRIDGE_TOKEN`
 - `Variables`
-  - `TELEGRAM_MEMORY_MODEL` 선택 사항. 기본값은 `gpt-4o-mini`
-  - `TECH_NEWS_MODEL` 선택 사항. 기본값은 `gpt-4o-mini`
+  - `OPENAI_MODEL` 공통 모델명. 텔레그램 메모리/기술 뉴스/투자자료 RAG가 우선 사용
   - `TELEGRAM_MEMORY_BRIDGE_URL`
 
 #### 참고

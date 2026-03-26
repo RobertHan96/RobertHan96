@@ -28,7 +28,7 @@ jobs:
         working-directory: scripts/automation
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          TELEGRAM_MEMORY_MODEL: ${{ vars.TELEGRAM_MEMORY_MODEL }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
           TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
           TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
         run: python telegram_memory_maintenance.py --yesterday

@@ -94,7 +94,7 @@ def generate_blog_post(overview: str, page_content: str) -> str:
         raise
 
     api_url = os.environ.get("LLM_API_URL", "http://localhost:8000/v1")
-    model = os.environ.get("LLM_MODEL", "default")
+    model = os.environ.get("OPENAI_MODEL", "").strip() or os.environ.get("LLM_MODEL", "default")
 
     client = OpenAI(base_url=api_url, api_key=os.environ.get("LLM_API_KEY", "none"))
 

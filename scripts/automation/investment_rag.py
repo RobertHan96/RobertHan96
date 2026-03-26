@@ -36,8 +36,17 @@ SUPPORTED_DIRECT_EXTENSIONS = {
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
 OPENAI_API_KEY = get_required_env("OPENAI_API_KEY")
-INVESTMENT_RAG_MODEL = os.environ.get("INVESTMENT_RAG_MODEL", "gpt-5-mini")
-INVESTMENT_OCR_MODEL = os.environ.get("INVESTMENT_OCR_MODEL", "gpt-5-mini")
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "").strip()
+INVESTMENT_RAG_MODEL = (
+    OPENAI_MODEL
+    or os.environ.get("INVESTMENT_RAG_MODEL", "").strip()
+    or "gpt-5-mini"
+)
+INVESTMENT_OCR_MODEL = (
+    OPENAI_MODEL
+    or os.environ.get("INVESTMENT_OCR_MODEL", "").strip()
+    or "gpt-5-mini"
+)
 INVESTMENT_VECTOR_STORE_ID = os.environ.get("INVESTMENT_VECTOR_STORE_ID", "").strip()
 INVESTMENT_VECTOR_STORE_NAME = os.environ.get(
     "INVESTMENT_VECTOR_STORE_NAME",
