@@ -107,16 +107,15 @@ TSLA,Tesla,us,true,true,true,3.0,twelvedata,TSLA,marketaux,TSLA,us,en
 
 #### 현재 포함된 구성
 
-- 수동/자동 자료 동기화 스크립트: [investment_rag_sync.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/investment_rag_sync.py)
+- 수동 자료 동기화 스크립트: [investment_rag_sync.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/investment_rag_sync.py)
 - OpenAI Vector Store 공통 모듈: [investment_rag.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/investment_rag.py)
 - 일일 투자 브리프 생성기: [investment_digest.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/investment_digest.py)
 - Telegram webhook 앱: [telegram_rag_app.py](/Users/han/Desktop/Dev/RobertHan96/services/telegram_rag_app.py)
-- 일일 동기화 workflow: [investment-rag-sync.yml](/Users/han/Desktop/Dev/RobertHan96/.github/workflows/investment-rag-sync.yml)
 
 #### 자료 적재 방식
 
 - 직접 넣고 싶은 자료는 [investment_docs](/Users/han/Desktop/Dev/RobertHan96/data/investment_docs) 에 둡니다.
-- 매일 workflow가 워치리스트 가격/뉴스를 요약한 markdown 문서를 생성해 [investment_rag](/Users/han/Desktop/Dev/RobertHan96/data/investment_rag) 아래에 누적합니다.
+- 필요할 때 수동 실행으로 워치리스트 가격/뉴스를 요약한 markdown 문서를 생성해 [investment_rag](/Users/han/Desktop/Dev/RobertHan96/data/investment_rag) 아래에 누적할 수 있습니다.
 - PDF, TXT, MD, JSON, HTML, DOCX, PPTX는 바로 적재합니다.
 - 이미지(`png/jpg/jpeg/webp`)는 OCR 후 markdown으로 변환해서 적재합니다.
 
@@ -128,7 +127,7 @@ TSLA,Tesla,us,true,true,true,3.0,twelvedata,TSLA,marketaux,TSLA,us,en
 - `WATCHLIST_PUBLISHED_CSV_URL`
 - `INVESTMENT_VECTOR_STORE_NAME`
 - `INVESTMENT_VECTOR_STORE_ID`  
-  처음엔 없어도 되지만, 한 번 생성된 store id를 여기에 넣어두면 GitHub Actions와 webhook 앱이 항상 같은 Vector Store를 안정적으로 재사용합니다.
+  처음엔 없어도 되지만, 한 번 생성된 store id를 여기에 넣어두면 수동 실행과 webhook 앱이 항상 같은 Vector Store를 안정적으로 재사용합니다.
 - `INVESTMENT_RAG_MODEL`
 - `INVESTMENT_OCR_MODEL`
 - `TELEGRAM_BOT_TOKEN`
@@ -207,6 +206,7 @@ curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
   - `TELEGRAM_MEMORY_BRIDGE_TOKEN`
 - `Variables`
   - `TELEGRAM_MEMORY_MODEL` 선택 사항. 기본값은 `gpt-4o-mini`
+  - `TECH_NEWS_MODEL` 선택 사항. 기본값은 `gpt-4o-mini`
   - `TELEGRAM_MEMORY_BRIDGE_URL`
 
 #### 참고

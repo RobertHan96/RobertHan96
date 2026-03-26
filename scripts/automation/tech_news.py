@@ -18,6 +18,7 @@ from notify import send_telegram
 
 KST = timezone(timedelta(hours=9))
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+TECH_NEWS_MODEL = os.environ.get("TECH_NEWS_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
 
 
 class TextExtractor(HTMLParser):
@@ -120,7 +121,7 @@ def summarize_with_openai(entries: list[dict]) -> list[dict]:
     )
 
     body = json.dumps({
-        "model": "gpt-4o-mini",
+        "model": TECH_NEWS_MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.3,
         "max_tokens": 1024,
