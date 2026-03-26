@@ -30,10 +30,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
-          TELEGRAM_MEMORY_ENABLED: "true"
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
           TELEGRAM_MEMORY_SOURCE: "birthday-alert"
         run: python birthday_alert.py
-
-      - name: Commit telegram memory
-        if: always()
-        run: bash scripts/automation/commit_telegram_memory.sh "data/telegram_memory" "Update telegram memory"

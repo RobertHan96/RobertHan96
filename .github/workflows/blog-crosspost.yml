@@ -31,10 +31,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
           BLOG_BASE_URL: ${{ vars.BLOG_BASE_URL }}
-          TELEGRAM_MEMORY_ENABLED: "true"
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
           TELEGRAM_MEMORY_SOURCE: "blog-crosspost"
         run: python blog_crosspost.py
-
-      - name: Commit telegram memory
-        if: always()
-        run: bash scripts/automation/commit_telegram_memory.sh "data/telegram_memory" "Update telegram memory"

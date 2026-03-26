@@ -307,6 +307,55 @@ def answer_query(query: str, *, limit: int = 8) -> tuple[str, list[dict[str, Any
     return answer.strip(), results
 
 
+def get_bridge_url() -> str:
+    return os.environ.get("TELEGRAM_MEMORY_BRIDGE_URL", "").strip().rstrip("/")
+
+
+def get_bridge_token() -> str:
+    return os.environ.get("TELEGRAM_MEMORY_BRIDGE_TOKEN", "").strip()
+
+
+def bridge_is_configured() -> bool:
+    return bool(get_bridge_url() and get_bridge_token())
+
+
+def send_bridge_log(payload: dict[str, Any]) -> bool:
+    bridge_url = get_bridge_url()
+    bridge_token = get_bridge_token()
+    if not bridge_url or not bridge_token:
+        return False
+
+    request_json(
+        f"{bridge_url}/log",
+        method="POST",
+        timeout=20,
+        label="Telegram memory bridge write",
+        headers={
+            "Authorization": f"Bearer {bridge_token}",
+            "Content-Type": "application/json",
+        },
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+    )
+    return True
+
+
+def log_outgoing_message_to_bridge(
+    source: str,
+    message: str,
+    *,
+    parse_mode: str = "HTML",
+) -> bool:
+    timestamp = now_kst()
+    return send_bridge_log({
+        "kind": "outbox",
+        "date": timestamp.strftime("%Y-%m-%d"),
+        "sent_at": timestamp.isoformat(),
+        "source": source,
+        "parse_mode": parse_mode,
+        "message": message,
+    })
+
+
 def log_outgoing_message(source: str, message: str, *, parse_mode: str = "HTML") -> None:
     ensure_dirs()
     timestamp = now_kst()
@@ -470,21 +519,70 @@ def collect_outbox_rows(target_date: date) -> list[dict[str, Any]]:
     return rows
 
 
-def fallback_daily_summary(target_date: date, rows: list[dict[str, Any]]) -> str:
+def fetch_bridge_logs(kind: str, target_date: date) -> list[dict[str, Any]]:
+    bridge_url = get_bridge_url()
+    bridge_token = get_bridge_token()
+    if not bridge_url or not bridge_token:
+        if kind == "outbox":
+            return collect_outbox_rows(target_date)
+        return []
+
+    query = urllib.parse.urlencode({
+        "kind": kind,
+        "date": target_date.isoformat(),
+    })
+    response = request_json(
+        f"{bridge_url}/logs?{query}",
+        timeout=20,
+        label=f"Telegram memory bridge read [{kind}]",
+        headers={"Authorization": f"Bearer {bridge_token}"},
+    )
+    if not isinstance(response, dict):
+        return []
+    logs = response.get("logs") or []
+    return [row for row in logs if isinstance(row, dict)]
+
+
+def collapse_outbox_message(row: dict[str, Any], limit: int = 180) -> str:
+    message = str(row.get("message", ""))
+    parse_mode = str(row.get("parse_mode", "")).upper()
+    plain_text = html_to_text(message) if parse_mode == "HTML" else message
+    return collapse_text(plain_text, limit)
+
+
+def fallback_daily_summary(
+    target_date: date,
+    inbox_rows: list[dict[str, Any]],
+    outbox_rows: list[dict[str, Any]],
+) -> str:
     grouped: dict[str, list[str]] = {}
-    for row in rows:
+    for row in outbox_rows:
         grouped.setdefault(row.get("source", "unknown"), []).append(
-            collapse_text(html_to_text(row.get("message", "")), 180)
+            collapse_outbox_message(row, 180)
         )
 
     lines = [
-        f"# Telegram Outbox Summary - {target_date.isoformat()}",
+        f"# Telegram Memory Summary - {target_date.isoformat()}",
         "",
-        f"총 {len(rows)}건의 텔레그램 발송 메시지를 요약했습니다.",
+        f"- 사용자 대화 로그: {len(inbox_rows)}건",
+        f"- 자동화 발송 로그: {len(outbox_rows)}건",
+        "",
+        "## 오늘의 대화 요약",
         "",
     ]
+    if inbox_rows:
+        for row in inbox_rows[:8]:
+            lines.append(f"- {collapse_text(str(row.get('text', '')), 180)}")
+    else:
+        lines.append("- 저장된 사용자 대화 로그가 없습니다.")
+    lines.extend(["", "## 오늘의 자동화 알림 요약", ""])
+
+    if not grouped:
+        lines.append("- 저장된 자동화 알림 로그가 없습니다.")
+        return "\n".join(lines).rstrip() + "\n"
+
     for source, messages in sorted(grouped.items()):
-        lines.append(f"## {source}")
+        lines.append(f"### {source}")
         lines.append("")
         lines.append(f"- 발송 건수: {len(messages)}")
         for message in messages[:5]:
@@ -493,19 +591,29 @@ def fallback_daily_summary(target_date: date, rows: list[dict[str, Any]]) -> str
     return "\n".join(lines).rstrip() + "\n"
 
 
-def summarize_outbox_rows(target_date: date, rows: list[dict[str, Any]]) -> str:
+def summarize_daily_rows(
+    target_date: date,
+    inbox_rows: list[dict[str, Any]],
+    outbox_rows: list[dict[str, Any]],
+) -> str:
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key or OpenAI is None:
-        return fallback_daily_summary(target_date, rows)
+        return fallback_daily_summary(target_date, inbox_rows, outbox_rows)
 
     client = OpenAI(api_key=api_key)
     model = os.environ.get("TELEGRAM_MEMORY_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
 
-    payload_lines = []
-    for row in rows[:80]:
-        payload_lines.append(
+    inbox_payload_lines = []
+    for row in inbox_rows[:60]:
+        inbox_payload_lines.append(
+            f"[{row.get('received_at', '')}] {collapse_text(str(row.get('text', '')), 220)}"
+        )
+
+    outbox_payload_lines = []
+    for row in outbox_rows[:80]:
+        outbox_payload_lines.append(
             f"[{row.get('sent_at','')}] ({row.get('source','unknown')}) "
-            f"{collapse_text(html_to_text(row.get('message','')), 300)}"
+            f"{collapse_outbox_message(row, 300)}"
         )
 
     response = client.chat.completions.create(
@@ -515,18 +623,22 @@ def summarize_outbox_rows(target_date: date, rows: list[dict[str, Any]]) -> str:
             {
                 "role": "system",
                 "content": (
-                    "너는 텔레그램 발송 로그를 정리하는 비서다. "
+                    "너는 하루치 텔레그램 메모리 로그를 정리하는 비서다. "
                     "한국어 마크다운으로 간결하게 요약해라. "
-                    "형식은 제목, 핵심 요약 bullet, source별 요약 섹션을 포함해라."
+                    "형식은 제목, 오늘의 대화 요약, 오늘의 자동화 알림 요약, 기억할 메모 섹션을 포함해라. "
+                    "중요한 사실이나 반복된 관심사를 짧게 정리하되 과장하지 마라."
                 ),
             },
             {
                 "role": "user",
                 "content": (
                     f"날짜: {target_date.isoformat()}\n"
-                    f"메시지 수: {len(rows)}\n\n"
-                    "발송 로그:\n"
-                    + "\n".join(payload_lines)
+                    f"사용자 대화 로그 수: {len(inbox_rows)}\n"
+                    f"자동화 발송 로그 수: {len(outbox_rows)}\n\n"
+                    "사용자 대화 로그:\n"
+                    + ("\n".join(inbox_payload_lines) or "(없음)")
+                    + "\n\n자동화 발송 로그:\n"
+                    + ("\n".join(outbox_payload_lines) or "(없음)")
                 ),
             },
         ],
@@ -534,27 +646,37 @@ def summarize_outbox_rows(target_date: date, rows: list[dict[str, Any]]) -> str:
     return (response.choices[0].message.content or "").strip() + "\n"
 
 
-def save_daily_outbox_summary(target_date: date) -> dict[str, str] | None:
-    rows = collect_outbox_rows(target_date)
-    if not rows:
+def save_daily_memory_summary(target_date: date) -> dict[str, str] | None:
+    inbox_rows = fetch_bridge_logs("inbox", target_date)
+    outbox_rows = fetch_bridge_logs("outbox", target_date)
+    if not inbox_rows and not outbox_rows:
         return None
 
-    summary_markdown = summarize_outbox_rows(target_date, rows)
+    summary_markdown = summarize_daily_rows(target_date, inbox_rows, outbox_rows)
     path = SUMMARY_DIR / f"{target_date.isoformat()}.md"
     path.write_text(summary_markdown, encoding="utf-8")
 
     doc_id = f"summary:{target_date.isoformat()}"
     upsert_document(
         doc_id=doc_id,
-        kind="telegram_outbox_summary",
+        kind="telegram_daily_summary",
         source="telegram-memory",
-        title=f"Telegram Outbox Summary {target_date.isoformat()}",
+        title=f"Telegram Memory Summary {target_date.isoformat()}",
         body=summary_markdown,
         path=str(path.relative_to(ROOT_DIR)),
         created_at=datetime.combine(target_date, datetime.min.time(), tzinfo=KST).isoformat(),
-        metadata={"date": target_date.isoformat(), "message_count": len(rows)},
+        metadata={
+            "date": target_date.isoformat(),
+            "inbox_count": len(inbox_rows),
+            "outbox_count": len(outbox_rows),
+        },
     )
     return {"doc_id": doc_id, "path": str(path.relative_to(ROOT_DIR))}
+
+
+def save_daily_outbox_summary(target_date: date) -> dict[str, str] | None:
+    """이전 함수명 호환용 래퍼"""
+    return save_daily_memory_summary(target_date)
 
 
 def telegram_api(method: str, payload: dict[str, Any]) -> dict[str, Any]:

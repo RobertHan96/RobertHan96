@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timedelta, timezone
 
-from telegram_memory import save_daily_outbox_summary
+from telegram_memory import save_daily_memory_summary
 
 KST = timezone(timedelta(hours=9))
 
@@ -29,11 +29,11 @@ def resolve_target_date(args: argparse.Namespace) -> date:
 def main() -> None:
     args = parse_args()
     target_date = resolve_target_date(args)
-    result = save_daily_outbox_summary(target_date)
+    result = save_daily_memory_summary(target_date)
     if result:
-        print(f"텔레그램 발송 요약 저장 완료: {result['path']}")
+        print(f"텔레그램 메모리 요약 저장 완료: {result['path']}")
     else:
-        print(f"요약할 텔레그램 발송 로그가 없습니다: {target_date.isoformat()}")
+        print(f"요약할 텔레그램 메모리 로그가 없습니다: {target_date.isoformat()}")
 
 
 if __name__ == "__main__":

@@ -14,18 +14,23 @@ TELEGRAM_MESSAGE_LIMIT = 3800
 
 
 def maybe_log_outgoing_message(message: str, parse_mode: str) -> None:
-    """메모리 저장이 켜져 있으면 발송 메시지를 로컬 메모리에 적재"""
-    enabled = os.environ.get("TELEGRAM_MEMORY_ENABLED", "").strip().lower()
-    if enabled not in {"1", "true", "yes", "on"}:
-        return
-
+    """발송 메시지를 메모리 브리지 또는 로컬 메모리에 적재"""
     source = os.environ.get("TELEGRAM_MEMORY_SOURCE", "").strip() or "telegram-alert"
     try:
         try:
-            from .telegram_memory import log_outgoing_message
+            from .telegram_memory import log_outgoing_message, log_outgoing_message_to_bridge
         except ImportError:
-            from telegram_memory import log_outgoing_message
-        log_outgoing_message(source, message, parse_mode=parse_mode)
+            from telegram_memory import log_outgoing_message, log_outgoing_message_to_bridge
+
+        bridge_url = os.environ.get("TELEGRAM_MEMORY_BRIDGE_URL", "").strip()
+        bridge_token = os.environ.get("TELEGRAM_MEMORY_BRIDGE_TOKEN", "").strip()
+        if bridge_url and bridge_token:
+            log_outgoing_message_to_bridge(source, message, parse_mode=parse_mode)
+            return
+
+        enabled = os.environ.get("TELEGRAM_MEMORY_ENABLED", "").strip().lower()
+        if enabled in {"1", "true", "yes", "on"}:
+            log_outgoing_message(source, message, parse_mode=parse_mode)
     except Exception as exc:
         print(f"텔레그램 메모리 로깅 실패: {exc}")
 

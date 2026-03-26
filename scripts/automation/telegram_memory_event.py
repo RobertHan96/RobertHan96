@@ -17,8 +17,6 @@ from telegram_memory import (
     save_temp_bytes,
     send_telegram_message,
     store_document_file,
-    store_raw_update,
-    store_text_note,
 )
 
 
@@ -41,16 +39,13 @@ def parse_message_datetime(message: dict) -> str | None:
 def build_help_message() -> str:
     return (
         "사용법\n"
-        "- 일반 텍스트: 메모로 저장\n"
+        "- 일반 텍스트: 저장하지 않고 메모리/RAG에서 바로 검색\n"
         "- PDF/txt/md/html/json/docx: RAG 자료로 저장\n"
-        "- /ask 질문내용: 저장된 메모/자료를 바탕으로 답변"
+        "- /ask 질문내용: 일반 텍스트와 동일한 검색 별칭"
     )
 
 
 def handle_text_message(message: dict) -> str:
-    chat_id = message["chat"]["id"]
-    message_id = message["message_id"]
-    created_at = parse_message_datetime(message)
     text = (message.get("text") or "").strip()
 
     if not text:
@@ -66,24 +61,15 @@ def handle_text_message(message: dict) -> str:
         answer, _ = answer_query(query)
         return answer
 
-    stored = store_text_note(
-        source="telegram-user",
-        title=message.get("caption") or collapse_title(text),
-        text=text,
-        chat_id=chat_id,
-        message_id=message_id,
-        created_at=created_at,
+    answer, results = answer_query(text)
+    if results:
+        return answer
+
+    return (
+        "기본적으로 텍스트는 저장하지 않고 검색만 합니다.\n\n"
+        f"{answer}\n\n"
+        "남겨둘 자료는 파일로 보내 주세요."
     )
-    return f"메모 저장 완료: {stored['path']}"
-
-
-def collapse_title(text: str, limit: int = 60) -> str:
-    compact = " ".join(text.split())
-    if len(compact) <= limit:
-        return compact or "Telegram note"
-    return compact[: limit - 3].rstrip() + "..."
-
-
 def handle_document_message(message: dict) -> str:
     chat_id = message["chat"]["id"]
     message_id = message["message_id"]
@@ -127,7 +113,6 @@ def main() -> None:
     if not update:
         raise RuntimeError("repository_dispatch payload에 update가 없습니다.")
 
-    store_raw_update(update)
     message = update.get("message") or update.get("edited_message")
     if not message:
         return

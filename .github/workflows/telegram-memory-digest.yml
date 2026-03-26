@@ -2,8 +2,8 @@ name: "텔레그램 메모리 요약"
 
 on:
   schedule:
-    # 매일 23:55 KST = UTC 14:55
-    - cron: "55 14 * * *"
+    # 매일 00:10 KST = UTC 15:10 (전일 요약)
+    - cron: "10 15 * * *"
   workflow_dispatch:
 
 permissions:
@@ -29,7 +29,9 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TELEGRAM_MEMORY_MODEL: ${{ vars.TELEGRAM_MEMORY_MODEL }}
-        run: python telegram_memory_maintenance.py --date "$(TZ=Asia/Seoul date +%F)"
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
+        run: python telegram_memory_maintenance.py --yesterday
 
       - name: Commit telegram memory summary
         if: always()
