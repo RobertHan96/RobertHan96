@@ -61,15 +61,10 @@ def handle_text_message(message: dict) -> str:
         answer, _ = answer_query(query)
         return answer
 
-    answer, results = answer_query(text)
-    if results:
-        return answer
+    answer, _ = answer_query(text)
+    return answer
 
-    return (
-        "기본적으로 텍스트는 저장하지 않고 검색만 합니다.\n\n"
-        f"{answer}\n\n"
-        "남겨둘 자료는 파일로 보내 주세요."
-    )
+
 def handle_document_message(message: dict) -> str:
     chat_id = message["chat"]["id"]
     message_id = message["message_id"]

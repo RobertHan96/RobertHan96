@@ -333,34 +333,142 @@ def build_query_context(results: list[dict[str, Any]], limit_chars: int = 5000) 
     return "\n\n".join(chunks)
 
 
+def list_recent_documents(limit: int = 8) -> list[dict[str, Any]]:
+    if not INDEX_DB_PATH.exists():
+        return []
+
+    conn = db_connect()
+    rows = conn.execute(
+        """
+        SELECT
+            doc_id,
+            kind,
+            source,
+            title,
+            body,
+            path,
+            created_at,
+            metadata_json
+        FROM docs
+        WHERE kind IN (
+            'telegram_daily_summary',
+            'telegram_outbox_summary',
+            'telegram_note',
+            'telegram_file'
+        )
+        ORDER BY created_at DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    conn.close()
+
+    return [{
+        "doc_id": row["doc_id"],
+        "kind": row["kind"],
+        "source": row["source"],
+        "title": row["title"],
+        "body": row["body"],
+        "path": row["path"],
+        "created_at": row["created_at"],
+        "score": 0,
+        "metadata": json.loads(row["metadata_json"] or "{}"),
+    } for row in rows]
+
+
+def list_recent_bridge_context(
+    *,
+    limit: int = 10,
+    lookback_days: int = 3,
+) -> list[dict[str, Any]]:
+    if not bridge_is_configured():
+        return []
+
+    items: list[dict[str, Any]] = []
+    seen_keys: set[str] = set()
+    today = now_kst().date()
+
+    for offset in range(lookback_days):
+        target_date = today - timedelta(days=offset)
+        for kind in ("inbox", "outbox"):
+            rows = fetch_bridge_logs(kind, target_date)
+            for row in rows:
+                if kind == "inbox":
+                    title = collapse_text(str(row.get("text", "")), 100) or "Telegram inbox"
+                    body = str(row.get("text", ""))
+                    created_at = row.get("received_at", "")
+                    source = "telegram-user"
+                else:
+                    title = collapse_text(collapse_outbox_message(row, 100), 100) or "Telegram outbox"
+                    body = collapse_outbox_message(row, 1000)
+                    created_at = row.get("sent_at", "")
+                    source = row.get("source", "telegram-bridge")
+
+                dedupe_key = f"{kind}:{created_at}:{title}"
+                if dedupe_key in seen_keys:
+                    continue
+                seen_keys.add(dedupe_key)
+
+                items.append({
+                    "doc_id": dedupe_key,
+                    "kind": f"bridge_{kind}",
+                    "source": source,
+                    "title": title,
+                    "body": body,
+                    "path": f"worker://{kind}/{target_date.isoformat()}",
+                    "created_at": created_at,
+                    "score": 0,
+                    "metadata": row,
+                })
+
+    items.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+    return items[:limit]
+
+
+def merge_results(*groups: list[dict[str, Any]], limit: int = 8) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    seen_doc_ids: set[str] = set()
+
+    for group in groups:
+        for item in group:
+            doc_id = item.get("doc_id")
+            if doc_id in seen_doc_ids:
+                continue
+            seen_doc_ids.add(doc_id)
+            merged.append(item)
+            if len(merged) >= limit:
+                return merged
+    return merged
+
+
 def answer_query(query: str, *, limit: int = 8) -> tuple[str, list[dict[str, Any]]]:
     persisted_results = search_documents(query, limit=limit)
     bridge_results = search_bridge_logs(query, limit=limit)
-    results = []
-    seen_doc_ids: set[str] = set()
-
-    for item in bridge_results + persisted_results:
-        doc_id = item.get("doc_id")
-        if doc_id in seen_doc_ids:
-            continue
-        seen_doc_ids.add(doc_id)
-        results.append(item)
-        if len(results) >= limit:
-            break
-
-    if not results:
-        return "저장된 메모/자료에서 관련 내용을 찾지 못했습니다.", []
+    relevant_results = merge_results(bridge_results, persisted_results, limit=limit)
+    recent_context = merge_results(
+        list_recent_bridge_context(limit=8),
+        list_recent_documents(limit=8),
+        limit=8,
+    )
+    results = merge_results(relevant_results, recent_context, limit=limit + 4)
 
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key or OpenAI is None:
-        lines = ["관련 메모를 찾았습니다.\n"]
+        if not results:
+            return (
+                "아직 참고할 메모나 최근 대화가 충분하지 않습니다. "
+                "파일을 보내거나 조금 더 구체적으로 물어보면 더 잘 도와드릴 수 있어요.",
+                [],
+            )
+        lines = ["최근 메모리에서 참고할 내용을 찾았습니다.\n"]
         for item in results[:5]:
             lines.append(f"- {item['title']}: {collapse_text(item['body'], 120)}")
         return "\n".join(lines), results
 
     client = OpenAI(api_key=api_key)
     model = resolve_openai_model("OPENAI_MODEL", "TELEGRAM_MEMORY_MODEL")
-    context = build_query_context(results)
+    relevant_context = build_query_context(relevant_results, limit_chars=3500) if relevant_results else "(없음)"
+    recent_context_text = build_query_context(recent_context, limit_chars=2500) if recent_context else "(없음)"
     response = client.chat.completions.create(
         model=model,
         temperature=0.2,
@@ -368,23 +476,31 @@ def answer_query(query: str, *, limit: int = 8) -> tuple[str, list[dict[str, Any
             {
                 "role": "system",
                 "content": (
-                    "너는 사용자의 개인 비서처럼 동작하는 텔레그램 메모리 도우미다. "
-                    "항상 한국어로 답하고, 말투는 자연스럽고 부드럽되 과하게 장황하지 마라. "
-                    "반드시 제공된 메모/문서 내용만 근거로 답하고, 모르면 추측하지 말고 부족한 점을 분명히 말해라. "
+                    "너는 사용자의 개인 비서처럼 동작하는 텔레그램 어시스턴트다. "
+                    "항상 한국어로 답하고, 말투는 자연스럽고 따뜻하며 실용적으로 유지해라. "
+                    "사용자의 최근 대화, 메모, 자동화 알림을 참고해 취향과 맥락을 반영하되 "
+                    "근거 없는 사실이나 취향을 만들어내지는 마라. "
+                    "질문과 직접 관련된 메모가 있으면 그것을 우선 사용하고, "
+                    "직접 관련된 자료가 부족해도 일반적인 일상 질문(날씨, 음식 메뉴 추천, 일정 정리, 우선순위, 가벼운 상담, 글 정리 등)은 "
+                    "개인 비서처럼 자연스럽게 도와줘라. "
+                    "단, 실시간 사실 확인이 필요한 주제인데 현재 문맥에 최신 데이터가 없으면 "
+                    "확정적으로 말하지 말고, 최신 정보 접근이 없음을 짧게 밝힌 뒤 도움이 되는 대안이나 추천을 제안해라. "
                     "답변은 가능하면 다음 순서를 따른다: "
                     "1) 한두 문장으로 바로 결론, "
                     "2) 필요하면 핵심 bullet 2~4개, "
-                    "3) 사용자가 바로 이어서 할 만한 다음 행동이나 체크 포인트 1개. "
-                    "사용자의 관심사, 반복되는 맥락, 최근 대화 흐름이 보이면 비서처럼 연결해서 설명하되 "
-                    "근거 없는 기억을 만들어내지 마라."
+                    "3) 사용자가 바로 이어서 할 수 있는 추천 행동 1개. "
+                    "메모리에서 파악되는 선호가 있으면 메뉴, 추천, 우선순위 제안에 반영해라. "
+                    "선호 정보가 부족하면 과하게 물어보지 말고, 가벼운 가정 또는 짧은 확인 질문 1개 정도만 써라. "
+                    "답변 끝에는 '근거:' 섹션을 붙이되, 참고한 메모리가 없으면 '근거: 최근 저장된 메모리와 직접 연결된 내용은 없음'이라고 적어라."
                 ),
             },
             {
                 "role": "user",
                 "content": (
                     f"질문: {query}\n\n"
-                    f"검색 결과:\n{context}\n\n"
-                    "답변 뒤에는 반드시 '근거:' 섹션을 만들고, 참고한 제목을 bullet로 덧붙여라."
+                    f"질문과 직접 관련된 메모리:\n{relevant_context}\n\n"
+                    f"최근 메모리/취향 힌트:\n{recent_context_text}\n\n"
+                    f"현재 시각(KST): {now_kst().isoformat()}"
                 ),
             },
         ],
