@@ -20,6 +20,12 @@ watchlist:
 
 # 태스크1: 관심 종목 뉴스 모니터링
 stock_news:
+  # 하루 3회 (08/13/18시 KST) 실행
+  schedule_hours_kst: [8, 13, 18]
+  # 스케줄 시각 직후 실행은 "현재 슬롯"으로 보고 직전 슬롯부터 조회
+  schedule_trigger_grace_minutes: 60
+  # 스케줄 경계 누락 방지를 위한 조회 겹침 시간
+  schedule_overlap_minutes: 30
   # Marketaux 기반 최근 뉴스 조회 시간 범위
   lookback_hours: 3
   # 무료 플랜 사용량을 아끼기 위해 여러 종목을 배치 조회
@@ -28,6 +34,11 @@ stock_news:
   per_symbol_article_limit: 2
   # Marketaux 배치 요청당 최대 기사 수
   max_articles_per_batch: 50
+  hada:
+    enabled: true
+    lookback_hours: 6
+    max_entries: 30
+    per_symbol_article_limit: 1
 
 # 태스크2: 종목 가격 변동 알림
 stock_price:
@@ -36,8 +47,12 @@ stock_price:
   # TWELVE_DATA_API_KEY: Twelve Data API 키
   # 일부 한국 종목은 무료 플랜에서 제한될 수 있어 row 단위 provider 선택을 권장
 
-# 태스크3: 기술 뉴스 (LLM 요약)
+# 태스크1에 병합된 기술 뉴스 (LLM 요약)
 tech_news:
+  merge_into_stock_task:
+    enabled: true
+    dispatch_hour_kst: 8
+    per_source_limit: 5
   sources:
     - { name: "GeekNews", url: "https://news.hada.io/new" }
     - { name: "PyTorch Korea", url: "https://discuss.pytorch.kr/c/news/14" }

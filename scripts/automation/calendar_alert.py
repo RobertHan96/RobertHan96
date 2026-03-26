@@ -3,7 +3,7 @@ from __future__ import annotations
 
 """
 태스크5: Todoist 일정 알림
-- Todoist REST API v2로 오늘부터 7일 뒤까지의 일정 조회
+- Todoist API v1로 오늘부터 7일 뒤까지의 일정 조회
 - 평일 아침 08:30 KST 텔레그램 발송
 """
 
@@ -12,7 +12,7 @@ from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
 
 from notify import send_telegram
-from todoist_client import get_active_tasks
+from todoist_client import get_active_tasks, parse_task_due
 
 KST = timezone(timedelta(hours=9))
 WINDOW_DAYS = 7
@@ -21,29 +21,7 @@ WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"]
 
 def parse_due(task: dict) -> dict | None:
     """Todoist due 정보를 파싱해 KST 기준 일정 정보로 변환"""
-    due = task.get("due") or {}
-    due_date_str = due.get("date")
-    if not due_date_str:
-        return None
-
-    due_datetime = None
-    due_datetime_str = due.get("datetime")
-    parsed_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
-
-    if due_datetime_str:
-        try:
-            due_datetime = datetime.fromisoformat(
-                due_datetime_str.replace("Z", "+00:00")
-            ).astimezone(KST)
-            parsed_date = due_datetime.date()
-        except ValueError:
-            due_datetime = None
-
-    return {
-        "due_date": parsed_date,
-        "due_datetime": due_datetime,
-        "is_all_day": due_datetime is None,
-    }
+    return parse_task_due(task, default_timezone=KST)
 
 
 def normalize_task(task: dict) -> dict | None:

@@ -2,15 +2,20 @@ name: "태스크1: 관심 종목 뉴스 모니터링"
 
 on:
   schedule:
-    # 매 2시간 (08~22시 KST = UTC-9 → 23,01,03,05,07,09,11,13)
-    - cron: "0 23,1,3,5,7,9,11,13 * * *"
+    # 하루 3회 (08/13/18시 KST = UTC 23/04/09)
+    - cron: "0 23,4,9 * * *"
   workflow_dispatch: # 수동 실행용
+
+permissions:
+  contents: write
 
 jobs:
   stock-news:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
@@ -25,5 +30,12 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           MARKETAUX_API_TOKEN: ${{ secrets.MARKETAUX_API_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           WATCHLIST_PUBLISHED_CSV_URL: ${{ vars.WATCHLIST_PUBLISHED_CSV_URL }}
+          TELEGRAM_MEMORY_ENABLED: "true"
+          TELEGRAM_MEMORY_SOURCE: "stock-news"
         run: python stock_news.py
+
+      - name: Commit telegram memory
+        if: always()
+        run: bash scripts/automation/commit_telegram_memory.sh "data/telegram_memory" "Update telegram memory"

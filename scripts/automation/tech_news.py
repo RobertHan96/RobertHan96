@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-태스크3: 기술 뉴스 알림 (GeekNews, PyTorch Korea)
-- 각 사이트에서 최근 24시간 이내 새 글 수집
-- OpenAI GPT로 요약 후 텔레그램 발송
-- 매일 아침 08:00 KST 1회 발송
+기술 뉴스 수집/요약 유틸리티 (GeekNews, PyTorch Korea)
+- 태스크1 관심 종목 뉴스 모니터링의 일일 기술 뉴스 섹션에서 재사용
+- 필요시 단독 실행도 가능
 """
 
 import json
@@ -45,7 +44,7 @@ def fetch_hada_new(hours: int = 24) -> list[dict]:
     """GeekNews (hada.io) /new 페이지에서 최근 글 수집 via RSS"""
     import feedparser
 
-    feed = feedparser.parse("https://news.hada.io/rss")
+    feed = feedparser.parse("https://news.hada.io/rss/news")
     import time
 
     cutoff = time.time() - (hours * 3600)

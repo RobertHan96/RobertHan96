@@ -5,3 +5,4 @@ yfinance>=0.2
 openai>=1.0
 fastapi>=0.115
 uvicorn>=0.30
+pypdf>=5.0

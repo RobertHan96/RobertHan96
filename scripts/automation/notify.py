@@ -1,6 +1,7 @@
 """텔레그램 알림 공통 모듈"""
 
 import json
+import os
 import urllib.parse
 import urllib.request
 
@@ -10,6 +11,23 @@ except ImportError:
     from runtime import get_required_env
 
 TELEGRAM_MESSAGE_LIMIT = 3800
+
+
+def maybe_log_outgoing_message(message: str, parse_mode: str) -> None:
+    """메모리 저장이 켜져 있으면 발송 메시지를 로컬 메모리에 적재"""
+    enabled = os.environ.get("TELEGRAM_MEMORY_ENABLED", "").strip().lower()
+    if enabled not in {"1", "true", "yes", "on"}:
+        return
+
+    source = os.environ.get("TELEGRAM_MEMORY_SOURCE", "").strip() or "telegram-alert"
+    try:
+        try:
+            from .telegram_memory import log_outgoing_message
+        except ImportError:
+            from telegram_memory import log_outgoing_message
+        log_outgoing_message(source, message, parse_mode=parse_mode)
+    except Exception as exc:
+        print(f"텔레그램 메모리 로깅 실패: {exc}")
 
 
 def split_message_lines(message: str, limit: int = TELEGRAM_MESSAGE_LIMIT) -> list[str]:
@@ -98,4 +116,5 @@ def send_telegram(
         )
         if not ok:
             return False
+    maybe_log_outgoing_message(message, parse_mode)
     return True

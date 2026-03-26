@@ -147,3 +147,65 @@ TSLA,Tesla,us,true,true,true,3.0,twelvedata,TSLA,marketaux,TSLA,us,en
 uvicorn services.telegram_rag_app:app --host 0.0.0.0 --port 8000
 python3 scripts/automation/investment_rag_sync.py --generate-digest
 ```
+
+***
+
+### 💬 텔레그램 메모리/RAG 가이드
+
+알림으로 이미 보낸 텔레그램 메시지를 메모리로 쌓고, 내가 Telegram으로 보낸 텍스트/PDF/TXT/MD/HTML/JSON/DOCX 파일도 저장한 뒤 `/ask` 명령으로 다시 물어볼 수 있는 가장 가벼운 구조를 추가했습니다.  
+별도 서버 대신 `Cloudflare Worker -> GitHub Actions -> repo 파일 저장 + SQLite FTS5` 흐름으로 동작합니다.
+
+#### 현재 포함된 구성
+
+- Cloudflare Worker 브리지: [worker.mjs](/Users/han/Desktop/Dev/RobertHan96/services/cloudflare-telegram-bridge/worker.mjs)
+- Telegram 인입 workflow: [telegram-memory.yml](/Users/han/Desktop/Dev/RobertHan96/.github/workflows/telegram-memory.yml)
+- 일일 요약 workflow: [telegram-memory-digest.yml](/Users/han/Desktop/Dev/RobertHan96/.github/workflows/telegram-memory-digest.yml)
+- 메모리/검색 모듈: [telegram_memory.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/telegram_memory.py)
+- 이벤트 처리기: [telegram_memory_event.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/telegram_memory_event.py)
+
+#### Telegram에서 쓰는 방법
+
+1. 일반 텍스트를 보내면 메모로 저장됩니다.
+2. `pdf`, `txt`, `md`, `html`, `json`, `docx` 파일을 보내면 문서로 저장됩니다.
+3. `/ask 질문내용` 형식으로 보내면 저장된 메모/문서를 검색해 답변합니다.
+4. 기존 자동화 태스크가 텔레그램으로 보낸 메시지는 자동으로 `outbox` 메모리에 저장됩니다.
+
+#### 저장 위치
+
+- 원본 로그: [data/telegram_memory](/Users/han/Desktop/Dev/RobertHan96/data/telegram_memory)
+- SQLite 검색 인덱스: [index.db](/Users/han/Desktop/Dev/RobertHan96/data/telegram_memory/index.db)
+- 수신 메모: [inbox](/Users/han/Desktop/Dev/RobertHan96/data/telegram_memory/inbox)
+- 발송 로그: [outbox](/Users/han/Desktop/Dev/RobertHan96/data/telegram_memory/outbox)
+- 일일 요약: [summaries](/Users/han/Desktop/Dev/RobertHan96/data/telegram_memory/summaries)
+
+#### Cloudflare에서 해야 할 설정
+
+1. Cloudflare Dashboard에서 새 Worker를 만듭니다.
+2. [worker.mjs](/Users/han/Desktop/Dev/RobertHan96/services/cloudflare-telegram-bridge/worker.mjs) 내용을 붙여넣어 배포합니다.
+3. Worker 환경변수를 설정합니다.
+   - `GITHUB_REPOSITORY`: `RobertHan96/RobertHan96`
+4. Worker secret을 설정합니다.
+   - `GITHUB_TOKEN`: `repo` 권한 또는 해당 저장소 dispatch 권한이 있는 토큰
+   - `TELEGRAM_WEBHOOK_SECRET_TOKEN`: 임의의 긴 랜덤 문자열
+5. Worker URL을 배포한 뒤 Telegram webhook을 연결합니다.
+
+예시:
+
+```bash
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
+  -d "url=https://<your-worker>.workers.dev" \
+  -d "secret_token=<TELEGRAM_WEBHOOK_SECRET_TOKEN>"
+```
+
+#### GitHub Secrets / Variables
+
+- `Secrets`
+  - `TELEGRAM_BOT_TOKEN`
+  - `OPENAI_API_KEY`
+- `Variables`
+  - `TELEGRAM_MEMORY_MODEL` 선택 사항. 기본값은 `gpt-4o-mini`
+
+#### 참고
+
+- 이 구조는 무료 인프라 기준으로 가장 단순한 편이지만, OpenAI 답변 생성은 호출량에 따라 비용이 발생할 수 있습니다.
+- 메모리 커밋이 잦아도 페이지 배포가 불필요하게 돌지 않도록 [deploy.yml](/Users/han/Desktop/Dev/RobertHan96/.github/workflows/deploy.yml) 에 `data/telegram_memory/**` 경로는 배포 제외로 처리했습니다.

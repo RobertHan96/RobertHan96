@@ -12,7 +12,7 @@ import html
 from datetime import date, datetime, timedelta, timezone
 
 from notify import send_telegram
-from todoist_client import get_active_tasks
+from todoist_client import get_active_tasks, parse_task_due
 
 KST = timezone(timedelta(hours=9))
 WINDOW_DAYS = 7
@@ -22,25 +22,10 @@ BIRTHDAY_KEYWORD = "생일"
 
 def parse_due_date(task: dict) -> date | None:
     """Todoist 태스크의 due date를 KST 기준 날짜로 변환"""
-    due = task.get("due") or {}
-    due_date_str = due.get("date")
-    if not due_date_str:
+    parsed = parse_task_due(task, default_timezone=KST)
+    if parsed is None:
         return None
-
-    due_datetime_str = due.get("datetime")
-    if due_datetime_str:
-        try:
-            due_datetime = datetime.fromisoformat(
-                due_datetime_str.replace("Z", "+00:00")
-            ).astimezone(KST)
-            return due_datetime.date()
-        except ValueError:
-            return None
-
-    try:
-        return datetime.strptime(due_date_str, "%Y-%m-%d").date()
-    except ValueError:
-        return None
+    return parsed["due_date"]
 
 
 def is_birthday_task(task: dict) -> bool:

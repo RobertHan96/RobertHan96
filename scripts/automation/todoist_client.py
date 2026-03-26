@@ -3,12 +3,72 @@ from __future__ import annotations
 
 """Todoist API v1 공통 클라이언트"""
 
+from datetime import date, datetime, timezone
 from urllib.parse import urlencode
 
 from runtime import get_required_env, request_json
 
 API_BASE = "https://api.todoist.com/api/v1"
 DEFAULT_LIMIT = 200
+
+
+def parse_due_datetime(value: str, *, default_timezone: timezone) -> datetime:
+    """Todoist due 문자열을 datetime으로 파싱"""
+    normalized = (value or "").strip()
+    if normalized.endswith("Z"):
+        parsed = datetime.fromisoformat(normalized.replace("Z", "+00:00"))
+    else:
+        parsed = datetime.fromisoformat(normalized)
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=default_timezone)
+    return parsed.astimezone(default_timezone)
+
+
+def parse_task_due(
+    task: dict,
+    *,
+    default_timezone: timezone,
+) -> dict | None:
+    """Todoist task의 due object를 날짜/시간 정보로 정규화"""
+    due = task.get("due") or {}
+    due_date_str = due.get("date")
+    due_datetime_str = due.get("datetime")
+
+    if due_datetime_str:
+        parsed_datetime = parse_due_datetime(
+            due_datetime_str,
+            default_timezone=default_timezone,
+        )
+        return {
+            "due_date": parsed_datetime.date(),
+            "due_datetime": parsed_datetime,
+            "is_all_day": False,
+        }
+
+    if not due_date_str:
+        return None
+
+    try:
+        if "T" in due_date_str:
+            parsed_datetime = parse_due_datetime(
+                due_date_str,
+                default_timezone=default_timezone,
+            )
+            return {
+                "due_date": parsed_datetime.date(),
+                "due_datetime": parsed_datetime,
+                "is_all_day": False,
+            }
+
+        parsed_date = date.fromisoformat(due_date_str)
+        return {
+            "due_date": parsed_date,
+            "due_datetime": None,
+            "is_all_day": True,
+        }
+    except ValueError:
+        return None
 
 
 def todoist_request(path: str, query: dict[str, str] | None = None) -> dict | list:

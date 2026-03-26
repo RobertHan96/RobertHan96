@@ -3,6 +3,9 @@ name: Deploy Hugo to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "data/investment_rag/**"
+      - "data/telegram_memory/**"
   repository_dispatch:
     types: [content-updated]
   workflow_dispatch:

@@ -6,11 +6,16 @@ on:
     - cron: "0 0 * * 1-5"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   jira-releases:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
@@ -28,4 +33,10 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          TELEGRAM_MEMORY_ENABLED: "true"
+          TELEGRAM_MEMORY_SOURCE: "jira-releases"
         run: python jira_releases.py
+
+      - name: Commit telegram memory
+        if: always()
+        run: bash scripts/automation/commit_telegram_memory.sh "data/telegram_memory" "Update telegram memory"

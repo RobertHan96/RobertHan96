@@ -1,0 +1,36 @@
+name: "텔레그램 메모리 요약"
+
+on:
+  schedule:
+    # 매일 23:55 KST = UTC 14:55
+    - cron: "55 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  telegram-memory-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/automation/requirements.txt
+
+      - name: Build daily telegram memory summary
+        working-directory: scripts/automation
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TELEGRAM_MEMORY_MODEL: ${{ vars.TELEGRAM_MEMORY_MODEL }}
+        run: python telegram_memory_maintenance.py --date "$(TZ=Asia/Seoul date +%F)"
+
+      - name: Commit telegram memory summary
+        if: always()
+        run: bash scripts/automation/commit_telegram_memory.sh "data/telegram_memory" "Summarize telegram memory"

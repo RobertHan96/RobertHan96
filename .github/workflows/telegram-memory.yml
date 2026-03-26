@@ -1,16 +1,15 @@
-name: "태스크6: 생일 알림"
+name: "텔레그램 메모리 인입/질의응답"
 
 on:
-  schedule:
-    # 매일 08:00 KST = UTC 23:00 (전일)
-    - cron: "0 23 * * *"
+  repository_dispatch:
+    types: [telegram-memory-update]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  birthday-alert:
+  telegram-memory:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,15 +23,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r scripts/automation/requirements.txt
 
-      - name: Run birthday alert
+      - name: Process Telegram event
         working-directory: scripts/automation
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
-          TELEGRAM_MEMORY_ENABLED: "true"
-          TELEGRAM_MEMORY_SOURCE: "birthday-alert"
-        run: python birthday_alert.py
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TELEGRAM_MEMORY_MODEL: ${{ vars.TELEGRAM_MEMORY_MODEL }}
+        run: python telegram_memory_event.py
 
       - name: Commit telegram memory
         if: always()
