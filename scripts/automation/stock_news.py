@@ -5,7 +5,7 @@ from __future__ import annotations
 태스크1: 관심 종목 뉴스 모니터링
 - watchlist 기반으로 종목별 뉴스 수집
 - Marketaux 공식 API로 최근 금융 뉴스를 조회
-- 매일 3회 실행 (08/13/18시 KST)
+- 평일 3회 / 주말 1회 실행
 - 텔레그램으로 발송
 """
 
@@ -58,6 +58,48 @@ def format_marketaux_datetime(target: datetime) -> str:
     return target.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
 
+def get_schedule_hours_for_date(stock_config: dict, target_date) -> list[int]:
+    """날짜별 실행 슬롯 반환 (평일/주말 분리)"""
+    if target_date.weekday() >= 5:
+        hours = stock_config.get("weekend_schedule_hours_kst")
+    else:
+        hours = stock_config.get("weekday_schedule_hours_kst")
+
+    if not hours:
+        hours = stock_config.get("schedule_hours_kst", [8, 13, 18])
+
+    schedule_hours = sorted({int(hour) for hour in hours})
+    return schedule_hours or [8]
+
+
+def find_latest_schedule_slot(stock_config: dict, reference_time: datetime) -> datetime:
+    """주어진 시각 이하의 가장 최근 실행 슬롯 반환"""
+    search_date = reference_time.date()
+
+    for _ in range(8):
+        schedule_hours = get_schedule_hours_for_date(stock_config, search_date)
+        for hour in reversed(schedule_hours):
+            candidate = datetime(
+                search_date.year,
+                search_date.month,
+                search_date.day,
+                hour,
+                tzinfo=KST,
+            )
+            if candidate <= reference_time:
+                return candidate
+        search_date = search_date - timedelta(days=1)
+
+    fallback_hours = get_schedule_hours_for_date(stock_config, reference_time.date())
+    return datetime(
+        reference_time.year,
+        reference_time.month,
+        reference_time.day,
+        fallback_hours[0],
+        tzinfo=KST,
+    )
+
+
 def get_scheduled_lookback_hours(
     config: dict,
     *,
@@ -67,58 +109,16 @@ def get_scheduled_lookback_hours(
     """실행 스케줄 기준으로 이전 실행 시점부터의 조회 범위를 계산"""
     now = now or datetime.now(KST)
     stock_config = config.get("stock_news", {})
-    schedule_hours = sorted({
-        int(hour)
-        for hour in stock_config.get("schedule_hours_kst", [8, 13, 18])
-    })
-    if not schedule_hours:
-        return default_hours
 
     overlap_minutes = int(stock_config.get("schedule_overlap_minutes", 30))
     trigger_grace_minutes = int(stock_config.get("schedule_trigger_grace_minutes", 60))
-    today = now.date()
-    latest_slot = None
-
-    for hour in reversed(schedule_hours):
-        candidate = datetime(today.year, today.month, today.day, hour, tzinfo=KST)
-        if candidate <= now:
-            latest_slot = candidate
-            break
-
-    if latest_slot is None:
-        previous_day = today - timedelta(days=1)
-        latest_slot = datetime(
-            previous_day.year,
-            previous_day.month,
-            previous_day.day,
-            schedule_hours[-1],
-            tzinfo=KST,
-        )
+    latest_slot = find_latest_schedule_slot(stock_config, now)
 
     if now - latest_slot <= timedelta(minutes=trigger_grace_minutes):
-        reference_time = latest_slot - timedelta(seconds=1)
-        previous_run = None
-        reference_day = reference_time.date()
-        for hour in reversed(schedule_hours):
-            candidate = datetime(
-                reference_day.year,
-                reference_day.month,
-                reference_day.day,
-                hour,
-                tzinfo=KST,
-            )
-            if candidate <= reference_time:
-                previous_run = candidate
-                break
-        if previous_run is None:
-            previous_day = reference_day - timedelta(days=1)
-            previous_run = datetime(
-                previous_day.year,
-                previous_day.month,
-                previous_day.day,
-                schedule_hours[-1],
-                tzinfo=KST,
-            )
+        previous_run = find_latest_schedule_slot(
+            stock_config,
+            latest_slot - timedelta(seconds=1),
+        )
     else:
         previous_run = latest_slot
 

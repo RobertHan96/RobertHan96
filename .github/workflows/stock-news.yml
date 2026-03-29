@@ -2,8 +2,10 @@ name: "태스크1: 관심 종목 뉴스 모니터링"
 
 on:
   schedule:
-    # 하루 3회 (08/13/18시 KST = UTC 23/04/09)
-    - cron: "0 23,4,9 * * *"
+    # 매일 08:00 KST = UTC 23:00 (전일)
+    - cron: "0 23 * * *"
+    # 평일만 13:00/18:00 KST = UTC 04:00/09:00
+    - cron: "0 4,9 * * 1-5"
   workflow_dispatch: # 수동 실행용
 
 permissions:
