@@ -32,18 +32,22 @@ jobs:
       - name: Run job fit monitor
         env:
           JOB_MONITOR_REPORT_DIR: ${{ github.workspace }}/jobs/reports
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          JOB_FIT_REPORT_BRIDGE_URL: ${{ vars.JOB_FIT_REPORT_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          JOB_FIT_REPORT_BRIDGE_TOKEN: ${{ secrets.JOB_FIT_REPORT_BRIDGE_TOKEN }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
+          TELEGRAM_MEMORY_SOURCE: "job-fit-monitor"
         run: |
           python -m jobs.run_job_monitor \
             --limit-per-site 20 \
             --detail-top-n 8 \
-            --min-score 20 \
-            --report-limit 10
-
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: job-fit-monitor-reports
-          path: jobs/reports/*.md
-          if-no-files-found: warn
-          retention-days: 14
+            --min-score 70 \
+            --report-limit 10 \
+            --upload-report \
+            --notify-high-fit-titles \
+            --notify-min-score 80 \
+            --notify-limit 5

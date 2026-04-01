@@ -4,3 +4,7 @@ compatibility_date = "2026-03-26"
 
 [observability.logs]
 enabled = true
+
+[[r2_buckets]]
+binding = "JOB_FIT_REPORTS_BUCKET"
+bucket_name = "job-fit-reports"

@@ -17,6 +17,10 @@ export default {
       return handleLogWrite(request, env);
     }
 
+    if (url.pathname === "/job-fit-report") {
+      return handleJobFitReport(request, env);
+    }
+
     const secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
     if (!secret || secret !== env.TELEGRAM_WEBHOOK_SECRET_TOKEN) {
       return json({ ok: false, error: "invalid_secret" }, 401);
@@ -122,6 +126,40 @@ async function handleLogRead(request, env, url) {
   return json({ ok: true, kind, date: logDate, logs });
 }
 
+async function handleJobFitReport(request, env) {
+  const authorized = authorizeBridge(request, env);
+  if (!authorized) {
+    return json({ ok: false, error: "unauthorized" }, 401);
+  }
+
+  const bucket = env.JOB_FIT_REPORTS_BUCKET;
+  if (!bucket) {
+    return json({ ok: false, error: "missing_job_fit_bucket" }, 500);
+  }
+
+  const payload = await request.json();
+  const report = String(payload.report || "");
+  if (!report.trim()) {
+    return json({ ok: false, error: "empty_report" }, 400);
+  }
+
+  const date = sanitizeDate(payload.date || new Date().toISOString().slice(0, 10));
+  const filename = sanitizeFilename(payload.filename || `job_report_${Date.now()}.md`);
+  const key = `jobs/reports/${date}/${filename}`;
+
+  await bucket.put(key, report, {
+    httpMetadata: {
+      contentType: "text/markdown; charset=utf-8",
+    },
+    customMetadata: {
+      generated_at: String(payload.generated_at || ""),
+      high_fit_count: String((payload.high_fit_titles || []).length || 0),
+    },
+  });
+
+  return json({ ok: true, key });
+}
+
 function authorizeBridge(request, env) {
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") || "";
   return Boolean(token && token === env.TELEGRAM_MEMORY_BRIDGE_TOKEN);
@@ -181,6 +219,14 @@ function sanitizeDate(date) {
 
 function sanitizeSeed(value) {
   return String(value || "").slice(0, 200);
+}
+
+function sanitizeFilename(value) {
+  const cleaned = String(value || "")
+    .replace(/[^0-9A-Za-z._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return cleaned || `job-report-${Date.now()}.md`;
 }
 
 function formatKstDate(date) {
