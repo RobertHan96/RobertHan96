@@ -20,8 +20,8 @@ watchlist:
 
 # 태스크1: 관심 종목 뉴스 모니터링
 stock_news:
-  # 평일은 08/13/18시, 주말은 08시 1회 실행
-  weekday_schedule_hours_kst: [8, 13, 18]
+  # 평일은 08/18시, 주말은 08시 1회 실행
+  weekday_schedule_hours_kst: [8, 18]
   weekend_schedule_hours_kst: [8]
   # 스케줄 시각 직후 실행은 "현재 슬롯"으로 보고 직전 슬롯부터 조회
   schedule_trigger_grace_minutes: 60

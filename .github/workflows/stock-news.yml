@@ -4,8 +4,8 @@ on:
   schedule:
     # 매일 08:00 KST = UTC 23:00 (전일)
     - cron: "0 23 * * *"
-    # 평일만 13:00/18:00 KST = UTC 04:00/09:00
-    - cron: "0 4,9 * * 1-5"
+    # 평일만 18:00 KST = UTC 09:00
+    - cron: "0 9 * * 1-5"
   workflow_dispatch: # 수동 실행용
 
 permissions:
