@@ -28,6 +28,8 @@ CLEANEYE_DETAIL_URL = (
     "https://job.cleaneye.go.kr/user/ypCareersData.do"
     "?empyear={empyear}&ypEntId={yp_ent_id}&entSeq={ent_seq}"
 )
+ALIO_LIST_URL = "https://job.alio.go.kr/recruit.do"
+ALIO_DETAIL_URL = "https://job.alio.go.kr/recruitview.do?idx={idx}"
 
 
 def wanted_request(url: str) -> dict:
@@ -82,6 +84,17 @@ def cleaneye_request(payload: list[tuple[str, str]]) -> dict:
         label="클린아이 API 요청",
     )
     return data if isinstance(data, dict) else {}
+
+
+def html_request(url: str, label: str) -> str:
+    """HTML 페이지 요청"""
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "Mozilla/5.0")
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.read().decode("utf-8", errors="ignore")
+    except Exception as exc:
+        raise RuntimeError(f"{label} 실패 [{url}]: {exc}") from exc
 
 
 def clean_lines(text: str) -> list[str]:
@@ -163,6 +176,19 @@ def parse_cleaneye_date(value: str) -> datetime | None:
         return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=KST)
     except ValueError:
         return None
+
+
+def parse_alio_date(value: str) -> datetime | None:
+    """ALIO 날짜 문자열을 KST datetime으로 변환"""
+    if not value:
+        return None
+    cleaned = value.strip()
+    for fmt in ("%Y.%m.%d", "%y.%m.%d"):
+        try:
+            return datetime.strptime(cleaned, fmt).replace(tzinfo=KST)
+        except ValueError:
+            continue
+    return None
 
 
 def fetch_wanted_posted_date(job_id: int | str) -> datetime | None:
@@ -439,6 +465,127 @@ def summarize_cleaneye_job_detail(item: dict, detail_html: str) -> str:
     return shorten_text(" / ".join(summary_parts), 220)
 
 
+def parse_html_cells(row_html: str) -> list[str]:
+    """HTML table row의 cell 텍스트 추출"""
+    cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row_html or "", re.S | re.I)
+    return [strip_html_tags(cell) for cell in cells]
+
+
+def parse_alio_list_rows(html_text: str) -> list[dict]:
+    """ALIO 채용 목록 HTML에서 공고 row 추출"""
+    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", html_text or "", re.S | re.I)
+    jobs = []
+    for row in rows:
+        if "recruitview.do?idx=" not in row:
+            continue
+
+        idx_match = re.search(r"recruitview\.do\?idx=([0-9]+)", row)
+        if not idx_match:
+            continue
+        title_match = re.search(
+            r'<a[^>]+href="/recruitview\.do\?idx=[0-9]+"[^>]*/*>(.*?)</a>',
+            row,
+            re.S | re.I,
+        )
+        cells = parse_html_cells(row)
+        if len(cells) < 9:
+            continue
+
+        jobs.append({
+            "idx": idx_match.group(1),
+            "title": strip_html_tags(title_match.group(1)) if title_match else cells[2],
+            "company": cells[3],
+            "location": cells[4],
+            "employment_type": cells[5],
+            "reg_date": cells[6],
+            "end_date": cells[7],
+            "status": cells[8],
+        })
+    return jobs
+
+
+def extract_alio_detail_fields(html_text: str) -> dict[str, str]:
+    """ALIO 상세 HTML의 기본 정보 table을 key/value로 추출"""
+    fields: dict[str, str] = {}
+    for row in re.findall(r"<tr[^>]*>(.*?)</tr>", html_text or "", re.S | re.I):
+        cells = re.findall(r"<(th|td)[^>]*>(.*?)</(?:th|td)>", row, re.S | re.I)
+        pending_key = ""
+        for tag, raw_cell in cells:
+            text = strip_html_tags(raw_cell)
+            if not text:
+                continue
+            if tag.lower() == "th":
+                pending_key = text
+            elif pending_key:
+                fields[pending_key] = text
+                pending_key = ""
+    return fields
+
+
+def extract_alio_sections(html_text: str) -> dict[str, str]:
+    """ALIO 상세 탭의 h4/p 섹션 추출"""
+    sections: dict[str, str] = {}
+    for heading, body in re.findall(
+        r"<h4[^>]*>(.*?)</h4>\s*<p[^>]*>(.*?)</p>",
+        html_text or "",
+        re.S | re.I,
+    ):
+        title = strip_html_tags(heading)
+        text = strip_html_tags(body)
+        if title and text:
+            sections[title] = text
+    return sections
+
+
+def summarize_alio_job_detail(item: dict, detail_html: str) -> str:
+    """ALIO 상세 HTML을 주요 정보 중심 요약으로 변환"""
+    fields = extract_alio_detail_fields(detail_html)
+    sections = extract_alio_sections(detail_html)
+
+    summary_parts = []
+    role_bits = dedupe_preserve_order([
+        fields.get("표준직무(NCS)", ""),
+        fields.get("근무분야", ""),
+        item.get("employment_type", ""),
+        item.get("location", ""),
+    ])
+    if role_bits:
+        summary_parts.append("분야: " + ", ".join(role_bits[:4]))
+
+    qualification = sections.get("응시자격", "")
+    if qualification:
+        summary_parts.append("응시자격: " + shorten_text(qualification, 90))
+
+    preference = sections.get("우대내용") or fields.get("우대조건", "")
+    if preference:
+        summary_parts.append("우대: " + shorten_text(preference, 70))
+
+    process = sections.get("전형절차/방법", "")
+    if process:
+        summary_parts.append("전형: " + shorten_text(process, 70))
+
+    period = fields.get("채용기간") or item.get("end_date", "")
+    if period:
+        summary_parts.append("일정: " + shorten_text(period, 45))
+
+    if not summary_parts:
+        summary_parts.append(
+            "기본 정보: "
+            + ", ".join(
+                bit
+                for bit in [
+                    item.get("company", ""),
+                    item.get("location", ""),
+                    item.get("employment_type", ""),
+                    item.get("reg_date", ""),
+                ]
+                if bit
+            )
+        )
+
+    return shorten_text(" / ".join(summary_parts), 240)
+
+
 def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
     """직행 채용공고 검색"""
     label = source.get("label") or "직행 AI 채용"
@@ -582,6 +729,68 @@ def search_cleaneye_jobs(source: dict) -> tuple[str, list[dict]]:
     return label, jobs
 
 
+def fetch_alio_job_detail(idx: str) -> str:
+    """ALIO 채용공고 상세 HTML 조회"""
+    return html_request(
+        ALIO_DETAIL_URL.format(idx=urllib.parse.quote(str(idx))),
+        "ALIO 상세 조회",
+    )
+
+
+def search_alio_jobs(source: dict) -> tuple[str, list[dict]]:
+    """ALIO 공공기관 채용 조회"""
+    label = source.get("label") or "ALIO 공공기관 채용"
+    today_only = bool(source.get("today_only", True))
+    today = datetime.now(KST).date()
+    date_value = today.strftime("%Y.%m.%d")
+    max_results = int(source.get("max_results", 5))
+    page_set = int(source.get("page_set", 50))
+    work_types = source.get("work_types") or ["R1010", "R1030"]
+
+    query: list[tuple[str, str]] = [
+        ("pageNo", "1"),
+        ("idx", ""),
+        ("s_date", date_value if today_only else str(source.get("start_date", ""))),
+        ("e_date", date_value if today_only else str(source.get("end_date", ""))),
+        ("org_type", str(source.get("org_type", ""))),
+        ("org_name", str(source.get("org_name", ""))),
+        ("search_type", str(source.get("search_type", ""))),
+        ("keyword", str(source.get("keyword", ""))),
+        ("order", str(source.get("order", "REG_DATE"))),
+        ("sort", str(source.get("sort", "DESC"))),
+        ("pageSet", str(page_set)),
+    ]
+    for work_type in work_types:
+        query.append(("work_type", str(work_type)))
+
+    list_url = ALIO_LIST_URL + "?" + urllib.parse.urlencode(query)
+    list_html = html_request(list_url, "ALIO 목록 조회")
+    items = parse_alio_list_rows(list_html)
+
+    if today_only:
+        items = [
+            item for item in items
+            if (parse_alio_date(item.get("reg_date", "")) or datetime.min.replace(tzinfo=KST)).date() == today
+        ]
+
+    jobs = []
+    for item in items:
+        idx = str(item.get("idx", ""))
+        detail_html = fetch_alio_job_detail(idx) if idx else ""
+        jobs.append({
+            "id": idx,
+            "source": "ALIO",
+            "title": item.get("title", ""),
+            "company": item.get("company", ""),
+            "link": ALIO_DETAIL_URL.format(idx=urllib.parse.quote(idx)),
+            "summary": summarize_alio_job_detail(item, detail_html),
+        })
+        if len(jobs) >= max_results:
+            break
+
+    return label, jobs
+
+
 def build_message(results: dict[str, list]) -> str:
     """텔레그램 메시지 생성"""
     now = datetime.now(KST).strftime("%Y-%m-%d")
@@ -641,6 +850,19 @@ def main():
                 print(f"[{result_label}] {len(jobs)}건")
             except Exception as e:
                 print(f"클린아이 검색 실패 [{label}]: {e}")
+                results[label] = []
+                failures += 1
+            continue
+
+        if source_name == "alio":
+            attempted += 1
+            label = src.get("label") or "ALIO 공공기관 채용"
+            try:
+                result_label, jobs = search_alio_jobs(src)
+                results[result_label] = jobs
+                print(f"[{result_label}] {len(jobs)}건")
+            except Exception as e:
+                print(f"ALIO 검색 실패 [{label}]: {e}")
                 results[label] = []
                 failures += 1
             continue

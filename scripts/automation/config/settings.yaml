@@ -70,12 +70,12 @@ birthdays:
 # 태스크7: 채용공고 모니터링
 job_monitor:
   sources:
-    - { name: "wanted", keywords: ["AI 엔지니어", "ML 엔지니어", "LLM"], size: 20, max_results: 5, sort: "latest", today_only: true }
+    - { name: "wanted", keywords: ["AI 엔지니어", "ML 엔지니어", "LLM"], size: 50, max_results: 50, sort: "latest", today_only: true }
     - name: "zighang"
       label: "직행 AI/LLM"
       page: 0
-      size: 20
-      max_results: 5
+      size: 50
+      max_results: 50
       today_only: true
       depth_twos: ["LLM", "RAG", "생성형AI", "NLP", "AI서비스기획", "기타AI_데이터"]
       career_min: 0
@@ -87,11 +87,23 @@ job_monitor:
       label: "클린아이 공공채용"
       job_type_list: ["702001"]
       today_only: true
-      max_results: 5
+      max_results: 50
       yearincome: ""
       status: ""
       pub_end_date: ""
       ent_name: ""
+    - name: "alio"
+      label: "ALIO 공공기관 채용"
+      work_types: ["R1010", "R1030"]
+      today_only: true
+      max_results: 50
+      page_set: 50
+      order: "REG_DATE"
+      sort: "DESC"
+      org_type: ""
+      org_name: ""
+      search_type: ""
+      keyword: ""
 
 # 태스크8: 블로그 크로스포스팅 (Dev.to)
 blog_crosspost:
