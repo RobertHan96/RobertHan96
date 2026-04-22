@@ -505,12 +505,15 @@ def search_cleaneye_jobs(source: dict) -> tuple[str, list[dict]]:
     today_only = bool(source.get("today_only", True))
     today = datetime.now(KST).date()
     today_str = today.strftime("%Y-%m-%d")
-    ent_recruit_list = source.get("ent_recruit_list") or ["700020"]
+    ent_recruit_list = source.get("ent_recruit_list") or []
+    job_type_list = source.get("job_type_list") or ["702001"]
     max_results = int(source.get("max_results", 5))
 
     base_payload: list[tuple[str, str]] = []
     for code in ent_recruit_list:
         base_payload.append(("entRecruitList[]", str(code)))
+    for code in job_type_list:
+        base_payload.append(("jobTypeList[]", str(code)))
     base_payload.extend([
         ("yearincome", str(source.get("yearincome", ""))),
         ("status", str(source.get("status", ""))),
