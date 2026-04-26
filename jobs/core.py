@@ -5,15 +5,16 @@ import datetime as dt
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 from urllib.parse import urljoin
 
-from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 try:
     from openai import OpenAI
@@ -164,6 +165,24 @@ def safe_goto(page: Page, url: str) -> None:
     page.wait_for_timeout(2_000)
 
 
+def wait_for_first_selector(
+    page: Page,
+    selectors: list[str],
+    *,
+    timeout_ms: int = 30_000,
+    poll_ms: int = 1_000,
+) -> str:
+    deadline = time.monotonic() + (timeout_ms / 1000)
+    while time.monotonic() < deadline:
+        for selector in selectors:
+            if page.locator(selector).count() > 0:
+                return selector
+        page.wait_for_timeout(poll_ms)
+    raise PlaywrightTimeoutError(
+        f"None of the selectors appeared within {timeout_ms}ms: {selectors}"
+    )
+
+
 def parse_inthiswork_card(raw_text: str, url: str) -> JobPosting:
     lines = clean_lines(raw_text)
     title = lines[0] if lines else ""
@@ -237,8 +256,16 @@ def collect_cards(page: Page, selector: str, parser, limit: int) -> list[JobPost
 
 def scrape_inthiswork(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, "https://inthiswork.com/junior")
-    page.wait_for_selector("a[href*='/archives/']", state="attached", timeout=30_000)
-    anchors = page.locator("a[href*='/archives/']")
+    selector = wait_for_first_selector(
+        page,
+        [
+            "a[href*='/archives/']",
+            "article a[href*='/archives/']",
+            "main a[href*='/archives/']",
+        ],
+        timeout_ms=30_000,
+    )
+    anchors = page.locator(selector)
     results: list[JobPosting] = []
     seen: set[str] = set()
     for idx in range(anchors.count()):
@@ -307,6 +334,23 @@ def enrich_detail(page: Page, job: JobPosting) -> None:
         lines = clean_lines(body_text)
         if len(lines) > 2:
             job.company = lines[2]
+
+
+def collect_site_jobs(
+    page: Page,
+    *,
+    label: str,
+    scraper: Callable[[Page, int], list[JobPosting]],
+    limit: int,
+) -> tuple[list[JobPosting], str | None]:
+    try:
+        jobs = scraper(page, limit)
+        print(f"[{label}] 목록 수집 완료: {len(jobs)}건")
+        return jobs, None
+    except Exception as exc:
+        message = f"[{label}] 목록 수집 실패: {exc}"
+        print(message)
+        return [], message
 
 
 def score_text(text: str, profile: CandidateProfile) -> tuple[int, list[str]]:
@@ -688,16 +732,31 @@ def build_match(job: JobPosting, profile: CandidateProfile) -> JobMatch:
 
 
 def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[JobMatch]:
+    scrape_errors: list[str] = []
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1440, "height": 2200})
 
         jobs: list[JobPosting] = []
-        jobs.extend(scrape_inthiswork(page, limit_per_site))
-        jobs.extend(scrape_jobda(page, limit_per_site))
-        jobs.extend(scrape_zighang(page, limit_per_site))
+        for label, scraper in [
+            ("InThisWork", scrape_inthiswork),
+            ("Jobda", scrape_jobda),
+            ("Zighang", scrape_zighang),
+        ]:
+            items, error = collect_site_jobs(
+                page,
+                label=label,
+                scraper=scraper,
+                limit=limit_per_site,
+            )
+            jobs.extend(items)
+            if error:
+                scrape_errors.append(error)
 
         browser.close()
+
+        if not jobs and scrape_errors:
+            raise RuntimeError("채용공고 source 수집이 모두 실패했습니다.")
 
         quick_ranked = sorted(
             jobs,
@@ -706,12 +765,27 @@ def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[
         )
 
     detail_targets = quick_ranked[:detail_top_n]
+    detail_errors: list[str] = []
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1440, "height": 2200})
         for job in detail_targets:
-            enrich_detail(page, job)
+            try:
+                enrich_detail(page, job)
+            except Exception as exc:
+                message = f"[{job.source}] 상세 수집 실패: {job.url} ({exc})"
+                print(message)
+                detail_errors.append(message)
         browser.close()
+
+    if scrape_errors:
+        print("부분 수집 실패:")
+        for error in scrape_errors:
+            print(f"- {error}")
+    if detail_errors:
+        print("부분 상세 수집 실패:")
+        for error in detail_errors[:10]:
+            print(f"- {error}")
 
     matches = [build_match(job, CANDIDATE) for job in detail_targets]
     matches.sort(key=lambda match: match.score, reverse=True)
