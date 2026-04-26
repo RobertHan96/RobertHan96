@@ -22,6 +22,11 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 try:
+    import requests
+except ImportError:
+    requests = None
+
+try:
     from .config.loader import load_config
     from .notify import send_telegram
 except ImportError:
@@ -70,6 +75,24 @@ def fetch_html(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.read().decode("utf-8", errors="ignore")
     except Exception as exc:
+        if requests is not None:
+            try:
+                response = requests.request(
+                    method,
+                    url,
+                    data=payload if method.upper() != "GET" else None,
+                    headers={
+                        "User-Agent": USER_AGENT,
+                        "Accept-Language": "ko,en;q=0.9",
+                    },
+                    timeout=timeout,
+                )
+                response.raise_for_status()
+                return response.text
+            except Exception as fallback_exc:
+                raise RuntimeError(
+                    f"{label} 실패 [{method} {url}]: {exc} / requests fallback: {fallback_exc}"
+                ) from fallback_exc
         raise RuntimeError(f"{label} 실패 [{method} {url}]: {exc}") from exc
 
 
@@ -103,6 +126,23 @@ def fetch_json_api(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8", errors="replace"))
     except Exception as exc:
+        if requests is not None:
+            try:
+                response = requests.get(
+                    full_url,
+                    headers={
+                        "User-Agent": USER_AGENT,
+                        "Accept": "application/json,*/*",
+                        "Accept-Language": "ko,en;q=0.9",
+                    },
+                    timeout=timeout,
+                )
+                response.raise_for_status()
+                return response.json()
+            except Exception as fallback_exc:
+                raise RuntimeError(
+                    f"{label} 실패 [GET {url}]: {exc} / requests fallback: {fallback_exc}"
+                ) from fallback_exc
         raise RuntimeError(f"{label} 실패 [GET {url}]: {exc}") from exc
 
 
@@ -877,9 +917,14 @@ def collect_lh_source(source_config: dict[str, Any], today: datetime) -> list[di
     return notices
 
 
-def collect_notices(today: datetime, config: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+def collect_notices(
+    today: datetime,
+    config: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[str], int, int]:
     notices: list[dict[str, Any]] = []
     errors: list[str] = []
+    attempted_sources = 0
+    successful_sources = 0
     sources = config.get("sources", [])
 
     for source in sources:
@@ -887,6 +932,7 @@ def collect_notices(today: datetime, config: dict[str, Any]) -> tuple[list[dict[
             continue
 
         name = source["name"]
+        attempted_sources += 1
         try:
             if name == "myhome":
                 items = collect_myhome_source(source, today, config)
@@ -900,12 +946,13 @@ def collect_notices(today: datetime, config: dict[str, Any]) -> tuple[list[dict[
                 print(f"알 수 없는 임대주택 source 건너뜀: {name}")
                 continue
             notices.extend(items)
+            successful_sources += 1
         except Exception as exc:
             message = f"[{source['label']}] 수집 실패: {exc}"
             print(message)
             errors.append(message)
 
-    return notices, errors
+    return notices, errors, attempted_sources, successful_sources
 
 
 def dedupe_notices(notices: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1059,8 +1106,10 @@ def main() -> None:
     today = datetime.now(tz=KST)
 
     print("임대주택 공고 수집 중...")
-    collected, errors = collect_notices(today, config)
-    if errors and not collected:
+    collected, errors, attempted_sources, successful_sources = collect_notices(today, config)
+    if attempted_sources == 0:
+        raise RuntimeError("활성화된 임대주택 수집 source가 없습니다.")
+    if successful_sources == 0:
         raise RuntimeError("임대주택 공고 수집이 모두 실패했습니다.")
 
     prepared = prepare_notices(collected, config)
@@ -1070,7 +1119,10 @@ def main() -> None:
     new_items = update_seen_state(state, prepared)
     save_state(config, state)
 
-    print(f"오늘 수집 공고: {len(prepared)}건 / 신규 공고: {len(new_items)}건")
+    print(
+        f"오늘 수집 공고: {len(prepared)}건 / 신규 공고: {len(new_items)}건 "
+        f"/ 성공 source: {successful_sources}/{attempted_sources}"
+    )
     if errors:
         print("부분 수집 실패:")
         for error in errors:
