@@ -105,6 +105,28 @@ job_monitor:
       search_type: ""
       keyword: ""
 
+# 태스크9: 부모님용 임대주택 공고 모니터링
+housing_monitor:
+  state_path: "data/housing_monitor/seen_notices.json"
+  latest_path: "data/housing_monitor/latest_items.json"
+  notify_when_empty: false
+  thresholds:
+    immediate: 70
+    summary: 50
+  target_regions:
+    primary: ["안양", "군포", "의왕"]
+    secondary: ["안산", "시흥", "과천", "광명"]
+    tertiary: ["화성", "수원", "평택", "오산", "인천"]
+  preferred_types: ["영구임대", "국민임대", "통합공공임대", "매입임대", "기존주택", "전세임대"]
+  high_keywords: ["고령자", "영구임대", "국민임대", "통합공공임대", "예비입주자", "매입임대", "기존주택", "전세임대", "잔여세대", "미계약", "선착순", "수의계약"]
+  exclude_keywords: ["청년", "신혼", "대학생", "산업단지", "상가", "토지", "분양"]
+  sources:
+    - { name: "myhome", label: "마이홈 공공주택", enabled: true, brtc_codes: ["11", "41", "28"], num_of_rows: 100, max_pages: 10 }
+    - { name: "gh_rent", label: "GH 임대주택", enabled: true, max_pages: 5 }
+    - { name: "gh_buy_rent", label: "GH 매입임대", enabled: true, max_pages: 5 }
+    - { name: "sh", label: "SH 서울주거포털", enabled: true, max_pages: 5 }
+    - { name: "lh", label: "LH 청약플러스", enabled: true, max_pages: 5 }
+
 # 태스크8: 블로그 크로스포스팅 (Dev.to)
 blog_crosspost:
   # DEVTO_API_KEY: Dev.to 설정 > Extensions > DEV Community API Keys

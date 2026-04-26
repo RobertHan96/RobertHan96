@@ -1,0 +1,39 @@
+name: "태스크9: 임대주택 공고 모니터링"
+
+on:
+  schedule:
+    # 매일 13:00 KST = UTC 04:00
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  housing-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/automation/requirements.txt
+
+      - name: Run housing monitor
+        working-directory: scripts/automation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MYHOME_API_KEY: ${{ secrets.MYHOME_API_KEY }}
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
+          TELEGRAM_MEMORY_SOURCE: "housing-monitor"
+        run: python housing_monitor.py
+
+      - name: Commit housing monitor state
+        run: bash scripts/automation/commit_telegram_memory.sh "data/housing_monitor" "Update housing monitor state"
