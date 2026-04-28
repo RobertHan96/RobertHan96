@@ -1,4 +1,21 @@
 {
-  "notices": {},
-  "updated_at": "2026-04-27T15:36:01.276073+09:00"
+  "notices": {
+    "3eb840070d9680ab6f21f68c0da8ef8e0cd062b2": {
+      "first_seen_at": "2026-04-28T15:37:16.972478+09:00",
+      "last_seen_at": "2026-04-28T15:37:16.972485+09:00",
+      "published_at": "2026-04-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "[정정공고]삼척당저 행복주택 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019857&aisTpCd=03&uppAisTpCd=06"
+    },
+    "ba11e071ec8359bde8c71c473ebf7f5cecaa1b69": {
+      "first_seen_at": "2026-04-28T15:37:16.972489+09:00",
+      "last_seen_at": "2026-04-28T15:37:16.972491+09:00",
+      "published_at": "2026-04-17T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "완주삼봉A-2BL 행복주택 입주자격완화 예비입주자 모집('26.04.17.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019858&aisTpCd=03&uppAisTpCd=39"
+    }
+  },
+  "updated_at": "2026-04-28T15:37:16.972506+09:00"
 }
