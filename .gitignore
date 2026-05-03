@@ -1,3 +1,8 @@
 public/
 resources/
 .hugo_build.lock
+.env
+.venv/
+.DS_Store
+**/.DS_Store
+data/live_pipeline/

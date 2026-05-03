@@ -12,6 +12,38 @@
 
 *** 
 
+### 🧭 현재 프로젝트 구조
+
+이 저장소는 단순한 개인 소개 페이지를 넘어서, `개인 사이트 + 생활/투자/채용 자동화 + 로컬 AI 콘텐츠 제작`을 함께 운영하는 워크스페이스로 쓰고 있습니다.
+
+- `content/`, `layouts/`, `static/`
+  - Hugo 기반 개인 사이트와 블로그 콘텐츠
+- `.github/workflows/`, `scripts/automation/`
+  - GitHub Actions로 도는 모니터링/알림 자동화
+  - 주식, 뉴스, 할 일, 생일, 채용공고, 임대주택 공고 등을 수집해 Telegram으로 발송
+- `services/`
+  - Telegram webhook 앱, Cloudflare Worker 브리지, 로컬 대시보드 앱
+- `jobs/`
+  - 채용공고 적합도 분석과 지원 초안 생성을 위한 별도 파이프라인
+- `data/`
+  - 워치리스트, 텔레그램 메모리, 임대주택 모니터링 상태 등 실행 중 쌓이는 데이터
+- `scripts/automation/live_*`, `services/live_content_dashboard.py`
+  - 유튜브/OBS 로컬 녹화본을 기준으로
+  - `ElevenLabs STT`
+  - `OpenAI 주제 분석`
+  - `Hugo 블로그 초안`
+  - `숏츠 후보/1차 렌더`
+  를 만드는 로컬 라이브 콘텐츠 파이프라인
+
+즉 현재 이 프로젝트는 아래 4개 축으로 보면 가장 이해하기 쉽습니다.
+
+1. 개인 소개/포트폴리오 사이트
+2. 일상 자동화와 모니터링 봇
+3. Telegram 메모리/RAG 실험
+4. 라이브 방송 후처리용 로컬 AI 제작 툴
+
+*** 
+
 ### ✍️ 블로그 작성 가이드
 
 이제 Hugo 포스트는 로컬에서 파일을 만들고 `git push`하지 않아도 됩니다.  
@@ -216,3 +248,70 @@ curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
 - 일반 텍스트 대화와 자동화 알림은 즉시 git push하지 않고, 하루 1번 요약해서만 저장합니다.
 - 파일 첨부는 의도적인 자료 적재로 보고 즉시 저장/커밋됩니다.
 - 메모리 관련 커밋이 있어도 페이지 배포가 불필요하게 돌지 않도록 [deploy.yml](/Users/han/Desktop/Dev/RobertHan96/.github/workflows/deploy.yml) 에 `data/telegram_memory/**` 경로는 배포 제외로 처리했습니다.
+
+***
+
+### 🎥 라이브 콘텐츠 파이프라인
+
+유튜브 라이브 방송을 `OBS 로컬 녹화본` 기준으로 후처리해, 블로그 초안과 숏츠 후보를 로컬에서 반자동으로 만드는 파이프라인을 추가했습니다.
+
+#### 현재 포함된 기능
+
+- 최근 녹화 영상 목록 확인
+- ElevenLabs STT 실행
+- OpenAI 기반 영상 주제/챕터/요약 추출
+- Hugo 블로그 초안 생성
+- 숏츠 후보 생성
+- `ffmpeg` 기반 9:16 숏츠 1차 렌더
+
+#### 주요 파일
+
+- 대시보드 앱: [live_content_dashboard.py](/Users/han/Desktop/Dev/RobertHan96/services/live_content_dashboard.py)
+- 파이프라인 엔트리: [live_content_pipeline.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/live_content_pipeline.py)
+- ElevenLabs STT: [live_transcribe_elevenlabs.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/live_transcribe_elevenlabs.py)
+- 주제 분석: [live_content_analysis.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/live_content_analysis.py)
+- 블로그 초안 작성: [live_blog_writer.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/live_blog_writer.py)
+- 숏츠 렌더/TTS: [live_shorts_pipeline.py](/Users/han/Desktop/Dev/RobertHan96/scripts/automation/live_shorts_pipeline.py)
+
+#### 필요한 환경변수
+
+- `ELEVENLABS_API_KEY`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `LIVE_PIPELINE_RECORDINGS_DIR`  
+  OBS 녹화본이 저장되는 폴더. 기본값은 `~/Movies/LiveRecordings`
+- `LIVE_PIPELINE_OUTPUT_DIR` 선택 사항  
+  기본값은 [data/live_pipeline](/Users/han/Desktop/Dev/RobertHan96/data/live_pipeline)
+- `LIVE_PIPELINE_DEFAULT_VOICE_ID` 선택 사항  
+  숏츠용 짧은 TTS 보이스오버를 만들 때 사용
+
+#### 로컬 실행 예시
+
+`.env` 또는 현재 shell에 환경변수를 준비한 뒤:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r scripts/automation/requirements.txt
+.venv/bin/fastapi dev services/live_content_dashboard.py
+```
+
+브라우저에서 `http://127.0.0.1:8000` 을 열면 대시보드가 뜹니다.
+
+#### CLI 예시
+
+```bash
+.venv/bin/python scripts/automation/live_content_pipeline.py scan
+.venv/bin/python scripts/automation/live_content_pipeline.py transcribe <recording_id>
+.venv/bin/python scripts/automation/live_content_pipeline.py analyze <recording_id>
+.venv/bin/python scripts/automation/live_content_pipeline.py render-short <recording_id> --candidate-index 0
+```
+
+#### 출력 위치
+
+- 파이프라인 상태: [data/live_pipeline/recordings](/Users/han/Desktop/Dev/RobertHan96/data/live_pipeline/recordings)
+- transcript: [data/live_pipeline/transcripts](/Users/han/Desktop/Dev/RobertHan96/data/live_pipeline/transcripts)
+- 분석 결과: [data/live_pipeline/analysis](/Users/han/Desktop/Dev/RobertHan96/data/live_pipeline/analysis)
+- 블로그 초안 복사본: [data/live_pipeline/blog_drafts](/Users/han/Desktop/Dev/RobertHan96/data/live_pipeline/blog_drafts)
+- 숏츠 후보/렌더: [data/live_pipeline/shorts](/Users/han/Desktop/Dev/RobertHan96/data/live_pipeline/shorts)
+
+실제 Hugo 포스트 초안은 `content/posts/<slug>/index.md` 에 `draft: true` 상태로 저장됩니다.

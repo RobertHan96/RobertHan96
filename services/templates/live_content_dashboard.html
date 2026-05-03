@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% if has_active_jobs %}
+    <meta http-equiv="refresh" content="4" />
+    {% endif %}
+    <title>Live Content Dashboard</title>
+    <style>
+      :root {
+        --bg: #f6f4ef;
+        --surface: #fffdf8;
+        --text: #20201d;
+        --muted: #67655d;
+        --line: #ddd7ca;
+        --accent: #0f7b6c;
+        --accent-soft: #dff3ef;
+        --warn: #8d2f1f;
+        --warn-soft: #fbe7e1;
+      }
+      body {
+        margin: 0;
+        font-family: "Pretendard", "Apple SD Gothic Neo", sans-serif;
+        background: linear-gradient(180deg, #f7f2e8 0%, var(--bg) 100%);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 32px;
+      }
+      .sub {
+        margin: 0 0 24px;
+        color: var(--muted);
+      }
+      .flash {
+        margin: 0 0 20px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: var(--accent-soft);
+      }
+      .flash.error {
+        background: var(--warn-soft);
+      }
+      .flash.info {
+        background: #eef4ff;
+      }
+      .grid {
+        display: grid;
+        gap: 18px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+      }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .filename {
+        font-size: 20px;
+        font-weight: 700;
+        word-break: break-word;
+      }
+      .meta {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .status-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 16px 0;
+      }
+      .pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 13px;
+        border: 1px solid var(--line);
+        background: #f3efe6;
+      }
+      .pill.ok {
+        background: var(--accent-soft);
+      }
+      .pill.running {
+        background: #eef4ff;
+      }
+      .pill.fail {
+        background: var(--warn-soft);
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+      .artifact-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+      form {
+        margin: 0;
+      }
+      button,
+      .action-link {
+        border: 0;
+        border-radius: 12px;
+        background: var(--text);
+        color: white;
+        padding: 10px 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+      }
+      button.alt {
+        background: var(--accent);
+      }
+      .action-link.alt {
+        background: var(--accent);
+      }
+      .action-link.soft {
+        background: #374151;
+      }
+      button.soft {
+        background: #374151;
+      }
+      button[disabled] {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      .topics, .titles, .shorts {
+        margin-top: 14px;
+      }
+      ul {
+        margin: 8px 0 0 18px;
+        padding: 0;
+      }
+      .empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: var(--muted);
+        border: 1px dashed var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.5);
+      }
+      .hint {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>최근 녹화 영상</h1>
+      <p class="sub">OBS 로컬 녹화본을 기준으로 STT, 주제 분석, 블로그 초안, 숏츠 후보를 관리합니다.</p>
+
+      {% if flash %}
+      <div class="flash {{ 'error' if level == 'error' else 'info' if level == 'info' else '' }}">{{ flash }}</div>
+      {% endif %}
+
+      {% if has_active_jobs %}
+      <div class="flash info">
+        작업이 진행 중입니다. 4초마다 자동 새로고침해서 완료 상태를 보여드릴게요.
+      </div>
+      {% endif %}
+
+      {% if recordings %}
+      <div class="grid">
+        {% for recording in recordings %}
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="filename">{{ recording.filename }}</div>
+              <div class="meta">
+                {{ recording.recorded_at }} · {{ recording.formatted_duration }} · {{ recording.formatted_size }}
+              </div>
+              {% if recording.updated_at %}
+              <div class="meta">최근 상태 갱신: {{ recording.updated_at }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          {% set transcript_status = recording.status.get('transcript', 'pending') %}
+          {% set analysis_status = recording.status.get('analysis', 'pending') %}
+          {% set blog_status = recording.status.get('blog_draft', 'pending') %}
+          {% set shorts_status = recording.status.get('shorts', 'pending') %}
+          <div class="status-row">
+            <div class="pill {{ 'ok' if transcript_status == 'succeeded' else 'fail' if transcript_status == 'failed' else 'running' if transcript_status in ['queued', 'running'] else '' }}">
+              STT: {{ transcript_status }}
+            </div>
+            <div class="pill {{ 'ok' if analysis_status == 'succeeded' else 'fail' if analysis_status == 'failed' else 'running' if analysis_status in ['queued', 'running'] else '' }}">
+              분석: {{ analysis_status }}
+            </div>
+            <div class="pill {{ 'ok' if blog_status == 'succeeded' else 'fail' if blog_status == 'failed' else 'running' if blog_status in ['queued', 'running'] else '' }}">
+              블로그 초안: {{ blog_status }}
+            </div>
+            <div class="pill {{ 'ok' if shorts_status == 'succeeded' else 'fail' if shorts_status == 'failed' else 'running' if shorts_status in ['queued', 'running'] else '' }}">
+              숏츠: {{ shorts_status }}
+            </div>
+          </div>
+
+          <div class="actions">
+            <form method="post" action="/recordings/{{ recording.recording_id }}/transcribe">
+              <button type="submit" {% if transcript_status in ['queued', 'running'] %}disabled{% endif %}>
+                {{ 'STT 진행 중' if transcript_status in ['queued', 'running'] else 'STT 돌리기' }}
+              </button>
+            </form>
+            <form method="post" action="/recordings/{{ recording.recording_id }}/analyze">
+              <button class="alt" type="submit" {% if analysis_status in ['queued', 'running'] or transcript_status != 'succeeded' %}disabled{% endif %}>
+                {{ 'AI 분석 진행 중' if analysis_status in ['queued', 'running'] else 'AI 영상 주제 뽑기' }}
+              </button>
+            </form>
+          </div>
+          <div class="hint">
+            긴 영상은 STT가 몇 분 이상 걸릴 수 있습니다. 작업 시작 후에는 이 화면이 자동으로 갱신됩니다.
+          </div>
+
+          {% if recording.artifacts.get('blog_post_path') or recording.artifacts.get('last_short_render_path') or recording.artifacts.get('transcript_text_path') %}
+          <div class="artifact-actions">
+            {% if recording.artifacts.get('blog_post_path') %}
+            <a class="action-link alt" href="/recordings/{{ recording.recording_id }}/artifacts/blog-post" target="_blank" rel="noopener noreferrer">블로그 초안 보기</a>
+            <form method="post" action="/recordings/{{ recording.recording_id }}/reveal/blog-post">
+              <button class="soft" type="submit">Finder에서 보기</button>
+            </form>
+            {% endif %}
+            {% if recording.artifacts.get('last_short_render_path') %}
+            <a class="action-link" href="/recordings/{{ recording.recording_id }}/artifacts/short-render" target="_blank" rel="noopener noreferrer">숏츠 재생</a>
+            <form method="post" action="/recordings/{{ recording.recording_id }}/reveal/short-render">
+              <button class="soft" type="submit">숏츠 파일 위치</button>
+            </form>
+            {% endif %}
+            {% if recording.artifacts.get('transcript_text_path') %}
+            <a class="action-link soft" href="/recordings/{{ recording.recording_id }}/artifacts/transcript-text" target="_blank" rel="noopener noreferrer">전사본 보기</a>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          {% if recording.title_candidates %}
+          <div class="titles">
+            <strong>제목 후보</strong>
+            <ul>
+              {% for title in recording.title_candidates[:3] %}
+              <li>{{ title }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if recording.topics %}
+          <div class="topics">
+            <strong>핵심 주제</strong>
+            <ul>
+              {% for topic in recording.topics[:5] %}
+              <li>{{ topic }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if recording.shorts_candidates %}
+          <div class="shorts">
+            <strong>숏츠 후보</strong>
+            <ul>
+              {% for candidate in recording.shorts_candidates[:3] %}
+              <li>
+                {{ candidate.title_candidate }} ({{ candidate.start_seconds }}s ~ {{ candidate.end_seconds }}s)
+                <form method="post" action="/recordings/{{ recording.recording_id }}/render-short/{{ loop.index0 }}" style="display:inline;">
+                  <button type="submit" {% if shorts_status in ['queued', 'running'] %}disabled{% endif %}>
+                    {{ '렌더 진행 중' if shorts_status in ['queued', 'running'] else '1차 렌더' }}
+                  </button>
+                </form>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if recording.errors %}
+          <div class="topics">
+            <strong>최근 오류</strong>
+            <ul>
+              {% for key, value in recording.errors.items() %}
+              <li>{{ key }}: {{ value }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty">지정된 녹화 디렉터리에서 최근 영상이 아직 발견되지 않았습니다.</div>
+      {% endif %}
+    </div>
+  </body>
+</html>
