@@ -4,6 +4,25 @@
     "[GH 임대주택] 수집 실패: GH 임대주택 목록 실패 [POST https://apply.gh.or.kr/sb/sr/sr7150/selectPbancRentHouseList.do]: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)> / requests fallback: HTTPSConnectionPool(host='apply.gh.or.kr', port=443): Max retries exceeded with url: /sb/sr/sr7150/selectPbancRentHouseList.do (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))",
     "[GH 매입임대] 수집 실패: GH 매입임대 목록 실패 [POST https://apply.gh.or.kr/sb/sr/sr7155/selectPbancRentHouseList.do]: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)> / requests fallback: HTTPSConnectionPool(host='apply.gh.or.kr', port=443): Max retries exceeded with url: /sb/sr/sr7155/selectPbancRentHouseList.do (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))"
   ],
-  "generated_at": "2026-05-03T15:33:10.670635+09:00",
-  "items": []
+  "generated_at": "2026-05-04T15:47:33.078777+09:00",
+  "items": [
+    {
+      "apply_end": "2026-05-14",
+      "apply_start": "",
+      "detail_summary": "접수기간: 당첨자발표일 : / 자격: 2년, 재계약 14회 가능(입주자격 유지시 최장 30년까지 거주가능)",
+      "eligibility": "2년, 재계약 14회 가능(입주자격 유지시 최장 30년까지 거주가능)",
+      "housing_type": "매입임대",
+      "id": "0fc4989eceabf415bb249e8a7b07d9c5bf643d1e",
+      "priority_score": 40,
+      "published_at": "2026-04-29T00:00:00+09:00",
+      "reason": "매입임대 유형, 매입임대 조건",
+      "region": "부산광역시 외",
+      "source": "LH 청약플러스",
+      "source_id": "2015122300019883",
+      "source_name": "lh",
+      "status": "공고중",
+      "title": "[정정공고][전국] 2026년 1차 일반 매입임대주택 입주자 모집 공고",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019883&aisTpCd=03&uppAisTpCd=13"
+    }
+  ]
 }

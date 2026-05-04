@@ -1,5 +1,13 @@
 {
   "notices": {
+    "0fc4989eceabf415bb249e8a7b07d9c5bf643d1e": {
+      "first_seen_at": "2026-05-04T15:47:33.079305+09:00",
+      "last_seen_at": "2026-05-04T15:47:33.079311+09:00",
+      "published_at": "2026-04-29T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "[정정공고][전국] 2026년 1차 일반 매입임대주택 입주자 모집 공고",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019883&aisTpCd=03&uppAisTpCd=13"
+    },
     "201611bdfbf3e2cdf88797194d32f54d41613440": {
       "first_seen_at": "2026-04-29T15:31:01.394128+09:00",
       "last_seen_at": "2026-04-29T15:31:01.394130+09:00",
@@ -105,5 +113,5 @@
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019884&ccrCnntSysDsCd=03&uppAisTpCd=39&aisTpCd=42&mi=1026"
     }
   },
-  "updated_at": "2026-05-03T15:33:10.671082+09:00"
+  "updated_at": "2026-05-04T15:47:33.079369+09:00"
 }
