@@ -4,6 +4,61 @@
     "[GH 임대주택] 수집 실패: GH 임대주택 목록 실패 [POST https://apply.gh.or.kr/sb/sr/sr7150/selectPbancRentHouseList.do]: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)> / requests fallback: HTTPSConnectionPool(host='apply.gh.or.kr', port=443): Max retries exceeded with url: /sb/sr/sr7150/selectPbancRentHouseList.do (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))",
     "[GH 매입임대] 수집 실패: GH 매입임대 목록 실패 [POST https://apply.gh.or.kr/sb/sr/sr7155/selectPbancRentHouseList.do]: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)> / requests fallback: HTTPSConnectionPool(host='apply.gh.or.kr', port=443): Max retries exceeded with url: /sb/sr/sr7155/selectPbancRentHouseList.do (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))"
   ],
-  "generated_at": "2026-05-05T15:24:58.207976+09:00",
-  "items": []
+  "generated_at": "2026-05-06T15:38:08.102228+09:00",
+  "items": [
+    {
+      "apply_end": "2026-05-27",
+      "apply_start": "",
+      "detail_summary": "접수기간: : / 임대조건: 보증금 공고문 확인 / 월임대료 -",
+      "eligibility": "",
+      "housing_type": "국민임대",
+      "id": "64360c3eb177afea8b0b7d81e7e36d6039cec9ce",
+      "priority_score": 60,
+      "published_at": "2026-05-06T00:00:00+09:00",
+      "reason": "국민임대 유형, 국민임대 조건, 예비입주자 조건",
+      "region": "경기도",
+      "source": "LH 청약플러스",
+      "source_id": "2015122300019882",
+      "source_name": "lh",
+      "status": "공고중",
+      "title": "파주시 국민임대 예비입주자 모집공고(26.05.06)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019882&aisTpCd=03&uppAisTpCd=06"
+    },
+    {
+      "apply_end": "2026-06-10",
+      "apply_start": "",
+      "detail_summary": "접수기간: : / 임대조건: 보증금 공고문 확인 / 월임대료 -",
+      "eligibility": "",
+      "housing_type": "영구임대",
+      "id": "aa2c05c4f8d8203292b14a0440a975fe83fac6ab",
+      "priority_score": 60,
+      "published_at": "2026-05-06T00:00:00+09:00",
+      "reason": "영구임대 유형, 영구임대 조건, 예비입주자 조건",
+      "region": "강원특별자치도",
+      "source": "LH 청약플러스",
+      "source_id": "2015122300019869",
+      "source_name": "lh",
+      "status": "공고중",
+      "title": "동해천곡5 영구임대주택 예비입주자 모집 공고",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019869&aisTpCd=03&uppAisTpCd=06"
+    },
+    {
+      "apply_end": "2026-05-20",
+      "apply_start": "",
+      "detail_summary": "접수기간: : / 임대조건: 보증금 공고문 확인 / 월임대료 청약신청전",
+      "eligibility": "",
+      "housing_type": "공공임대",
+      "id": "aaebb89b21fb837151b55159a1ac540a2c1e01ef",
+      "priority_score": 25,
+      "published_at": "2026-05-06T00:00:00+09:00",
+      "reason": "예비입주자 조건",
+      "region": "전북특별자치도",
+      "source": "LH 청약플러스",
+      "source_id": "2015122300019875",
+      "source_name": "lh",
+      "status": "공고중",
+      "title": "익산어양4단지 50년 공공임대주택 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019875&aisTpCd=03&uppAisTpCd=06"
+    }
+  ]
 }
