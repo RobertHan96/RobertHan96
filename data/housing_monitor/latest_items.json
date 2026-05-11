@@ -3,6 +3,61 @@
     "[GH 임대주택] 수집 실패: GH 임대주택 목록 실패 [POST https://apply.gh.or.kr/sb/sr/sr7150/selectPbancRentHouseList.do]: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)> / requests fallback: HTTPSConnectionPool(host='apply.gh.or.kr', port=443): Max retries exceeded with url: /sb/sr/sr7150/selectPbancRentHouseList.do (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))",
     "[GH 매입임대] 수집 실패: GH 매입임대 목록 실패 [POST https://apply.gh.or.kr/sb/sr/sr7155/selectPbancRentHouseList.do]: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)> / requests fallback: HTTPSConnectionPool(host='apply.gh.or.kr', port=443): Max retries exceeded with url: /sb/sr/sr7155/selectPbancRentHouseList.do (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))"
   ],
-  "generated_at": "2026-05-10T15:39:33.156709+09:00",
-  "items": []
+  "generated_at": "2026-05-11T16:51:28.017019+09:00",
+  "items": [
+    {
+      "apply_end": "2026-06-26",
+      "apply_start": "",
+      "detail_summary": "접수기간: : / 임대조건: 보증금 공고문 확인 / 월임대료 -",
+      "eligibility": "",
+      "housing_type": "영구임대",
+      "id": "f13ba9b2573b775aa7845d4fbd6390a60ab7a87d",
+      "priority_score": 60,
+      "published_at": "2026-05-11T00:00:00+09:00",
+      "reason": "영구임대 유형, 영구임대 조건, 예비입주자 조건",
+      "region": "전라남도",
+      "source": "LH 청약플러스",
+      "source_id": "2015122300019924",
+      "source_name": "lh",
+      "status": "공고중",
+      "title": "나주용산1 영구임대주택 예비입주자 모집 (입주자모집공고일 : 2026. 05. 11.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019924&aisTpCd=03&uppAisTpCd=06"
+    },
+    {
+      "apply_end": "2026-05-29",
+      "apply_start": "2026-05-11",
+      "detail_summary": "공급기관: 안산도시공사 / 위치: 경기도 안산시 단원구 선부로 35 / 공급호수: 10호 / 임대조건: 보증금 18,000,000 / 월임대료 90,000",
+      "eligibility": "031-481-4895",
+      "housing_type": "행복주택 아파트",
+      "id": "dcc1fba8d6de8c485eb74d93b6ee774270f854cc",
+      "priority_score": 45,
+      "published_at": "2026-05-11T00:00:00+09:00",
+      "reason": "2순위 지역(안산), 예비입주자 조건",
+      "region": "경기도 안산시 단원구",
+      "source": "마이홈 공공주택 · 안산도시공사",
+      "source_id": "20282:1",
+      "source_name": "myhome",
+      "status": "접수중",
+      "title": "안산 선부동 행복주택 예비입주자(주거급여)모집 공고",
+      "url": "https://apply.ansanuc.net/web/jsp/home.jsp"
+    },
+    {
+      "apply_end": "2026-05-22",
+      "apply_start": "",
+      "detail_summary": "접수기간: : / 임대조건: 보증금 공고문 확인 / 월임대료 -",
+      "eligibility": "",
+      "housing_type": "행복주택",
+      "id": "3483fe9eac7f4eec977e5ae7c813ffb8ba1ac126",
+      "priority_score": 5,
+      "published_at": "2026-05-11T00:00:00+09:00",
+      "reason": "부모님 조건 기준으로 추가 검토 필요",
+      "region": "경기도",
+      "source": "LH 청약플러스",
+      "source_id": "2015122300019913",
+      "source_name": "lh",
+      "status": "공고중",
+      "title": "파주시 중소기업체 기관공급(행복주택)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019913&aisTpCd=03&uppAisTpCd=06"
+    }
+  ]
 }
