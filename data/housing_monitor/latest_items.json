@@ -3,6 +3,25 @@
     "[GH 임대주택] 수집 실패: GH 임대주택 목록 실패 [POST https://apply.gh.or.kr/sb/sr/sr7150/selectPbancRentHouseList.do]: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)> / requests fallback: HTTPSConnectionPool(host='apply.gh.or.kr', port=443): Max retries exceeded with url: /sb/sr/sr7150/selectPbancRentHouseList.do (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))",
     "[GH 매입임대] 수집 실패: GH 매입임대 목록 실패 [POST https://apply.gh.or.kr/sb/sr/sr7155/selectPbancRentHouseList.do]: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)> / requests fallback: HTTPSConnectionPool(host='apply.gh.or.kr', port=443): Max retries exceeded with url: /sb/sr/sr7155/selectPbancRentHouseList.do (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))"
   ],
-  "generated_at": "2026-05-12T15:42:48.246745+09:00",
-  "items": []
+  "generated_at": "2026-05-13T15:53:16.273904+09:00",
+  "items": [
+    {
+      "apply_end": "2026-05-22",
+      "apply_start": "2026-05-20",
+      "detail_summary": "공급기관: LH / 공급호수: 11호",
+      "eligibility": "운영기관 연락처 : free-wel@hanmail.net (02-2648-2252, 유선전화는 평일 10-17시까지)",
+      "housing_type": "매입임대 다가구주택",
+      "id": "820170744329214e2548c9c160c4b6e9c4cce329",
+      "priority_score": 40,
+      "published_at": "2026-05-13T00:00:00+09:00",
+      "reason": "매입임대 유형, 매입임대 조건",
+      "region": "경기도 김포시",
+      "source": "마이홈 공공주택 · LH",
+      "source_id": "20294:0",
+      "source_name": "myhome",
+      "status": "공고중",
+      "title": "장애인 자립특화형 주택 여기가 입주자 모집공고(경기도 김포시)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019940&ccrCnntSysDsCd=03&uppAisTpCd=13&aisTpCd=26&mi=1026"
+    }
+  ]
 }
