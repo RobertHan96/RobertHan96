@@ -1,5 +1,21 @@
 {
   "notices": {
+    "05dabd0744214981873841acd805dc1da5215dbc": {
+      "first_seen_at": "2026-05-15T16:31:38.414313+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414315+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "원주시지역 국민임대주택 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019929&aisTpCd=03&uppAisTpCd=06"
+    },
+    "093813fd36c3711ca36cd3bda6bac35eb2c3c0c9": {
+      "first_seen_at": "2026-05-15T16:31:38.414346+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414348+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "경남 사천진사 국민임대 예비입주자 모집(2026.05.15.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019906&aisTpCd=03&uppAisTpCd=06"
+    },
     "0fc4989eceabf415bb249e8a7b07d9c5bf643d1e": {
       "first_seen_at": "2026-05-04T15:47:33.079305+09:00",
       "last_seen_at": "2026-05-04T15:47:33.079311+09:00",
@@ -7,6 +23,30 @@
       "source": "LH 청약플러스",
       "title": "[정정공고][전국] 2026년 1차 일반 매입임대주택 입주자 모집 공고",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019883&aisTpCd=03&uppAisTpCd=13"
+    },
+    "1926e1afa9e326ea93d6f74835640a1495a674a1": {
+      "first_seen_at": "2026-05-15T16:31:38.414272+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414274+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "천안병천신한 국민임대주택 예비입주자 모집공고(2026.05.15)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019947&aisTpCd=03&uppAisTpCd=06"
+    },
+    "1a67f47461a6c7bc7be3af0d7da343cac35ff13a": {
+      "first_seen_at": "2026-05-15T16:31:38.414368+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414370+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "칠곡북삼휴먼시아 국민임대주택 예비자 모집공고(2026.05.15)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019973&aisTpCd=03&uppAisTpCd=06"
+    },
+    "1e3c0b1d29605bd83ba0746d0aba95445d452747": {
+      "first_seen_at": "2026-05-15T16:31:38.414299+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414300+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "괴산군지역 국민임대주택 예비입주자 모집 공고[2026.05.15]",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019921&aisTpCd=03&uppAisTpCd=06"
     },
     "201611bdfbf3e2cdf88797194d32f54d41613440": {
       "first_seen_at": "2026-04-29T15:31:01.394128+09:00",
@@ -16,6 +56,22 @@
       "title": "춘천효자8 영구임대주택 예비입주자 모집공고",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019851&aisTpCd=03&uppAisTpCd=06"
     },
+    "24c907105d427012888ce772dd57fd43c22c8ffa": {
+      "first_seen_at": "2026-05-15T16:31:38.414353+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414355+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "경남 함양교산 국민임대 예비입주자 모집(2026.05.15.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019905&aisTpCd=03&uppAisTpCd=06"
+    },
+    "2cabbd3bb7bb2cfa51300a1241ffdf304f156680": {
+      "first_seen_at": "2026-05-15T16:31:38.414257+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414258+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "'2026.5.15. 순천시·여수시 국민임대주택 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019911&aisTpCd=03&uppAisTpCd=06"
+    },
     "2d094c1b0df85f30a9c1fdb5324ca08169275f90": {
       "first_seen_at": "2026-05-07T15:45:49.193926+09:00",
       "last_seen_at": "2026-05-07T15:45:49.193928+09:00",
@@ -23,6 +79,14 @@
       "source": "마이홈 공공주택 · LH",
       "title": "[서울지역본부] 집주인 임대주택 예비입주자 모집공고(건설개량형)",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019874&ccrCnntSysDsCd=03&uppAisTpCd=13&aisTpCd=36&mi=1026"
+    },
+    "2e959e9c5599eab23f8583c4e713758b2dbadcef": {
+      "first_seen_at": "2026-05-15T16:31:38.414288+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414290+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "금산군지역 국민임대주택 예비입주자 모집(20260515)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019953&aisTpCd=03&uppAisTpCd=06"
     },
     "3483fe9eac7f4eec977e5ae7c813ffb8ba1ac126": {
       "first_seen_at": "2026-05-11T16:51:28.017617+09:00",
@@ -64,6 +128,30 @@
       "title": "[정정공고]삼척당저 행복주택 예비입주자 모집",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019857&aisTpCd=03&uppAisTpCd=06"
     },
+    "4073a889a84c0eeb706e4ace894279c9a7a3e336": {
+      "first_seen_at": "2026-05-15T16:31:38.414358+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414359+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "김해시 지역 국민임대주택 예비입주자 모집 공고('26.05.15 공고)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019952&aisTpCd=03&uppAisTpCd=06"
+    },
+    "44654c1adb8d07a6296b6c598bf5f4e2ce042f45": {
+      "first_seen_at": "2026-05-15T16:31:38.414310+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414311+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "목포,영암지역 국민임대주택 예비입주자 모집(2026.05.15.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019960&aisTpCd=03&uppAisTpCd=06"
+    },
+    "4fa1c7623057f3da9c7a9974a9255b6b30562b2f": {
+      "first_seen_at": "2026-05-15T16:31:38.414335+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414337+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "대전광역시 동구지역 국민임대주택 예비입주자 모집(20260515)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019957&aisTpCd=03&uppAisTpCd=06"
+    },
     "503e02241e05c1f535dfe52c42d2f60e4cdb5588": {
       "first_seen_at": "2026-05-07T15:45:49.193939+09:00",
       "last_seen_at": "2026-05-07T15:45:49.193941+09:00",
@@ -88,6 +176,14 @@
       "title": "인천광역시, 경기도 부천시 다자녀 매입임대주택 예비입주자 모집 공고",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019868&ccrCnntSysDsCd=03&uppAisTpCd=13&aisTpCd=26&mi=1026"
     },
+    "60de16698ee95e25ea3ea69964d1cc9697b2460f": {
+      "first_seen_at": "2026-05-15T16:31:38.414339+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414340+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "[양산시지역]양산대석휴먼시아 국민임대주택 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019984&aisTpCd=03&uppAisTpCd=06"
+    },
     "64360c3eb177afea8b0b7d81e7e36d6039cec9ce": {
       "first_seen_at": "2026-05-06T15:38:08.102896+09:00",
       "last_seen_at": "2026-05-06T15:38:08.102902+09:00",
@@ -96,6 +192,22 @@
       "title": "파주시 국민임대 예비입주자 모집공고(26.05.06)",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019882&aisTpCd=03&uppAisTpCd=06"
     },
+    "669167110e3549d10213db80a1f3a72d044098f7": {
+      "first_seen_at": "2026-05-15T16:31:38.414331+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414333+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "전주시, 완주군, 무주군 국민임대주택 예비입주자 모집 공고('26.05.15.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019918&aisTpCd=03&uppAisTpCd=06"
+    },
+    "675cdcc11f8d4e09312e76452c6cd48cc1f04bdf": {
+      "first_seen_at": "2026-05-15T16:31:38.414365+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414366+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "영천문내 국민임대주택 예비입주자 모집공고(51형)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019948&aisTpCd=03&uppAisTpCd=06"
+    },
     "6d0df858f613727f5459ed3890383b763e5088d3": {
       "first_seen_at": "2026-05-07T15:45:49.193922+09:00",
       "last_seen_at": "2026-05-07T15:45:49.193924+09:00",
@@ -103,6 +215,54 @@
       "source": "LH 청약플러스",
       "title": "[정정공고]'26년 5월 인천시 남동구 국민임대주택 예비입주자 모집 공고(2026.05.06)",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019908&aisTpCd=03&uppAisTpCd=06"
+    },
+    "6d1f164867e3ab1d8db45799cbdc6b71edb4896c": {
+      "first_seen_at": "2026-05-15T16:31:38.414324+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414326+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "계룡시 지역 국민임대주택 예비입주자 모집(20260515)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019956&aisTpCd=03&uppAisTpCd=06"
+    },
+    "72e2332fb5c38ebff89a86404be26f8e50a39318": {
+      "first_seen_at": "2026-05-15T16:31:38.414281+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414282+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "울산광역시 국민임대주택 예비입주자 정례모집 공고(2026.05.15.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019936&aisTpCd=03&uppAisTpCd=06"
+    },
+    "73c458cec2cca3d38b1162a2435e60ae1946cac7": {
+      "first_seen_at": "2026-05-15T16:31:38.414361+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414362+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "부산광역시 국민임대 예비입주자 모집(2026.05.15)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019978&aisTpCd=03&uppAisTpCd=06"
+    },
+    "75672892592557c74ff8233f1e1f775e97661696": {
+      "first_seen_at": "2026-05-15T16:31:38.414241+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414242+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "음성신천 국민임대주택 예비입주자 모집 공고[2026.05.15]",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019923&aisTpCd=03&uppAisTpCd=06"
+    },
+    "779e0aa51c7f30e74a5450fe3a4841dab966624f": {
+      "first_seen_at": "2026-05-15T16:31:38.414295+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414297+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "경북서부지역(구미시, 김천시, 대구광역시 군위군, 의성군) 국민임대 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019946&aisTpCd=03&uppAisTpCd=06"
+    },
+    "7fc0ce78f6a42ff762f1badb3f153ad1f9e2e4cc": {
+      "first_seen_at": "2026-05-15T16:31:38.414253+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414254+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "홍성남장2 국민임대주택 예비입주자 모집공고(2026.05.15)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019951&aisTpCd=03&uppAisTpCd=06"
     },
     "820170744329214e2548c9c160c4b6e9c4cce329": {
       "first_seen_at": "2026-05-13T15:53:16.274374+09:00",
@@ -120,6 +280,14 @@
       "title": "군산나운4 영구임대주택 입주자격완화 예비입주자 모집 공고",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019970&aisTpCd=03&uppAisTpCd=06"
     },
+    "87d166550c7e15a013be439ccf701c3670e8f447": {
+      "first_seen_at": "2026-05-15T16:31:38.414375+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414377+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "울산다운2 A-6블록 행복주택 입주자격완화 추가모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019967&aisTpCd=03&uppAisTpCd=06"
+    },
     "88037aa535e83e878778e91e798b2866efb836a7": {
       "first_seen_at": "2026-05-07T15:45:49.193931+09:00",
       "last_seen_at": "2026-05-07T15:45:49.193932+09:00",
@@ -127,6 +295,54 @@
       "source": "LH 청약플러스",
       "title": "진주가좌1 영구임대주택 예비입주자 모집('26.05.07.)",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019898&aisTpCd=03&uppAisTpCd=06"
+    },
+    "8ef2fcf13d22ea88f29a7da9a6ec8de03c00e7a7": {
+      "first_seen_at": "2026-05-15T16:31:38.414249+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414250+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "장성군 국민임대주택 예비입주자 모집(2026.05.15. 공고)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019980&aisTpCd=03&uppAisTpCd=06"
+    },
+    "8ff08c5720219d5087eabb5a51dfe298973f6282": {
+      "first_seen_at": "2026-05-15T16:31:38.414264+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414265+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "광주광역시 광산구 도산청암, 삼라미주 국민임대주택 입주자격완화 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019964&aisTpCd=03&uppAisTpCd=06"
+    },
+    "9180ae4af3b08aa131b7df3db7c27c549d06e523": {
+      "first_seen_at": "2026-05-15T16:31:38.414285+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414286+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "금산군 지역(금산대원산마루) 국민임대(매입형)주택 입주자격완화 예비입주자 모집(20260515)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019954&aisTpCd=03&uppAisTpCd=06"
+    },
+    "92077236c8cc306df90acd869647a1127cfab19a": {
+      "first_seen_at": "2026-05-15T16:31:38.414379+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414381+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "울산다운2 A-9블록 행복주택(신혼희망타운) 입주자격완화 추가모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019966&aisTpCd=03&uppAisTpCd=39"
+    },
+    "995866553c4ab53d6d997be1b80ee83ac4ce32e7": {
+      "first_seen_at": "2026-05-15T16:31:38.414350+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414351+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "경남 진주평거5 국민임대 예비입주자 모집(2026.05.15.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019903&aisTpCd=03&uppAisTpCd=06"
+    },
+    "9c567c6b944a3c9a6575b1006d7849c1a93e5973": {
+      "first_seen_at": "2026-05-15T16:31:38.414317+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414319+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "철원군 국민임대주택 예비입주자 모집공고",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019962&aisTpCd=03&uppAisTpCd=06"
     },
     "aa2c05c4f8d8203292b14a0440a975fe83fac6ab": {
       "first_seen_at": "2026-05-06T15:38:08.102907+09:00",
@@ -168,6 +384,22 @@
       "title": "구리,남양주시 행복주택 예비입주자모집(26.04.30공고)",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019886&ccrCnntSysDsCd=03&uppAisTpCd=06&aisTpCd=10&mi=1026"
     },
+    "bca450299836bf0073071e12d93df28ac65b0a88": {
+      "first_seen_at": "2026-05-15T16:31:38.414343+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414344+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "[정정공고]진천군지역(진천벽암, 진천덕산, 진천신정) 국민임대주택 예비입주자 모집 공고[2026.05.15]",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019959&aisTpCd=03&uppAisTpCd=06"
+    },
+    "bf09d4b051ab05bdbef2dc88f5da5e7183b29632": {
+      "first_seen_at": "2026-05-15T16:31:38.414292+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414293+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "강릉초당 아트피아 국민임대주택 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019963&aisTpCd=03&uppAisTpCd=06"
+    },
     "c091b91711425e10473513536345c96312282c0e": {
       "first_seen_at": "2026-04-29T15:31:01.394113+09:00",
       "last_seen_at": "2026-04-29T15:31:01.394119+09:00",
@@ -175,6 +407,14 @@
       "source": "LH 청약플러스",
       "title": "[강원지역본부] 일반 매입임대주택 예비입주자 모집공고(춘천시, 홍천군)",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019848&aisTpCd=03&uppAisTpCd=13"
+    },
+    "c14cff2a743c2a33c0164b3568979121a94ead55": {
+      "first_seen_at": "2026-05-15T16:31:38.414372+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414373+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "울산다운2 A-5블록 국민임대 입주자 추가모집(소득기준 완화)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019974&aisTpCd=03&uppAisTpCd=06"
     },
     "c798ec05329439422cb7f561ab9c859dd5d8a4b6": {
       "first_seen_at": "2026-05-14T15:51:14.479722+09:00",
@@ -192,6 +432,22 @@
       "title": "공주,당진,태안,홍성 국민임대 소득완화 예비입주자모집",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019781&aisTpCd=03&uppAisTpCd=06"
     },
+    "cada701a345fa448d65841307d6c0e3dee5e6651": {
+      "first_seen_at": "2026-05-15T16:31:38.414277+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414278+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "함평향교 국민임대주택 예비입주자 모집공고(2026.05.15.)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019958&aisTpCd=03&uppAisTpCd=06"
+    },
+    "caf1b4bbb8f22b036d469b5f1a15f2a36e58d726": {
+      "first_seen_at": "2026-05-15T16:31:38.414245+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414247+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "익산시 국민임대주택 예비입주자 모집 공고('26.05.15)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019863&aisTpCd=03&uppAisTpCd=06"
+    },
     "d0ab044d887946b43190100a16fdca5f81cf0dd1": {
       "first_seen_at": "2026-04-30T15:34:26.845515+09:00",
       "last_seen_at": "2026-04-30T15:34:26.845517+09:00",
@@ -199,6 +455,30 @@
       "source": "마이홈 공공주택 · LH",
       "title": "남양주 장현5 2BL 행복주택 예비입주자 입주자격완화 모집(2026.04.30.공고)",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019887&ccrCnntSysDsCd=03&uppAisTpCd=06&aisTpCd=10&mi=1026"
+    },
+    "d63e3deb8e215ff45bfaca0772df2811c66b0e55": {
+      "first_seen_at": "2026-05-15T16:31:38.414306+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414308+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "논산시지역(금강빌리지,월야,조흥) 국민임대(매입형)주택 입주자격완화 예비입주자 모집(20260515)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019955&aisTpCd=03&uppAisTpCd=06"
+    },
+    "d7db7fd61d6773fd818e750cb6588614afa9ac17": {
+      "first_seen_at": "2026-05-15T16:31:38.414268+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414270+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "군산시 국민임대주택 예비입주자 모집 공고('26.05.15)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019864&aisTpCd=03&uppAisTpCd=06"
+    },
+    "d9eb838ce6c8f84b593e47de5babb90a4eb9b241": {
+      "first_seen_at": "2026-05-15T16:31:38.414260+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414262+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "260515 경북북부권 국민임대주택 예비입주자 모집공고(안동,상주)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019937&aisTpCd=03&uppAisTpCd=06"
     },
     "dcc1fba8d6de8c485eb74d93b6ee774270f854cc": {
       "first_seen_at": "2026-05-11T16:51:28.017613+09:00",
@@ -231,6 +511,38 @@
       "source": "LH 청약플러스",
       "title": "[영주가흥1] 영구임대주택 예비입주자 모집공고",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019881&aisTpCd=03&uppAisTpCd=06"
+    },
+    "e409b63c04a71e7084561e7ce35c19ff678d7aa0": {
+      "first_seen_at": "2026-05-15T16:31:38.414328+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414329+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "광주광역시 국민임대주택 예비입주자 모집(2026.05.15.공고)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019975&aisTpCd=03&uppAisTpCd=06"
+    },
+    "e41b84022c28f8f42986bed89c2c77c8a88630e0": {
+      "first_seen_at": "2026-05-15T16:31:38.414230+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414237+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "담양군 국민임대주택 예비입주자 모집(2026.05.15. 공고)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019979&aisTpCd=03&uppAisTpCd=06"
+    },
+    "e799c773cd71ce9cc8cad64b3d4926ca0ce8584c": {
+      "first_seen_at": "2026-05-15T16:31:38.414321+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414322+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "청주시 지역(청주가경6) 국민임대주택 예비입주자 모집(2026.05.15)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019944&aisTpCd=03&uppAisTpCd=06"
+    },
+    "e7cb48c3292efe00492c23f51b37c78e77afb918": {
+      "first_seen_at": "2026-05-15T16:31:38.414302+09:00",
+      "last_seen_at": "2026-05-15T16:31:38.414304+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "나주시 국민임대주택 예비입주자 모집(2026.05.15 공고)",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019949&aisTpCd=03&uppAisTpCd=06"
     },
     "e8c9feedc0913966bb0c4ffb7a36980510b5c37b": {
       "first_seen_at": "2026-05-08T15:04:54.700088+09:00",
@@ -265,5 +577,5 @@
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019884&ccrCnntSysDsCd=03&uppAisTpCd=39&aisTpCd=42&mi=1026"
     }
   },
-  "updated_at": "2026-05-14T15:51:14.479810+09:00"
+  "updated_at": "2026-05-15T16:31:38.414481+09:00"
 }
