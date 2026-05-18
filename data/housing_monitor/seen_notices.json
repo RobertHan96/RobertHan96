@@ -336,6 +336,14 @@
       "title": "경남 진주평거5 국민임대 예비입주자 모집(2026.05.15.)",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019903&aisTpCd=03&uppAisTpCd=06"
     },
+    "9b8d85ca4428d97b9c16c0b170867a0c85fe6add": {
+      "first_seen_at": "2026-05-18T17:12:02.929503+09:00",
+      "last_seen_at": "2026-05-18T17:12:02.929510+09:00",
+      "published_at": "2026-05-15T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "[정정공고]경북서부지역(구미시, 김천시, 대구광역시 군위군, 의성군) 국민임대 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019988&aisTpCd=03&uppAisTpCd=06"
+    },
     "9c567c6b944a3c9a6575b1006d7849c1a93e5973": {
       "first_seen_at": "2026-05-15T16:31:38.414317+09:00",
       "last_seen_at": "2026-05-15T16:31:38.414319+09:00",
@@ -577,5 +585,5 @@
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019884&ccrCnntSysDsCd=03&uppAisTpCd=39&aisTpCd=42&mi=1026"
     }
   },
-  "updated_at": "2026-05-17T15:49:46.046478+09:00"
+  "updated_at": "2026-05-18T17:12:02.929630+09:00"
 }
