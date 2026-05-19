@@ -24,6 +24,14 @@
       "title": "[정정공고][전국] 2026년 1차 일반 매입임대주택 입주자 모집 공고",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019883&aisTpCd=03&uppAisTpCd=13"
     },
+    "18db4349b2a08414a27fb9289852c9b689a65683": {
+      "first_seen_at": "2026-05-19T16:53:44.274011+09:00",
+      "last_seen_at": "2026-05-19T16:53:44.274012+09:00",
+      "published_at": "2026-05-07T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "[정정공고]'26년 5월 인천시(남동구) 행복주택 입주자격완화 예비입주자 모집",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019996&aisTpCd=03&uppAisTpCd=06"
+    },
     "1926e1afa9e326ea93d6f74835640a1495a674a1": {
       "first_seen_at": "2026-05-15T16:31:38.414272+09:00",
       "last_seen_at": "2026-05-15T16:31:38.414274+09:00",
@@ -352,6 +360,14 @@
       "title": "철원군 국민임대주택 예비입주자 모집공고",
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019962&aisTpCd=03&uppAisTpCd=06"
     },
+    "a8c4f3250c82ee3500532e1e033db417867be3c0": {
+      "first_seen_at": "2026-05-19T16:53:44.273998+09:00",
+      "last_seen_at": "2026-05-19T16:53:44.274004+09:00",
+      "published_at": "2026-05-19T00:00:00+09:00",
+      "source": "LH 청약플러스",
+      "title": "제천하소4 영구임대주택 예비입주자 모집 공고[2026.05.19]",
+      "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?ccrCnntSysDsCd=03&mi=1026&panId=2015122300019933&aisTpCd=03&uppAisTpCd=06"
+    },
     "aa2c05c4f8d8203292b14a0440a975fe83fac6ab": {
       "first_seen_at": "2026-05-06T15:38:08.102907+09:00",
       "last_seen_at": "2026-05-06T15:38:08.102909+09:00",
@@ -585,5 +601,5 @@
       "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300019884&ccrCnntSysDsCd=03&uppAisTpCd=39&aisTpCd=42&mi=1026"
     }
   },
-  "updated_at": "2026-05-18T17:12:02.929630+09:00"
+  "updated_at": "2026-05-19T16:53:44.274127+09:00"
 }
