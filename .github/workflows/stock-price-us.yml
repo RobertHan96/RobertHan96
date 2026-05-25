@@ -2,8 +2,8 @@ name: "태스크2-1: 미국장 가격 변동 알림"
 
 on:
   schedule:
-    # 새벽 1회 (00:00 KST 화~토 = UTC 15:00 월~금)
-    - cron: "0 15 * * 1-5"
+    # 새벽 1회 (00:00 KST 평일 = UTC 15:00 일~목)
+    - cron: "0 15 * * 0-4"
   workflow_dispatch:
 
 permissions:

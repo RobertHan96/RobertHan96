@@ -5,9 +5,6 @@ on:
     types: [telegram-memory-update]
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   telegram-memory:
     runs-on: ubuntu-latest
@@ -30,7 +27,3 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
         run: python telegram_memory_event.py
-
-      - name: Commit telegram memory
-        if: always()
-        run: bash scripts/automation/commit_telegram_memory.sh "data/telegram_memory" "Update telegram memory"

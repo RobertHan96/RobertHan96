@@ -6,9 +6,6 @@ on:
     - cron: "0 4 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   housing-monitor:
     runs-on: ubuntu-latest
@@ -34,6 +31,3 @@ jobs:
           TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
           TELEGRAM_MEMORY_SOURCE: "housing-monitor"
         run: python housing_monitor.py
-
-      - name: Commit housing monitor state
-        run: bash scripts/automation/commit_telegram_memory.sh "data/housing_monitor" "Update housing monitor state"
