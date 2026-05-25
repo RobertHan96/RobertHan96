@@ -4,9 +4,11 @@ from __future__ import annotations
 """로컬 라이브 콘텐츠 파이프라인 대시보드"""
 
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 import threading
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import quote
@@ -24,18 +26,23 @@ from scripts.automation.live_content_pipeline import (
     analyze_recording_topics,
     get_dashboard_recordings,
     get_recording_entry,
+    run_recording_full_pipeline,
     render_shorts_candidate,
     run_recording_transcription,
+    select_stable_recordings,
 )
+from scripts.automation.live_pipeline_config import DEFAULT_RECORDINGS_DIR, REQUIRED_STABLE_POLLS, WATCH_POLL_SECONDS
 from scripts.automation.live_pipeline_storage import update_recording_status
 
-app = FastAPI(title="Live Content Dashboard")
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
 ACTIVE_STATUSES = {"queued", "running"}
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="live-content-dashboard")
 _active_jobs: set[tuple[str, str]] = set()
 _active_jobs_lock = threading.Lock()
+_watcher_stop_event = threading.Event()
+_watcher_thread: threading.Thread | None = None
+_watcher_state_cache: dict[str, dict] = {}
 ARTIFACT_KEY_MAP = {
     "blog-post": "blog_post_path",
     "blog-artifact": "blog_artifact_path",
@@ -45,6 +52,53 @@ ARTIFACT_KEY_MAP = {
     "analysis-json": "analysis_json_path",
     "shorts-candidates": "shorts_candidates_path",
 }
+
+
+def _watch_loop() -> None:
+    while not _watcher_stop_event.is_set():
+        try:
+            recordings = get_dashboard_recordings()
+            ready_recording_ids = select_stable_recordings(
+                recordings,
+                _watcher_state_cache,
+                required_stable_polls=REQUIRED_STABLE_POLLS,
+            )
+            for recording_id in ready_recording_ids:
+                enqueue_pipeline_task(
+                    recording_id,
+                    "transcript",
+                    lambda rid=recording_id: run_recording_full_pipeline(rid),
+                    success_message="자동 STT 작업을 시작했습니다.",
+                )
+        except Exception:
+            pass
+        _watcher_stop_event.wait(WATCH_POLL_SECONDS)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    if getattr(_app.state, "disable_watcher", False):
+        yield
+        return
+
+    global _watcher_thread
+    _watcher_stop_event.clear()
+    _watcher_thread = threading.Thread(
+        target=_watch_loop,
+        name="live-content-watcher",
+        daemon=True,
+    )
+    _watcher_thread.start()
+    try:
+        yield
+    finally:
+        _watcher_stop_event.set()
+        if _watcher_thread is not None:
+            _watcher_thread.join(timeout=2)
+            _watcher_thread = None
+
+
+app = FastAPI(title="Live Content Dashboard", lifespan=lifespan)
 
 
 def _has_active_jobs(recordings: list[dict[str, Any]]) -> bool:
@@ -113,6 +167,8 @@ async def dashboard(request: Request, flash: str = "", level: str = "info") -> H
             "flash": flash,
             "level": level,
             "has_active_jobs": _has_active_jobs(recordings),
+            "watch_directory": str(DEFAULT_RECORDINGS_DIR),
+            "watch_poll_seconds": WATCH_POLL_SECONDS,
         },
     )
 

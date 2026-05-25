@@ -170,6 +170,10 @@
     <div class="wrap">
       <h1>최근 녹화 영상</h1>
       <p class="sub">OBS 로컬 녹화본을 기준으로 STT, 주제 분석, 블로그 초안, 숏츠 후보를 관리합니다.</p>
+      <div class="flash info">
+        감시 폴더: <strong>{{ watch_directory }}</strong><br />
+        새 영상이 들어오고 {{ watch_poll_seconds }}초 단위 점검에서 파일 크기가 안정화되면, 전체 STT가 자동으로 시작됩니다. STT가 끝나면 전체 분석까지 이어집니다.
+      </div>
 
       {% if flash %}
       <div class="flash {{ 'error' if level == 'error' else 'info' if level == 'info' else '' }}">{{ flash }}</div>

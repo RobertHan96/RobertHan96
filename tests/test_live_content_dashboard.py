@@ -8,6 +8,8 @@ from fastapi.testclient import TestClient
 
 from services.live_content_dashboard import app
 
+app.state.disable_watcher = True
+
 
 class LiveDashboardTests(unittest.TestCase):
     @patch("services.live_content_dashboard.get_dashboard_recordings")

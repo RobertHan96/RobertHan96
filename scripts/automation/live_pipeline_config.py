@@ -39,6 +39,8 @@ DEFAULT_VOICE_ID = os.environ.get("LIVE_PIPELINE_DEFAULT_VOICE_ID", "").strip()
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_STT_MODEL = os.environ.get("LIVE_PIPELINE_STT_MODEL", "scribe_v2").strip() or "scribe_v2"
 DEFAULT_TTS_MODEL = os.environ.get("LIVE_PIPELINE_TTS_MODEL", "eleven_multilingual_v2").strip() or "eleven_multilingual_v2"
+WATCH_POLL_SECONDS = max(5, int(os.environ.get("LIVE_PIPELINE_WATCH_POLL_SECONDS", "20")))
+REQUIRED_STABLE_POLLS = max(2, int(os.environ.get("LIVE_PIPELINE_REQUIRED_STABLE_POLLS", "2")))
 
 
 def get_output_root() -> Path:

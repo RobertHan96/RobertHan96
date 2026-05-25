@@ -10,7 +10,7 @@ from pathlib import Path
 try:
     from .live_blog_writer import write_hugo_draft
     from .live_content_analysis import analyze_transcript
-    from .live_pipeline_config import DEFAULT_RECORDINGS_DIR
+    from .live_pipeline_config import DEFAULT_RECORDINGS_DIR, REQUIRED_STABLE_POLLS
     from .live_pipeline_media import extract_audio_track, scan_recordings
     from .live_pipeline_models import merge_recording_with_manifest
     from .live_pipeline_storage import (
@@ -33,7 +33,7 @@ try:
 except ImportError:
     from live_blog_writer import write_hugo_draft
     from live_content_analysis import analyze_transcript
-    from live_pipeline_config import DEFAULT_RECORDINGS_DIR
+    from live_pipeline_config import DEFAULT_RECORDINGS_DIR, REQUIRED_STABLE_POLLS
     from live_pipeline_media import extract_audio_track, scan_recordings
     from live_pipeline_models import merge_recording_with_manifest
     from live_pipeline_storage import (
@@ -94,6 +94,50 @@ def get_recording_entry(recording_id: str) -> dict:
     return entry
 
 
+def should_skip_auto_pipeline(recording: dict) -> bool:
+    transcript_status = str(recording.get("status", {}).get("transcript", "pending"))
+    return transcript_status in {"queued", "running", "succeeded"}
+
+
+def select_stable_recordings(
+    recordings: list[dict],
+    stability_cache: dict[str, dict],
+    *,
+    required_stable_polls: int = REQUIRED_STABLE_POLLS,
+) -> list[str]:
+    ready: list[str] = []
+    current_paths = {str(recording.get("path", "")) for recording in recordings if recording.get("path")}
+
+    for stale_path in list(stability_cache.keys()):
+        if stale_path not in current_paths:
+            stability_cache.pop(stale_path, None)
+
+    for recording in recordings:
+        path = str(recording.get("path", "")).strip()
+        if not path or should_skip_auto_pipeline(recording):
+            continue
+
+        signature = f"{recording.get('recording_id', '')}|{recording.get('size_bytes', 0)}|{recording.get('recorded_at', '')}"
+        cached = stability_cache.get(path, {})
+        if cached.get("signature") == signature:
+            stable_polls = int(cached.get("stable_polls", 0)) + 1
+        else:
+            stable_polls = 1
+
+        scheduled = bool(cached.get("scheduled")) and cached.get("signature") == signature
+        stability_cache[path] = {
+            "signature": signature,
+            "stable_polls": stable_polls,
+            "scheduled": scheduled,
+        }
+
+        if not scheduled and stable_polls >= required_stable_polls:
+            stability_cache[path]["scheduled"] = True
+            ready.append(str(recording["recording_id"]))
+
+    return ready
+
+
 def run_recording_transcription(recording_id: str) -> dict:
     root = ensure_live_pipeline_dirs()["root"]
     entry = get_recording_entry(recording_id)
@@ -117,6 +161,16 @@ def run_recording_transcription(recording_id: str) -> dict:
     except Exception as exc:
         update_recording_status(recording_id, "transcript", "failed", error=str(exc))
         raise
+
+
+def run_recording_full_pipeline(recording_id: str) -> dict:
+    transcript = run_recording_transcription(recording_id)
+    analysis = analyze_recording_topics(recording_id)
+    return {
+        "recording_id": recording_id,
+        "transcript": transcript,
+        "analysis": analysis,
+    }
 
 
 def analyze_recording_topics(recording_id: str) -> dict:
