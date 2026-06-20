@@ -35,6 +35,42 @@ python -m jobs.run_job_monitor --limit-per-site 50 --detail-top-n 20 --min-score
 - OpenAI API 기반 `fit 점수`, `지원동기`, `나의 역량 및 강점` 500자 내외 초안 생성
 - GitHub Actions workflow: `.github/workflows/job-fit-monitor.yml`
 
+## AI 품질 전용 모니터
+
+별도로 `AI 품질 / AI 안전성 평가 / LLM 평가 / AI QA` 역할만 모아보는 전용 모니터도 추가했다.
+
+- 실행 엔트리: `/Users/han/Desktop/Dev/RobertHan96/jobs/run_ai_quality_job_monitor.py`
+- 핵심 로직: `/Users/han/Desktop/Dev/RobertHan96/jobs/ai_quality_monitor.py`
+- 역할 프로필: `/Users/han/Desktop/Dev/RobertHan96/jobs/ai_quality_profile.py`
+
+현재 1차 수집 소스:
+
+- Wanted
+- 카카오
+- 카카오뱅크
+- NAVER Careers
+- 현대오토에버
+- KT Careers
+- SK Careers
+- HYBE Careers
+
+실행 예시:
+
+```bash
+python3 -m jobs.run_ai_quality_job_monitor --mode dry-run --limit-per-site 5 --detail-top-n 5 --min-score 60
+```
+
+알림 정책:
+
+- `85점 이상`: 즉시 텔레그램 알림
+- `65점 이상`: 일일 요약 후보로 적재
+- 일일 요약 발송 시에는 이미 즉시 알림으로 보낸 `85점 이상` 공고를 제외하고 나머지만 보낸다
+
+상태 저장:
+
+- GitHub Actions에서는 Cloudflare Worker KV를 사용
+- 로컬에서는 `data/job_monitors/ai_quality_state.json` 파일 fallback 사용
+
 ## 참고
 
 - 동적 렌더링 사이트가 포함되어 있어 `Playwright`와 `Chromium`을 사용합니다.

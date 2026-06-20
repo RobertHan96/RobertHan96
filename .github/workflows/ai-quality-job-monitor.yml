@@ -1,0 +1,51 @@
+name: "태스크7-2: AI 품질 채용공고 즉시 알림"
+
+on:
+  schedule:
+    # 09:15, 13:15, 17:15, 21:15 KST
+    - cron: "15 0,4,8,12 * * *"
+  workflow_dispatch:
+
+jobs:
+  ai-quality-job-monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r jobs/requirements.txt
+
+      - name: Install Playwright Chromium
+        run: |
+          python -m playwright install --with-deps chromium
+
+      - name: Run AI quality immediate monitor
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
+          JOB_FIT_REPORT_BRIDGE_URL: ${{ vars.JOB_FIT_REPORT_BRIDGE_URL }}
+          JOB_FIT_REPORT_BRIDGE_TOKEN: ${{ secrets.JOB_FIT_REPORT_BRIDGE_TOKEN }}
+          TELEGRAM_MEMORY_SOURCE: "ai-quality-job-monitor"
+        run: |
+          python -m jobs.run_ai_quality_job_monitor \
+            --mode immediate \
+            --limit-per-site 20 \
+            --detail-top-n 12 \
+            --min-score 60 \
+            --high-fit-score 85 \
+            --summary-score 65 \
+            --notify-limit 5

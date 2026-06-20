@@ -21,6 +21,14 @@ export default {
       return handleJobFitReport(request, env);
     }
 
+    if (url.pathname === "/state/get") {
+      return handleStateGet(request, env);
+    }
+
+    if (url.pathname === "/state/put") {
+      return handleStatePut(request, env);
+    }
+
     const secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
     if (!secret || secret !== env.TELEGRAM_WEBHOOK_SECRET_TOKEN) {
       return json({ ok: false, error: "invalid_secret" }, 401);
@@ -162,7 +170,63 @@ async function handleJobFitReport(request, env) {
 
 function authorizeBridge(request, env) {
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") || "";
-  return Boolean(token && token === env.TELEGRAM_MEMORY_BRIDGE_TOKEN);
+  const validTokens = [
+    env.TELEGRAM_MEMORY_BRIDGE_TOKEN,
+    env.JOB_FIT_REPORT_BRIDGE_TOKEN,
+  ].filter(Boolean);
+  return Boolean(token && validTokens.includes(token));
+}
+
+async function handleStateGet(request, env) {
+  const authorized = authorizeBridge(request, env);
+  if (!authorized) {
+    return json({ ok: false, error: "unauthorized" }, 401);
+  }
+
+  const namespace = getKvNamespace(env);
+  if (!namespace) {
+    return json({ ok: false, error: "missing_kv_namespace" }, 500);
+  }
+
+  const payload = await request.json();
+  const stateKey = sanitizeStateKey(payload.key);
+  if (!stateKey) {
+    return json({ ok: false, error: "invalid_state_key" }, 400);
+  }
+
+  const raw = await namespace.get(`state:${stateKey}`, "text");
+  if (raw === null) {
+    return json({ ok: true, found: false });
+  }
+
+  try {
+    return json({ ok: true, found: true, value: JSON.parse(raw) });
+  } catch {
+    return json({ ok: true, found: true, value: raw });
+  }
+}
+
+async function handleStatePut(request, env) {
+  const authorized = authorizeBridge(request, env);
+  if (!authorized) {
+    return json({ ok: false, error: "unauthorized" }, 401);
+  }
+
+  const namespace = getKvNamespace(env);
+  if (!namespace) {
+    return json({ ok: false, error: "missing_kv_namespace" }, 500);
+  }
+
+  const payload = await request.json();
+  const stateKey = sanitizeStateKey(payload.key);
+  if (!stateKey) {
+    return json({ ok: false, error: "invalid_state_key" }, 400);
+  }
+
+  const ttlSeconds = normalizeTtlSeconds(payload.ttl_seconds);
+  const options = ttlSeconds ? { expirationTtl: ttlSeconds } : {};
+  await namespace.put(`state:${stateKey}`, JSON.stringify(payload.value ?? null), options);
+  return json({ ok: true, key: stateKey, ttl_seconds: ttlSeconds || null });
 }
 
 async function maybeStoreInboxLog(env, update) {
@@ -227,6 +291,22 @@ function sanitizeFilename(value) {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
   return cleaned || `job-report-${Date.now()}.md`;
+}
+
+function sanitizeStateKey(value) {
+  const cleaned = String(value || "")
+    .replace(/[^0-9A-Za-z._:/-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return cleaned.slice(0, 200);
+}
+
+function normalizeTtlSeconds(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 0;
+  }
+  return Math.min(Math.floor(parsed), 60 * 60 * 24 * 365);
 }
 
 function formatKstDate(date) {

@@ -1,0 +1,51 @@
+name: "태스크7-3: AI 품질 채용공고 일일 요약"
+
+on:
+  schedule:
+    # 21:30 KST
+    - cron: "30 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  ai-quality-job-summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r jobs/requirements.txt
+
+      - name: Install Playwright Chromium
+        run: |
+          python -m playwright install --with-deps chromium
+
+      - name: Run AI quality daily summary
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
+          JOB_FIT_REPORT_BRIDGE_URL: ${{ vars.JOB_FIT_REPORT_BRIDGE_URL }}
+          JOB_FIT_REPORT_BRIDGE_TOKEN: ${{ secrets.JOB_FIT_REPORT_BRIDGE_TOKEN }}
+          TELEGRAM_MEMORY_SOURCE: "ai-quality-job-summary"
+        run: |
+          python -m jobs.run_ai_quality_job_monitor \
+            --mode summary \
+            --limit-per-site 20 \
+            --detail-top-n 12 \
+            --min-score 60 \
+            --high-fit-score 85 \
+            --summary-score 65 \
+            --summary-limit 12
