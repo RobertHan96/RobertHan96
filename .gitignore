@@ -6,3 +6,4 @@ resources/
 .DS_Store
 **/.DS_Store
 data/live_pipeline/
+services/cloudflare-telegram-bridge/wrangler.ci.toml

@@ -224,6 +224,43 @@ python3 scripts/automation/investment_rag_sync.py --generate-digest
    - `TELEGRAM_WEBHOOK_SECRET_TOKEN`: 임의의 긴 랜덤 문자열
 6. Worker URL을 배포한 뒤 Telegram webhook을 연결합니다.
 
+#### Worker 수동 배포
+
+이번처럼 Worker 코드만 급하게 반영해야 할 때는 아래 순서가 가장 빠릅니다.
+
+1. Cloudflare Dashboard에서 `Workers & Pages`로 이동합니다.
+2. `telegram-memory-bridge` Worker를 엽니다.
+3. `Edit code` 또는 `Quick edit`로 들어갑니다.
+4. [worker.mjs](/Users/han/Desktop/Dev/RobertHan96/services/cloudflare-telegram-bridge/worker.mjs) 최신 내용으로 덮어씁니다.
+5. `Deploy`를 눌러 새 버전을 배포합니다.
+
+배포 후 아래 두 엔드포인트가 살아 있어야 이번 AI 품질 모니터링 상태 저장이 정상 동작합니다.
+
+- `POST /state/put`
+- `POST /state/get`
+
+#### Worker 자동 배포
+
+이제 repo에는 Worker 자동 배포 workflow도 추가했습니다.
+
+- Workflow: [deploy-telegram-memory-worker.yml](/Users/han/Desktop/Dev/RobertHan96/.github/workflows/deploy-telegram-memory-worker.yml)
+- 템플릿 설정: [wrangler.ci.toml.template](/Users/han/Desktop/Dev/RobertHan96/services/cloudflare-telegram-bridge/wrangler.ci.toml.template)
+
+필요한 GitHub 설정:
+
+- `Secrets`
+  - `CLOUDFLARE_API_TOKEN`
+  - `CLOUDFLARE_ACCOUNT_ID`
+- `Variables`
+  - `CLOUDFLARE_TELEGRAM_MEMORY_KV_ID`
+
+`CLOUDFLARE_TELEGRAM_MEMORY_KV_ID`는 Cloudflare의 `KV > TELEGRAM_MEMORY_KV에 연결된 namespace 상세 화면`에서 확인할 수 있는 namespace ID입니다.
+
+이 workflow는 `main`에 push되면서 아래 경로가 바뀌면 자동 실행됩니다.
+
+- `services/cloudflare-telegram-bridge/**`
+- `.github/workflows/deploy-telegram-memory-worker.yml`
+
 예시:
 
 ```bash

@@ -1,0 +1,45 @@
+name: "Deploy Telegram Memory Worker"
+
+"on":
+  push:
+    branches:
+      - main
+    paths:
+      - "services/cloudflare-telegram-bridge/**"
+      - ".github/workflows/deploy-telegram-memory-worker.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate required Cloudflare config
+        env:
+          CLOUDFLARE_TELEGRAM_MEMORY_KV_ID: ${{ vars.CLOUDFLARE_TELEGRAM_MEMORY_KV_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_TELEGRAM_MEMORY_KV_ID"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+
+      - name: Generate Wrangler config for CI deploy
+        working-directory: services/cloudflare-telegram-bridge
+        env:
+          CLOUDFLARE_TELEGRAM_MEMORY_KV_ID: ${{ vars.CLOUDFLARE_TELEGRAM_MEMORY_KV_ID }}
+        run: |
+          sed "s/__CLOUDFLARE_TELEGRAM_MEMORY_KV_ID__/${CLOUDFLARE_TELEGRAM_MEMORY_KV_ID}/g" \
+            wrangler.ci.toml.template > wrangler.ci.toml
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: "services/cloudflare-telegram-bridge"
+          command: deploy --config wrangler.ci.toml
