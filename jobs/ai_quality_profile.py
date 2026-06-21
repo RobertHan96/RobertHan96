@@ -30,6 +30,18 @@ AI_QUALITY_SEED_ROLES = (
             "ai quality engineer",
         ),
     },
+    {
+        "company": "Generic",
+        "title": "AI Builder / Forward Deployed Engineer",
+        "url": "https://example.com/ai-builder-reference",
+        "keywords": (
+            "ai builder",
+            "forward deployed",
+            "forward developer",
+            "developer productivity",
+            "agent platform",
+        ),
+    },
 )
 
 
@@ -45,11 +57,12 @@ AI_QUALITY_CANDIDATE = CandidateProfile(
     name=CANDIDATE.name,
     headline=(
         "실서비스 LLM·RAG 시스템을 운영하면서 응답 품질 평가 자동화, "
-        "피드백 반영, 안전한 서비스 품질 개선 경험을 쌓아온 AI Engineer."
+        "피드백 반영, 안전한 서비스 품질 개선과 AI Builder 성격의 구축 경험을 함께 쌓아온 AI Engineer."
     ),
     strengths=(
         "실서비스 AI 응답 품질 개선과 사용자 피드백 반영 경험",
         "RAG·LLM·에이전트 시스템의 평가 자동화 설계 경험",
+        "기업용 AI 에이전트와 개발자 생산성 도구를 직접 설계·구축한 경험",
         "기업용 AI 서비스의 운영 품질, 로그, 접근 제어 설계 경험",
         "실험 설계와 정량 평가를 바탕으로 한 품질 개선 경험",
         "여러 조직과 협업하며 서비스 기준과 운영 체계를 만든 경험",
@@ -82,6 +95,17 @@ AI_QUALITY_CANDIDATE = CandidateProfile(
             "품질 평가": 10,
             "feedback": 7,
             "human feedback": 8,
+            "ai builder": 10,
+            "agent builder": 9,
+            "forward deployed": 10,
+            "forward developer": 10,
+            "developer productivity": 11,
+            "solution engineer": 8,
+            "customer engineer": 8,
+            "implementation": 6,
+            "prototype": 5,
+            "productionize": 8,
+            "ship": 4,
         },
     ),
     negative_keywords=_merge_weights(

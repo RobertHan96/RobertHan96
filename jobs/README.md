@@ -35,9 +35,9 @@ python -m jobs.run_job_monitor --limit-per-site 50 --detail-top-n 20 --min-score
 - OpenAI API 기반 `fit 점수`, `지원동기`, `나의 역량 및 강점` 500자 내외 초안 생성
 - GitHub Actions workflow: `.github/workflows/job-fit-monitor.yml`
 
-## AI 품질 전용 모니터
+## AI 품질·Builder 전용 모니터
 
-별도로 `AI 품질 / AI 안전성 평가 / LLM 평가 / AI QA` 역할만 모아보는 전용 모니터도 추가했다.
+별도로 `AI 품질 / AI 안전성 평가 / LLM 평가 / AI QA / AI Builder / Forward Developer` 역할을 모아보는 전용 모니터도 추가했다.
 
 - 실행 엔트리: `/Users/han/Desktop/Dev/RobertHan96/jobs/run_ai_quality_job_monitor.py`
 - 핵심 로직: `/Users/han/Desktop/Dev/RobertHan96/jobs/ai_quality_monitor.py`
@@ -49,7 +49,10 @@ python -m jobs.run_job_monitor --limit-per-site 50 --detail-top-n 20 --min-score
 - 카카오
 - 카카오뱅크
 - NAVER Careers
+- 삼성 커리어스
+- LG Careers
 - 현대오토에버
+- CJ Careers
 - KT Careers
 - SK Careers
 - HYBE Careers

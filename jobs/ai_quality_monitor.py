@@ -34,6 +34,17 @@ HIGH_FIT_TTL_SECONDS = 60 * 60 * 24 * 180
 SUMMARY_TTL_SECONDS = 60 * 60 * 24 * 14
 WANTED_BASE_URL = "https://www.wanted.co.kr"
 WANTED_JOB_URL = "https://www.wanted.co.kr/wd/{job_id}"
+SAMSUNG_BASE_URL = "https://www.samsungcareers.com"
+SAMSUNG_LIST_URL = f"{SAMSUNG_BASE_URL}/hr/"
+SAMSUNG_DETAIL_API_URL = f"{SAMSUNG_BASE_URL}/recruit/detail.data?seqno={{seqno}}&strCode="
+LG_APPLY_URL = "https://careers.lg.com/apply"
+CJ_BASE_URL = "https://recruit.cj.net"
+CJ_LIST_URL = f"{CJ_BASE_URL}/recruit/ko/recruit/recruit/list.fo"
+CLOSED_MARKER_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"(?<!영입)\bclosed\b", re.IGNORECASE),
+    re.compile(r"(?:지원|채용|공고|접수)\s*마감"),
+    re.compile(r"(?<!영입)(?<!영입\s)(?<!영입일)(?<!마감일\s영입종료시)\b마감\b"),
+)
 
 AI_HINTS = (
     "ai",
@@ -67,11 +78,37 @@ QUALITY_HINTS = (
     "test",
     "테스트",
 )
+BUILDER_HINTS = (
+    "ai builder",
+    "agent builder",
+    "forward deployed",
+    "forward developer",
+    "developer productivity",
+    "solution engineer",
+    "customer engineer",
+    "implementation",
+    "prototype",
+)
 ROLE_SIGNAL_GROUPS: tuple[tuple[str, tuple[str, ...], int], ...] = (
     ("AI 서비스 품질", ("ai 서비스 품질", "ai quality", "service quality"), 24),
     ("안전성", ("안전성", "safety", "trust & safety", "responsible ai"), 22),
     ("평가", ("평가", "evaluation", "eval", "benchmark", "validation"), 18),
     ("LLM", ("llm", "prompt", "model behavior", "language model"), 12),
+    (
+        "Builder",
+        ("ai builder", "agent builder", "llm builder", "builder for ai", "ai product builder"),
+        18,
+    ),
+    (
+        "Forward Deployed",
+        ("forward deployed", "forward-deployed", "forward developer", "forward deployed engineer"),
+        18,
+    ),
+    (
+        "Developer Productivity",
+        ("developer productivity", "solution engineer", "customer engineer", "implementation"),
+        12,
+    ),
     ("QA", ("qa", "testing", "test engineer", "테스트 엔지니어"), 8),
     ("Red Teaming", ("red team", "red teaming"), 12),
 )
@@ -84,12 +121,17 @@ SEED_SIGNAL_GROUPS: tuple[tuple[str, tuple[str, ...], int], ...] = (
     ("카카오뱅크형", ("ai 서비스 품질", "안전성 평가", "ai quality & safety"), 28),
     ("LG형", ("ai 품질 엔지니어", "품질관리자", "서비스 품질"), 24),
     ("평가형", ("llm evaluation", "prompt evaluation", "model evaluation"), 18),
+    ("빌더형", ("ai builder", "forward deployed", "forward developer", "developer productivity"), 18),
 )
 WANTED_SEARCH_TERMS = (
     "AI 품질",
     "AI Quality",
     "LLM",
     "AI Safety",
+    "AI Builder",
+    "Forward Deployed",
+    "Forward Developer",
+    "Developer Productivity",
 )
 
 
@@ -181,9 +223,42 @@ def role_text_for_scoring(job: JobPosting) -> str:
     return "\n".join(part for part in parts if part)
 
 
+def is_closed_job(job: JobPosting) -> bool:
+    text = normalize_text(job.combined_text).lower()
+    if not text:
+        return False
+    return any(pattern.search(text) for pattern in CLOSED_MARKER_PATTERNS)
+
+
 def extract_naver_anno_id(onclick: str) -> str:
     match = re.search(r"show\('(\d+)'\)", onclick or "")
     return match.group(1) if match else ""
+
+
+def build_samsung_detail_api_url(raw_seq: str) -> str:
+    seqno = re.sub(r"\D+", "", raw_seq or "")
+    if not seqno:
+        return ""
+    return SAMSUNG_DETAIL_API_URL.format(seqno=seqno)
+
+
+def build_cj_detail_url(onclick: str) -> str:
+    match = re.search(
+        r"goNewDetail\('(?P<kind>[12])',\s*'(?P<job_no>[^']+)',\s*'(?P<direct>[YN])',\s*'(?P<close>[^']+)'\)",
+        onclick or "",
+    )
+    if not match:
+        return ""
+    kind = match.group("kind")
+    job_no = match.group("job_no")
+    direct = match.group("direct")
+    close = match.group("close")
+    if kind == "1":
+        return f"{CJ_BASE_URL}/recruit/ko/recruit/recruit/detail.fo?zz_jo_num={job_no}&closeYn={close}"
+    return (
+        f"{CJ_BASE_URL}/recruit/ko/recruit/recruit/bestDetail.fo"
+        f"?direct={direct}&zz_jo_num={job_no}&closeYn={close}"
+    )
 
 
 def score_role_relevance(text: str) -> tuple[int, list[str], list[str]]:
@@ -194,9 +269,13 @@ def score_role_relevance(text: str) -> tuple[int, list[str], list[str]]:
 
     ai_context = any(keyword in lowered for keyword in AI_HINTS)
     quality_context = any(keyword in lowered for keyword in QUALITY_HINTS)
+    builder_context = any(keyword in lowered for keyword in BUILDER_HINTS)
     if ai_context and quality_context:
         score += 30
         matched.append("AI+품질/평가 조합")
+    if ai_context and builder_context:
+        score += 24
+        matched.append("AI+Builder/구현 조합")
 
     for label, keywords, weight in ROLE_SIGNAL_GROUPS:
         if any(keyword in lowered for keyword in keywords):
@@ -249,7 +328,7 @@ def build_reason(role_hits: list[str], penalties: list[str], fit_reason: str) ->
     if cleaned_fit_reason:
         parts.append(cleaned_fit_reason)
     if not parts:
-        return "포트폴리오와 직접 연결되는 AI 품질 역할입니다."
+        return "포트폴리오와 직접 연결되는 AI 품질·빌더 역할입니다."
     return " / ".join(parts[:3])
 
 
@@ -260,7 +339,7 @@ def html_escape(text: str) -> str:
 def build_immediate_message(records: list[dict], date_label: str) -> str:
     if not records:
         return ""
-    lines = [f"<b>🎯 AI 품질 고적합 공고</b> ({date_label})", ""]
+    lines = [f"<b>🎯 AI 품질·Builder 고적합 공고</b> ({date_label})", ""]
     for item in records:
         lines.extend(
             [
@@ -280,9 +359,9 @@ def build_daily_summary_message(
     high_fit_score: int,
     date_label: str,
 ) -> str:
-    lines = [f"<b>🧭 AI 품질 공고 일일 요약</b> ({date_label})", ""]
+    lines = [f"<b>🧭 AI 품질·Builder 공고 일일 요약</b> ({date_label})", ""]
     if not records:
-        lines.append("오늘 새로 포착한 AI 품질 관련 공고가 없습니다.")
+        lines.append("오늘 새로 포착한 AI 품질·Builder 관련 공고가 없습니다.")
         return "\n".join(lines)
 
     high_fit = [item for item in records if int(item.get("score", 0)) >= high_fit_score]
@@ -338,6 +417,52 @@ def load_json_url(url: str, *, headers: dict[str, str] | None = None, label: str
         raise RuntimeError(f"{label} [{exc.code}] {url}: {detail}") from exc
     except Exception as exc:
         raise RuntimeError(f"{label} 실패 [{url}]: {exc}") from exc
+
+
+def fetch_samsung_job_detail(raw_seq: str) -> dict:
+    url = build_samsung_detail_api_url(raw_seq)
+    if not url:
+        return {}
+    data = load_json_url(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+        label=f"Samsung 상세 조회 [{raw_seq}]",
+    )
+    payload = data.get("data", {}) if isinstance(data, dict) else {}
+    result = payload.get("result", {}) if isinstance(payload, dict) else {}
+    items = payload.get("items", []) if isinstance(payload, dict) else []
+    return {
+        "url": url,
+        "result": result if isinstance(result, dict) else {},
+        "items": items if isinstance(items, list) else [],
+    }
+
+
+def summarize_samsung_job_detail(detail: dict) -> str:
+    result = detail.get("result", {}) if isinstance(detail, dict) else {}
+    items = detail.get("items", []) if isinstance(detail, dict) else []
+    parts: list[str] = []
+
+    for field in ("introKr", "qlfctKr", "processKr", "docInfoKr", "etcKr"):
+        value = normalize_text(str(result.get(field, "")))
+        if value:
+            parts.append(value)
+
+    for item in items[:5]:
+        if not isinstance(item, dict):
+            continue
+        item_parts = [
+            normalize_text(str(item.get("titleKr", ""))),
+            normalize_text(str(item.get("taskKr", ""))),
+            normalize_text(str(item.get("qlfctKr", ""))),
+            normalize_text(str(item.get("preferKr", ""))),
+            normalize_text(str(item.get("guideKr", ""))),
+        ]
+        item_text = " / ".join(part for part in item_parts if part)
+        if item_text:
+            parts.append(item_text)
+
+    return shrink(" / ".join(parts), 9_000)
 
 
 def fetch_wanted_job_detail(job_id: str) -> dict:
@@ -510,6 +635,84 @@ def scrape_naver(page: Page, limit: int) -> list[JobPosting]:
     return collect_unique_anchor_jobs(page, "a.card_link", limit, build_naver_posting)
 
 
+def scrape_samsung(page: Page, limit: int) -> list[JobPosting]:
+    safe_goto(page, SAMSUNG_LIST_URL)
+    page.wait_for_selector("ul#list a[data-value]", timeout=60_000)
+    anchors = page.locator("ul#list a[data-value]")
+    results: list[JobPosting] = []
+    seen_urls: set[str] = set()
+    for idx in range(anchors.count()):
+        anchor = anchors.nth(idx)
+        raw_seq = anchor.get_attribute("data-value") or ""
+        detail = fetch_samsung_job_detail(raw_seq)
+        url = str(detail.get("url") or build_samsung_detail_api_url(raw_seq))
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        company = normalize_text(anchor.locator("p.company").inner_text(timeout=5_000))
+        title = normalize_text(anchor.locator("h3.title").inner_text(timeout=5_000))
+        raw_card_text = normalize_text(anchor.locator("xpath=ancestor::li[1]").inner_text(timeout=5_000))
+        detail_result = detail.get("result", {}) if isinstance(detail, dict) else {}
+        summary = summarize_samsung_job_detail(detail)
+        posting = JobPosting(
+            source="samsung",
+            url=url,
+            raw_card_text=raw_card_text,
+            title=title,
+            company=company or normalize_text(str(detail_result.get("cmpNameKr", ""))),
+            card_meta=" ".join(clean_lines(raw_card_text)[4:8]),
+            detail_title=normalize_text(
+                " ".join(
+                    part for part in [company or normalize_text(str(detail_result.get("cmpNameKr", ""))), title] if part
+                )
+            ),
+            detail_text=summary,
+        )
+        results.append(posting)
+        if len(results) >= limit:
+            break
+    return results
+
+
+def scrape_lg(page: Page, limit: int) -> list[JobPosting]:
+    safe_goto(page, LG_APPLY_URL)
+    page.wait_for_selector("[grid='1'] > div", timeout=60_000)
+    results: list[JobPosting] = []
+    seen_urls: set[str] = set()
+    card_count = page.locator("[grid='1'] > div").count()
+    for idx in range(card_count):
+        cards = page.locator("[grid='1'] > div")
+        card = cards.nth(idx)
+        raw_block = card.inner_text(timeout=5_000)
+        lines = clean_lines(raw_block)
+        if len(lines) < 2:
+            continue
+        company = normalize_text(lines[0])
+        title = normalize_text(lines[1])
+        if not title:
+            continue
+        card.click(timeout=5_000)
+        page.wait_for_url(re.compile(r".*/apply/detail\?id=\d+"), timeout=15_000)
+        detail_url = page.url
+        if detail_url not in seen_urls:
+            seen_urls.add(detail_url)
+            results.append(
+                JobPosting(
+                    source="lg",
+                    url=detail_url,
+                    raw_card_text=normalize_text(raw_block),
+                    title=title,
+                    company=company,
+                    card_meta=" ".join(lines[2:8]),
+                )
+            )
+        page.go_back(wait_until="domcontentloaded", timeout=60_000)
+        page.wait_for_selector("[grid='1'] > div", timeout=60_000)
+        if len(results) >= limit:
+            break
+    return results
+
+
 def build_autoever_posting(page: Page, idx: int) -> JobPosting | None:
     anchor = page.locator("a[href^='/ko/o/']").nth(idx)
     href = anchor.get_attribute("href")
@@ -620,11 +823,47 @@ def scrape_hybe(page: Page, limit: int) -> list[JobPosting]:
     return collect_unique_anchor_jobs(page, "a[href^='/ko/o/']", limit, build_hybe_posting)
 
 
+def scrape_cj(page: Page, limit: int) -> list[JobPosting]:
+    safe_goto(page, CJ_LIST_URL)
+    page.wait_for_selector("a[onclick*='goNewDetail']", timeout=60_000)
+    anchors = page.locator("a[onclick*='goNewDetail']")
+    results: list[JobPosting] = []
+    seen_urls: set[str] = set()
+    for idx in range(anchors.count()):
+        anchor = anchors.nth(idx)
+        onclick = anchor.get_attribute("onclick") or ""
+        url = build_cj_detail_url(onclick)
+        if not url or url in seen_urls:
+            continue
+        lines = clean_lines(anchor.inner_text(timeout=5_000))
+        if len(lines) < 2:
+            continue
+        title = normalize_text(lines[0])
+        company = normalize_text(lines[1])
+        seen_urls.add(url)
+        results.append(
+            JobPosting(
+                source="cj",
+                url=url,
+                raw_card_text=normalize_text(anchor.inner_text(timeout=5_000)),
+                title=title,
+                company=company,
+                card_meta=" ".join(lines[2:8]),
+            )
+        )
+        if len(results) >= limit:
+            break
+    return results
+
+
 BROWSER_SOURCES: tuple[tuple[str, Callable[[Page, int], list[JobPosting]]], ...] = (
     ("카카오", scrape_kakao),
     ("카카오뱅크", scrape_kakaobank),
     ("NAVER", scrape_naver),
+    ("삼성", scrape_samsung),
+    ("LG", scrape_lg),
     ("현대오토에버", scrape_autoever),
+    ("CJ", scrape_cj),
     ("KT", scrape_kt),
     ("SK", scrape_sk),
     ("HYBE", scrape_hybe),
@@ -808,7 +1047,12 @@ def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[
     if not jobs and scrape_errors:
         raise RuntimeError("AI 품질 채용공고 source 수집이 모두 실패했습니다.")
 
-    ranked = sorted(jobs, key=quick_rank, reverse=True)
+    open_jobs = [job for job in jobs if not is_closed_job(job)]
+    filtered_closed_count = len(jobs) - len(open_jobs)
+    if filtered_closed_count:
+        print(f"마감 공고 제외: {filtered_closed_count}건")
+
+    ranked = sorted(open_jobs, key=quick_rank, reverse=True)
     detail_targets = ranked[:detail_top_n]
 
     detail_errors: list[str] = []
@@ -835,7 +1079,12 @@ def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[
         for error in detail_errors[:10]:
             print(f"- {error}")
 
-    matches = [build_ai_quality_match(job) for job in detail_targets]
+    enriched_open_targets = [job for job in detail_targets if not is_closed_job(job)]
+    enriched_closed_count = len(detail_targets) - len(enriched_open_targets)
+    if enriched_closed_count:
+        print(f"상세 확인 후 마감 공고 추가 제외: {enriched_closed_count}건")
+
+    matches = [build_ai_quality_match(job) for job in enriched_open_targets]
     matches.sort(key=lambda item: item.total_score, reverse=True)
     return [match for match in matches if match.total_score >= min_score]
 
@@ -848,7 +1097,7 @@ def render_report(matches: list[AIQualityMatch], mode: str) -> str:
         f"- 생성 시각: {now}",
         f"- 실행 모드: {mode}",
         f"- 후보자: {AI_QUALITY_CANDIDATE.name}",
-        f"- 핵심 역할: AI 품질 / AI 안전성 평가 / 모델 평가 / AI QA",
+        f"- 핵심 역할: AI 품질 / AI 안전성 평가 / 모델 평가 / AI QA / AI Builder / Forward Developer",
         "",
     ]
     if not matches:
@@ -895,8 +1144,9 @@ def handle_immediate_alerts(
     backend: StateBackend,
     high_fit_score: int,
     notify_limit: int,
+    ignore_seen: bool = False,
 ) -> list[dict]:
-    seen = set(str(item) for item in backend.get(HIGH_FIT_SEEN_KEY, []))
+    seen = set() if ignore_seen else set(str(item) for item in backend.get(HIGH_FIT_SEEN_KEY, []))
     new_high_fit: list[dict] = []
     for match in matches:
         if match.total_score < high_fit_score:
@@ -961,7 +1211,7 @@ def drain_summary_candidates(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="AI 품질 채용공고 모니터링")
+    parser = argparse.ArgumentParser(description="AI 품질·Builder 채용공고 모니터링")
     parser.add_argument("--mode", choices=("immediate", "summary", "dry-run"), default="dry-run")
     parser.add_argument("--limit-per-site", type=int, default=20, help="소스별 목록 수집 개수")
     parser.add_argument("--detail-top-n", type=int, default=12, help="상위 상세 수집 개수")
@@ -970,6 +1220,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--summary-score", type=int, default=65, help="일일 요약 최소 점수")
     parser.add_argument("--notify-limit", type=int, default=5, help="즉시 알림 최대 개수")
     parser.add_argument("--summary-limit", type=int, default=12, help="요약 최대 개수")
+    parser.add_argument(
+        "--ignore-seen",
+        action="store_true",
+        help="기존 고적합 발송 이력을 무시하고 즉시 알림 테스트",
+    )
     return parser.parse_args()
 
 
@@ -997,12 +1252,13 @@ def main() -> None:
             backend=backend,
             high_fit_score=args.high_fit_score,
             notify_limit=args.notify_limit,
+            ignore_seen=args.ignore_seen,
         )
         message = build_immediate_message(records, date_label)
         if message:
             send_message_if_available(message)
         else:
-            print("신규 고적합 AI 품질 공고가 없어 즉시 알림을 생략합니다.")
+            print("신규 고적합 AI 품질·Builder 공고가 없어 즉시 알림을 생략합니다.")
     elif args.mode == "summary":
         records = drain_summary_candidates(
             matches,
