@@ -46,6 +46,6 @@ jobs:
             --limit-per-site 20 \
             --detail-top-n 12 \
             --min-score 60 \
-            --high-fit-score 85 \
-            --summary-score 65 \
+            --high-fit-score 65 \
+            --summary-score 60 \
             --summary-limit 12

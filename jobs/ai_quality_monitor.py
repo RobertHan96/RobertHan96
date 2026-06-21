@@ -1216,8 +1216,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit-per-site", type=int, default=20, help="소스별 목록 수집 개수")
     parser.add_argument("--detail-top-n", type=int, default=12, help="상위 상세 수집 개수")
     parser.add_argument("--min-score", type=int, default=60, help="리포트 최소 점수")
-    parser.add_argument("--high-fit-score", type=int, default=85, help="즉시 알림 최소 점수")
-    parser.add_argument("--summary-score", type=int, default=65, help="일일 요약 최소 점수")
+    parser.add_argument("--high-fit-score", type=int, default=65, help="즉시 알림 최소 점수")
+    parser.add_argument("--summary-score", type=int, default=60, help="일일 요약 최소 점수")
     parser.add_argument("--notify-limit", type=int, default=5, help="즉시 알림 최대 개수")
     parser.add_argument("--summary-limit", type=int, default=12, help="요약 최대 개수")
     parser.add_argument(

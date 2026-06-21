@@ -12,9 +12,11 @@ from __future__ import annotations
 import html
 import math
 import re
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from typing import Callable, TypeVar
 
 from config.loader import load_config
 from notify import send_telegram
@@ -30,6 +32,32 @@ CLEANEYE_DETAIL_URL = (
 )
 ALIO_LIST_URL = "https://job.alio.go.kr/recruit.do"
 ALIO_DETAIL_URL = "https://job.alio.go.kr/recruitview.do?idx={idx}"
+REQUEST_RETRY_COUNT = 2
+REQUEST_RETRY_DELAY_SECONDS = 1.5
+PUBLIC_API_TIMEOUT_SECONDS = 25
+PUBLIC_DETAIL_TIMEOUT_SECONDS = 20
+T = TypeVar("T")
+
+
+def run_with_retry(label: str, callback: Callable[[], T]) -> T:
+    """일시적인 외부 사이트 지연에 대비해 재시도"""
+    last_error: Exception | None = None
+    for attempt in range(REQUEST_RETRY_COUNT + 1):
+        try:
+            return callback()
+        except Exception as exc:  # pragma: no cover - retry flow is exercised via stubs
+            last_error = exc
+            if attempt >= REQUEST_RETRY_COUNT:
+                break
+            wait_seconds = REQUEST_RETRY_DELAY_SECONDS * (attempt + 1)
+            print(
+                f"{label} 재시도 {attempt + 1}/{REQUEST_RETRY_COUNT}"
+                f" ({wait_seconds:.1f}s 후): {exc}"
+            )
+            time.sleep(wait_seconds)
+
+    assert last_error is not None
+    raise last_error
 
 
 def wanted_request(url: str) -> dict:
@@ -45,13 +73,16 @@ def wanted_request(url: str) -> dict:
 
 def wanted_html_request(url: str) -> str:
     """Wanted 웹 페이지 HTML 요청"""
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "Mozilla/5.0")
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.read().decode("utf-8", errors="ignore")
-    except Exception as exc:
-        raise RuntimeError(f"Wanted 페이지 요청 실패 [{url}]: {exc}") from exc
+    def _fetch() -> str:
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", "Mozilla/5.0")
+        try:
+            with urllib.request.urlopen(req, timeout=PUBLIC_API_TIMEOUT_SECONDS) as resp:
+                return resp.read().decode("utf-8", errors="ignore")
+        except Exception as exc:
+            raise RuntimeError(f"Wanted 페이지 요청 실패 [{url}]: {exc}") from exc
+
+    return run_with_retry("Wanted 페이지 요청", _fetch)
 
 
 def zighang_request(path: str, query: list[tuple[str, str]] | None = None) -> dict:
@@ -71,30 +102,36 @@ def zighang_request(path: str, query: list[tuple[str, str]] | None = None) -> di
 
 def cleaneye_request(payload: list[tuple[str, str]]) -> dict:
     """클린아이 채용 API 요청"""
-    data = request_json(
-        CLEANEYE_LIST_URL,
-        headers={
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        },
-        method="POST",
-        data=urllib.parse.urlencode(payload).encode(),
-        timeout=15,
-        label="클린아이 API 요청",
+    data = run_with_retry(
+        "클린아이 API 요청",
+        lambda: request_json(
+            CLEANEYE_LIST_URL,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            },
+            method="POST",
+            data=urllib.parse.urlencode(payload).encode(),
+            timeout=PUBLIC_API_TIMEOUT_SECONDS,
+            label="클린아이 API 요청",
+        ),
     )
     return data if isinstance(data, dict) else {}
 
 
 def html_request(url: str, label: str) -> str:
     """HTML 페이지 요청"""
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "Mozilla/5.0")
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            return resp.read().decode("utf-8", errors="ignore")
-    except Exception as exc:
-        raise RuntimeError(f"{label} 실패 [{url}]: {exc}") from exc
+    def _fetch() -> str:
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", "Mozilla/5.0")
+        try:
+            with urllib.request.urlopen(req, timeout=PUBLIC_API_TIMEOUT_SECONDS) as resp:
+                return resp.read().decode("utf-8", errors="ignore")
+        except Exception as exc:
+            raise RuntimeError(f"{label} 실패 [{url}]: {exc}") from exc
+
+    return run_with_retry(label, _fetch)
 
 
 def clean_lines(text: str) -> list[str]:
@@ -402,13 +439,19 @@ def fetch_cleaneye_job_detail(empyear: str, yp_ent_id: str, ent_seq: str) -> str
         yp_ent_id=urllib.parse.quote(yp_ent_id),
         ent_seq=urllib.parse.quote(ent_seq),
     )
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "Mozilla/5.0")
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.read().decode("utf-8", errors="ignore")
-    except Exception as exc:
-        raise RuntimeError(f"클린아이 상세 조회 실패 [{empyear}/{yp_ent_id}/{ent_seq}]: {exc}") from exc
+
+    def _fetch() -> str:
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", "Mozilla/5.0")
+        try:
+            with urllib.request.urlopen(req, timeout=PUBLIC_DETAIL_TIMEOUT_SECONDS) as resp:
+                return resp.read().decode("utf-8", errors="ignore")
+        except Exception as exc:
+            raise RuntimeError(
+                f"클린아이 상세 조회 실패 [{empyear}/{yp_ent_id}/{ent_seq}]: {exc}"
+            ) from exc
+
+    return run_with_retry("클린아이 상세 조회", _fetch)
 
 
 def extract_cleaneye_field(html_text: str, field_id: str) -> str:
@@ -710,7 +753,11 @@ def search_cleaneye_jobs(source: dict) -> tuple[str, list[dict]]:
         empyear = str(item.get("empyear", ""))
         yp_ent_id = str(item.get("ypEntId", ""))
         ent_seq = str(item.get("entSeq", ""))
-        detail_html = fetch_cleaneye_job_detail(empyear, yp_ent_id, ent_seq)
+        try:
+            detail_html = fetch_cleaneye_job_detail(empyear, yp_ent_id, ent_seq)
+        except Exception as exc:
+            print(f"클린아이 상세 조회 fallback [{yp_ent_id}:{ent_seq}]: {exc}")
+            detail_html = ""
         jobs.append({
             "id": f"{yp_ent_id}:{ent_seq}",
             "source": "클린아이",
@@ -776,7 +823,11 @@ def search_alio_jobs(source: dict) -> tuple[str, list[dict]]:
     jobs = []
     for item in items:
         idx = str(item.get("idx", ""))
-        detail_html = fetch_alio_job_detail(idx) if idx else ""
+        try:
+            detail_html = fetch_alio_job_detail(idx) if idx else ""
+        except Exception as exc:
+            print(f"ALIO 상세 조회 fallback [{idx}]: {exc}")
+            detail_html = ""
         jobs.append({
             "id": idx,
             "source": "ALIO",
@@ -791,7 +842,7 @@ def search_alio_jobs(source: dict) -> tuple[str, list[dict]]:
     return label, jobs
 
 
-def build_message(results: dict[str, list]) -> str:
+def build_message(results: dict[str, list], failed_labels: list[str] | None = None) -> str:
     """텔레그램 메시지 생성"""
     now = datetime.now(KST).strftime("%Y-%m-%d")
     lines = [f"<b>💼 채용공고 모니터링</b> ({now})\n"]
@@ -815,7 +866,30 @@ def build_message(results: dict[str, list]) -> str:
     if not has_jobs:
         return ""
 
+    if failed_labels:
+        lines.append("⚠ 일부 소스 수집 실패")
+        for label in failed_labels:
+            lines.append(f"  • {html.escape(label)}")
+
     return "\n".join(lines).rstrip()
+
+
+def build_partial_failure_message(results: dict[str, list], failed_labels: list[str]) -> str:
+    """일부 소스 실패 시 오해 없는 상태 메시지 생성"""
+    now = datetime.now(KST).strftime("%Y-%m-%d")
+    successful_labels = [label for label in results if label not in set(failed_labels)]
+
+    lines = [f"<b>💼 채용공고 모니터링</b> ({now})", "", "⚠ 일부 소스 수집이 실패했습니다."]
+    for label in failed_labels:
+        lines.append(f"• {html.escape(label)}")
+
+    lines.append("")
+    if successful_labels:
+        lines.append("정상 수집된 소스 기준으로는 오늘 등록된 새 채용공고가 없습니다.")
+    else:
+        lines.append("정상 수집된 소스가 없어 오늘 결과를 확정할 수 없습니다.")
+    lines.append("외부 사이트 응답 지연 가능성이 있어 다음 실행에서 다시 확인합니다.")
+    return "\n".join(lines)
 
 
 def main():
@@ -825,6 +899,7 @@ def main():
     results = {}
     attempted = 0
     failures = 0
+    failed_labels: list[str] = []
     for src in sources:
         source_name = (src.get("name") or "").strip().lower()
 
@@ -839,6 +914,7 @@ def main():
                 print(f"직행 검색 실패 [{label}]: {e}")
                 results[label] = []
                 failures += 1
+                failed_labels.append(label)
             continue
 
         if source_name == "cleaneye":
@@ -852,6 +928,7 @@ def main():
                 print(f"클린아이 검색 실패 [{label}]: {e}")
                 results[label] = []
                 failures += 1
+                failed_labels.append(label)
             continue
 
         if source_name == "alio":
@@ -865,6 +942,7 @@ def main():
                 print(f"ALIO 검색 실패 [{label}]: {e}")
                 results[label] = []
                 failures += 1
+                failed_labels.append(label)
             continue
 
         for keyword in src.get("keywords", []):
@@ -883,14 +961,18 @@ def main():
                 print(f"원티드 검색 실패 [{keyword}]: {e}")
                 results[keyword] = []
                 failures += 1
+                failed_labels.append(keyword)
 
     if attempted and failures == attempted:
         raise RuntimeError("채용공고 검색이 모두 실패했습니다.")
 
-    message = build_message(results)
+    message = build_message(results, failed_labels=failed_labels)
     if message:
         send_telegram(message)
         print("채용공고 알림 발송 완료")
+    elif failed_labels:
+        send_telegram(build_partial_failure_message(results, failed_labels))
+        print("채용공고 부분 실패 알림 발송 완료")
     else:
         no_jobs_message = (
             f"<b>💼 채용공고 모니터링</b> ({datetime.now(KST).strftime('%Y-%m-%d')})\n\n"
