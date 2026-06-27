@@ -7,6 +7,7 @@ import os
 import re
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -46,6 +47,18 @@ REPORT_DIR = Path(os.environ.get("JOB_MONITOR_REPORT_DIR", DEFAULT_REPORT_DIR))
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 DEFAULT_OPENAI_MODEL = "gpt-4.1-mini"
 DEFAULT_NOTIFY_MIN_SCORE = 80
+DEFAULT_STATE_PATH = ROOT_DIR / "data" / "job_monitors" / "job_fit_state.json"
+HIGH_FIT_SEEN_KEY = "job-fit/high-fit-seen"
+HIGH_FIT_TTL_SECONDS = 60 * 60 * 24 * 180
+ZIGHANG_API_URL = "https://api.zighang.com/api/recruitments/v3"
+ZIGHANG_DEPTH_TWOS = (
+    "LLM",
+    "RAG",
+    "생성형AI",
+    "NLP",
+    "AI서비스기획",
+    "기타AI_데이터",
+)
 CONTEXT_TEXT_FILES = (
     ROOT_DIR / "content" / "about" / "index.md",
     ROOT_DIR / "README.md",
@@ -229,6 +242,42 @@ def parse_zighang_card(raw_text: str, url: str) -> JobPosting:
     )
 
 
+def parse_zighang_api_datetime(value: str) -> dt.datetime | None:
+    if not value:
+        return None
+    normalized = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = dt.datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc)
+
+
+def parse_zighang_api_item(item: dict) -> JobPosting:
+    job_id = str(item.get("id") or "").strip()
+    company = str((item.get("company") or {}).get("name") or "").strip()
+    title = str(item.get("title") or "").strip()
+    created_at = str(item.get("createdAt") or "").strip()
+    depth_twos = ", ".join(str(value) for value in (item.get("depthTwos") or [])[:5])
+    keywords = ", ".join(str(value) for value in (item.get("keywords") or [])[:5])
+    regions = ", ".join(str(value) for value in (item.get("regions") or [])[:3])
+    meta = " / ".join(part for part in [created_at, regions, depth_twos, keywords] if part)
+    url = str(item.get("redirectUrl") or "").strip()
+    if not url and job_id:
+        url = f"https://zighang.com/recruitment/{job_id}"
+    raw_text = "\n".join(part for part in [company, meta, title] if part)
+    return JobPosting(
+        source="zighang",
+        url=url,
+        raw_card_text=raw_text,
+        title=title,
+        company=company,
+        card_meta=meta,
+    )
+
+
 def collect_cards(page: Page, selector: str, parser, limit: int) -> list[JobPosting]:
     anchors = page.locator(selector)
     results: list[JobPosting] = []
@@ -298,24 +347,44 @@ def scrape_jobda(page: Page, limit: int) -> list[JobPosting]:
 
 
 def scrape_zighang(page: Page, limit: int) -> list[JobPosting]:
-    safe_goto(page, "https://zighang.com/recruitment")
-    page.wait_for_selector("a[href^='/recruitment/']", timeout=30_000)
-    anchors = page.locator("a[href^='/recruitment/']")
-    results: list[JobPosting] = []
-    seen: set[str] = set()
-    for idx in range(anchors.count()):
-        anchor = anchors.nth(idx)
-        href = anchor.get_attribute("href")
-        if not href or not UUID_RE.match(href):
-            continue
-        text = anchor.inner_text(timeout=5_000).strip()
-        if not text or href in seen:
-            continue
-        seen.add(href)
-        results.append(parse_zighang_card(text, urljoin(page.url, href)))
-        if len(results) >= limit:
-            break
-    return results
+    query: list[tuple[str, str]] = [
+        ("page", "0"),
+        ("size", str(max(limit, 20))),
+        ("careerMin", "0"),
+        ("careerMax", "10"),
+        ("includeCareerOpen", "true"),
+        ("sortCondition", "LATEST"),
+        ("orderCondition", "DESC"),
+    ]
+    for depth_two in ZIGHANG_DEPTH_TWOS:
+        query.append(("depthTwos", depth_two))
+    request = urllib.request.Request(
+        ZIGHANG_API_URL + "?" + urllib.parse.urlencode(query),
+        headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+    )
+    with urllib.request.urlopen(request, timeout=20) as response:
+        payload = json.loads(response.read() or b"{}")
+
+    if payload.get("success") is False and not payload.get("data"):
+        raise RuntimeError(payload.get("message") or "직행 최신 공고 API 조회 실패")
+
+    content = (payload.get("data") or {}).get("content") or []
+    postings = [parse_zighang_api_item(item) for item in content if isinstance(item, dict)]
+    postings = [posting for posting in postings if posting.url and (posting.title or posting.company)]
+    postings.sort(
+        key=lambda posting: parse_zighang_api_datetime(posting.card_meta.split(" / ", 1)[0] or "")
+        or dt.datetime.min.replace(tzinfo=dt.timezone.utc),
+        reverse=True,
+    )
+    return postings[:limit]
+
+
+def build_job_key(job: JobPosting) -> str:
+    if job.url:
+        return f"{job.source}:{job.url}"
+    title = re.sub(r"[^0-9A-Za-z가-힣]+", "-", (job.title or job.detail_title).lower()).strip("-")
+    company = re.sub(r"[^0-9A-Za-z가-힣]+", "-", (job.company or "").lower()).strip("-")
+    return f"{job.source}:{company}:{title}"
 
 
 def enrich_detail(page: Page, job: JobPosting) -> None:
@@ -855,6 +924,14 @@ def resolve_bridge_token() -> str:
     return get_first_env("JOB_FIT_REPORT_BRIDGE_TOKEN", "TELEGRAM_MEMORY_BRIDGE_TOKEN")
 
 
+def resolve_bridge_state_base_url() -> str:
+    return get_first_env("TELEGRAM_MEMORY_BRIDGE_URL", "JOB_FIT_REPORT_BRIDGE_URL").rstrip("/")
+
+
+def resolve_bridge_state_token() -> str:
+    return get_first_env("TELEGRAM_MEMORY_BRIDGE_TOKEN", "JOB_FIT_REPORT_BRIDGE_TOKEN")
+
+
 def upload_report_to_bridge(path: Path, matches: list[JobMatch]) -> dict | None:
     base_url = resolve_bridge_base_url()
     token = resolve_bridge_token()
@@ -895,28 +972,126 @@ def upload_report_to_bridge(path: Path, matches: list[JobMatch]) -> dict | None:
         ) from exc
 
 
-def build_high_fit_titles_message(
+class StateBackend:
+    def __init__(self, local_path: Path | None = None) -> None:
+        self.base_url = resolve_bridge_state_base_url()
+        self.token = resolve_bridge_state_token()
+        self.local_path = Path(
+            os.environ.get("JOB_FIT_STATE_FILE", str(local_path or DEFAULT_STATE_PATH))
+        )
+
+    def get(self, key: str, default):
+        if self.base_url and self.token:
+            try:
+                value = self._bridge_get(key)
+                return default if value is None else value
+            except Exception as exc:
+                print(f"브리지 상태 조회 실패, 로컬 fallback 사용: {exc}")
+        state = self._load_local_state()
+        return state.get(key, default)
+
+    def put(self, key: str, value, ttl_seconds: int | None = None) -> None:
+        if self.base_url and self.token:
+            try:
+                self._bridge_put(key, value, ttl_seconds=ttl_seconds)
+                return
+            except Exception as exc:
+                print(f"브리지 상태 저장 실패, 로컬 fallback 사용: {exc}")
+        state = self._load_local_state()
+        state[key] = value
+        self._save_local_state(state)
+
+    def _bridge_get(self, key: str):
+        request = urllib.request.Request(
+            self.base_url + "/state/get",
+            data=json.dumps({"key": key}, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json; charset=utf-8",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read() or b"{}")
+            if not payload.get("ok"):
+                raise RuntimeError(str(payload))
+            if not payload.get("found"):
+                return None
+            return payload.get("value")
+
+    def _bridge_put(self, key: str, value, ttl_seconds: int | None = None) -> None:
+        payload = {"key": key, "value": value}
+        if ttl_seconds:
+            payload["ttl_seconds"] = ttl_seconds
+        request = urllib.request.Request(
+            self.base_url + "/state/put",
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json; charset=utf-8",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=20) as response:
+            body = json.loads(response.read() or b"{}")
+            if not body.get("ok"):
+                raise RuntimeError(str(body))
+
+    def _load_local_state(self) -> dict:
+        if not self.local_path.exists():
+            return {}
+        try:
+            return json.loads(self.local_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def _save_local_state(self, state: dict) -> None:
+        self.local_path.parent.mkdir(parents=True, exist_ok=True)
+        self.local_path.write_text(
+            json.dumps(state, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+
+def select_new_high_fit_matches(
     matches: list[JobMatch],
+    *,
+    backend: StateBackend,
     min_score: int,
     limit: int,
+) -> list[JobMatch]:
+    seen = set(str(item) for item in backend.get(HIGH_FIT_SEEN_KEY, []))
+    selected: list[JobMatch] = []
+    for match in matches:
+        if match.score < min_score or not (match.job.title or match.job.detail_title):
+            continue
+        key = build_job_key(match.job)
+        if key in seen:
+            continue
+        selected.append(match)
+        seen.add(key)
+        if len(selected) >= limit:
+            break
+    backend.put(
+        HIGH_FIT_SEEN_KEY,
+        list(seen)[-1000:],
+        ttl_seconds=HIGH_FIT_TTL_SECONDS,
+    )
+    return selected
+
+
+def build_high_fit_titles_message(
+    matches: list[JobMatch],
 ) -> str:
-    high_fit_matches = [
-        match for match in matches
-        if match.score >= min_score and (match.job.title or match.job.detail_title)
-    ]
-    high_fit_matches = high_fit_matches[:limit]
     date_label = dt.datetime.now().strftime("%Y-%m-%d")
 
-    if not high_fit_matches:
-        return (
-            f"<b>💼 고적합 채용공고</b> ({date_label})\n\n"
-            "오늘 기준으로 바로 챙겨볼 만한 공고를 찾지 못했습니다."
-        )
+    if not matches:
+        return ""
 
     lines = [f"<b>💼 고적합 채용공고</b> ({date_label})", ""]
     lines.extend(
         f"- {match.job.title or match.job.detail_title}"
-        for match in high_fit_matches
+        for match in matches
     )
     return "\n".join(lines)
 
@@ -925,7 +1100,16 @@ def maybe_send_high_fit_titles(matches: list[JobMatch], min_score: int, limit: i
     if send_telegram is None:
         print("send_telegram import에 실패해 제목 알림을 건너뜁니다.")
         return
-    message = build_high_fit_titles_message(matches, min_score=min_score, limit=limit)
+    new_matches = select_new_high_fit_matches(
+        matches,
+        backend=StateBackend(),
+        min_score=min_score,
+        limit=limit,
+    )
+    message = build_high_fit_titles_message(new_matches)
+    if not message:
+        print("신규 고적합 채용공고가 없어 제목 알림을 생략합니다.")
+        return
     send_telegram(message)
 
 
