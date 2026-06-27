@@ -33,7 +33,7 @@ jobs:
 
       - name: Install Playwright Chromium
         run: |
-          python -m playwright install --with-deps chromium
+          scripts/automation/install_playwright_chromium.sh
 
       - name: Run AI quality immediate monitor
         env:
