@@ -12,6 +12,7 @@ from jobs.ai_quality_monitor import (
     is_closed_job,
     merge_summary_records,
     score_role_relevance,
+    send_message_if_available,
 )
 from jobs.core import JobPosting, score_text
 
@@ -162,7 +163,7 @@ class AIQualityMonitorTests(unittest.TestCase):
             from jobs.ai_quality_monitor import StateBackend
 
             backend = StateBackend(local_path=Path(tmp_dir) / "state.json")
-            backend.put("ai-quality/high-fit-seen", ["kakaobank:https://example.com/1"])
+            backend.put("ai-quality/high-fit-seen", ["kakaobank:https://example.com/old"])
             records = handle_immediate_alerts(
                 [match],
                 backend=backend,
@@ -170,7 +171,117 @@ class AIQualityMonitorTests(unittest.TestCase):
                 notify_limit=5,
                 ignore_seen=True,
             )
-        self.assertEqual(1, len(records))
+            saved_seen = backend.get("ai-quality/high-fit-seen", [])
+            self.assertEqual(1, len(records))
+            self.assertNotIn("kakaobank:https://example.com/1", saved_seen)
+
+            from jobs import ai_quality_monitor
+
+            ai_quality_monitor.mark_records_seen(records, backend=backend)
+            saved_seen = backend.get("ai-quality/high-fit-seen", [])
+            self.assertIn("kakaobank:https://example.com/1", saved_seen)
+
+    def test_send_message_if_available_does_not_raise_on_telegram_failure(self) -> None:
+        from jobs import ai_quality_monitor
+
+        calls = []
+
+        def fake_send_telegram(message: str, fail_on_error: bool = True):
+            calls.append((message, fail_on_error))
+            return False
+
+        original = ai_quality_monitor.send_telegram
+        ai_quality_monitor.send_telegram = fake_send_telegram
+        try:
+            sent = send_message_if_available("테스트 메시지")
+        finally:
+            ai_quality_monitor.send_telegram = original
+
+        self.assertIs(sent, False)
+        self.assertEqual([("테스트 메시지", False)], calls)
+
+    def test_collect_unique_anchor_jobs_skips_broken_card(self) -> None:
+        from jobs.ai_quality_monitor import collect_unique_anchor_jobs
+
+        class FakeAnchors:
+            @staticmethod
+            def count() -> int:
+                return 2
+
+        class FakePage:
+            @staticmethod
+            def locator(_selector):
+                return FakeAnchors()
+
+        def builder(_page, idx):
+            if idx == 0:
+                raise ValueError("깨진 카드")
+            return JobPosting(
+                source="test",
+                url="https://example.com/good",
+                raw_card_text="AI Builder",
+                title="AI Builder",
+            )
+
+        jobs = collect_unique_anchor_jobs(FakePage(), "a", 5, builder)
+
+        self.assertEqual(["AI Builder"], [job.title for job in jobs])
+
+    def test_summary_state_is_finalized_only_after_delivery(self) -> None:
+        from jobs import ai_quality_monitor
+
+        delivered_record = {
+            "job_key": "kakao:https://example.com/high",
+            "company": "카카오",
+            "title": "AI Builder",
+            "score": 90,
+            "url": "https://example.com/high",
+        }
+        pending_record = {
+            "job_key": "naver:https://example.com/pending",
+            "company": "NAVER",
+            "title": "LLM Evaluation Engineer",
+            "score": 80,
+            "url": "https://example.com/pending",
+        }
+        with TemporaryDirectory() as tmp_dir:
+            backend = ai_quality_monitor.StateBackend(
+                local_path=Path(tmp_dir) / "state.json"
+            )
+            backend.put(
+                ai_quality_monitor.summary_key_for("2026-07-16"),
+                [delivered_record, pending_record],
+            )
+
+            selected = ai_quality_monitor.drain_summary_candidates(
+                [],
+                backend=backend,
+                summary_score=60,
+                high_fit_score=65,
+                summary_limit=1,
+                date_label="2026-07-16",
+            )
+
+            self.assertEqual([delivered_record], selected)
+            self.assertEqual(
+                [delivered_record, pending_record],
+                backend.get(ai_quality_monitor.summary_key_for("2026-07-16"), []),
+            )
+
+            ai_quality_monitor.finalize_summary_delivery(
+                selected,
+                backend=backend,
+                date_label="2026-07-16",
+            )
+
+            self.assertIn(
+                delivered_record["job_key"],
+                backend.get("ai-quality/high-fit-seen", []),
+            )
+            self.assertEqual(
+                [pending_record],
+                backend.get(ai_quality_monitor.summary_key_for("2026-07-16"), []),
+            )
 
 
 if __name__ == "__main__":

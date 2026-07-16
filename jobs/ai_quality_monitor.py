@@ -6,6 +6,7 @@ import html
 import json
 import os
 import re
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -22,7 +23,16 @@ except Exception:  # pragma: no cover - jobs 단독 실행 허용
     send_telegram = None
 
 from .ai_quality_profile import AI_QUALITY_CANDIDATE, AI_QUALITY_SEED_ROLES
-from .core import JobPosting, build_match, clean_lines, get_first_env, safe_goto, score_text, shrink
+from .core import (
+    JobPosting,
+    build_match,
+    clean_lines,
+    collect_browser_sources,
+    get_first_env,
+    safe_goto,
+    score_text,
+    shrink,
+)
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_REPORT_DIR = ROOT_DIR / "jobs" / "reports"
@@ -32,6 +42,7 @@ HIGH_FIT_SEEN_KEY = "ai-quality/high-fit-seen"
 SUMMARY_KEY_PREFIX = "ai-quality/summary"
 HIGH_FIT_TTL_SECONDS = 60 * 60 * 24 * 180
 SUMMARY_TTL_SECONDS = 60 * 60 * 24 * 14
+BROWSER_SELECTOR_TIMEOUT_MS = 30_000
 WANTED_BASE_URL = "https://www.wanted.co.kr"
 WANTED_JOB_URL = "https://www.wanted.co.kr/wd/{job_id}"
 SAMSUNG_BASE_URL = "https://www.samsungcareers.com"
@@ -509,7 +520,14 @@ def scrape_wanted(limit: int) -> list[JobPosting]:
             if not job_id or job_id in seen_ids:
                 continue
             seen_ids.add(job_id)
-            detail = fetch_wanted_job_detail(job_id)
+            try:
+                detail = fetch_wanted_job_detail(job_id)
+            except Exception as exc:
+                print(
+                    f"[Wanted] 상세 수집 fallback [{job_id}] "
+                    f"[{type(exc).__name__}]: {exc}"
+                )
+                detail = {}
             title = normalize_text(item.get("position", ""))
             company = normalize_text((item.get("company") or {}).get("name", ""))
             summary = summarize_wanted_detail(detail)
@@ -540,7 +558,11 @@ def collect_unique_anchor_jobs(
     seen_urls: set[str] = set()
     count = anchors.count()
     for idx in range(count):
-        posting = builder(page, idx)
+        try:
+            posting = builder(page, idx)
+        except Exception as exc:
+            print(f"카드 파싱 건너뜀 [{idx}] [{type(exc).__name__}]: {exc}")
+            continue
         if posting is None:
             continue
         if posting.url in seen_urls:
@@ -577,7 +599,7 @@ def scrape_kakao(page: Page, limit: int) -> list[JobPosting]:
         page,
         "https://careers.kakao.com/jobs?skillSet=&page=1&company=KAKAO&part=TECHNOLOGY&employeeType=&keyword=",
     )
-    page.wait_for_selector("a[href^='/jobs/P-']", timeout=60_000)
+    page.wait_for_selector("a[href^='/jobs/P-']", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     return collect_unique_anchor_jobs(page, "a[href^='/jobs/P-']", limit, build_kakao_posting)
 
 
@@ -603,7 +625,7 @@ def build_kakaobank_posting(page: Page, idx: int) -> JobPosting | None:
 
 def scrape_kakaobank(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, "https://recruit.kakaobank.com/jobs?recruitClassNames=AI")
-    page.wait_for_selector("a[href^='/jobs/']", timeout=60_000)
+    page.wait_for_selector("a[href^='/jobs/']", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     return collect_unique_anchor_jobs(page, "a[href^='/jobs/']", limit, build_kakaobank_posting)
 
 
@@ -631,13 +653,13 @@ def scrape_naver(page: Page, limit: int) -> list[JobPosting]:
         page,
         "https://recruit.navercorp.com/rcrt/list.do?subJobCdArr=&sysCompanyCdArr=&empTypeCdArr=&entTypeCdArr=&workAreaCdArr=&sw=",
     )
-    page.wait_for_selector("a.card_link", timeout=60_000)
+    page.wait_for_selector("a.card_link", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     return collect_unique_anchor_jobs(page, "a.card_link", limit, build_naver_posting)
 
 
 def scrape_samsung(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, SAMSUNG_LIST_URL)
-    page.wait_for_selector("ul#list a[data-value]", timeout=60_000)
+    page.wait_for_selector("ul#list a[data-value]", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     anchors = page.locator("ul#list a[data-value]")
     results: list[JobPosting] = []
     seen_urls: set[str] = set()
@@ -676,7 +698,7 @@ def scrape_samsung(page: Page, limit: int) -> list[JobPosting]:
 
 def scrape_lg(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, LG_APPLY_URL)
-    page.wait_for_selector("[grid='1'] > div", timeout=60_000)
+    page.wait_for_selector("[grid='1'] > div", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     results: list[JobPosting] = []
     seen_urls: set[str] = set()
     card_count = page.locator("[grid='1'] > div").count()
@@ -706,8 +728,8 @@ def scrape_lg(page: Page, limit: int) -> list[JobPosting]:
                     card_meta=" ".join(lines[2:8]),
                 )
             )
-        page.go_back(wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_selector("[grid='1'] > div", timeout=60_000)
+        page.go_back(wait_until="domcontentloaded", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
+        page.wait_for_selector("[grid='1'] > div", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
         if len(results) >= limit:
             break
     return results
@@ -735,7 +757,7 @@ def build_autoever_posting(page: Page, idx: int) -> JobPosting | None:
 
 def scrape_autoever(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, "https://career.hyundai-autoever.com/ko/apply")
-    page.wait_for_selector("a[href^='/ko/o/']", timeout=60_000)
+    page.wait_for_selector("a[href^='/ko/o/']", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     return collect_unique_anchor_jobs(page, "a[href^='/ko/o/']", limit, build_autoever_posting)
 
 
@@ -762,7 +784,7 @@ def build_kt_posting(page: Page, idx: int) -> JobPosting | None:
 
 def scrape_kt(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, "https://recruit.kt.com/careers")
-    page.wait_for_selector("a[href^='/careers/']", timeout=60_000)
+    page.wait_for_selector("a[href^='/careers/']", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     return collect_unique_anchor_jobs(page, "a[href^='/careers/']", limit, build_kt_posting)
 
 
@@ -792,7 +814,7 @@ def build_sk_posting(page: Page, idx: int) -> JobPosting | None:
 
 def scrape_sk(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, "https://www.skcareers.com/Recruit")
-    page.wait_for_selector("a[href*='/Recruit/Detail/']", timeout=60_000)
+    page.wait_for_selector("a[href*='/Recruit/Detail/']", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     return collect_unique_anchor_jobs(page, "a[href*='/Recruit/Detail/']", limit, build_sk_posting)
 
 
@@ -819,13 +841,13 @@ def build_hybe_posting(page: Page, idx: int) -> JobPosting | None:
 
 def scrape_hybe(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, "https://careers.hybecorp.com/ko/career?occupations=%EA%B8%B0%EC%88%A0")
-    page.wait_for_selector("a[href^='/ko/o/']", timeout=60_000)
+    page.wait_for_selector("a[href^='/ko/o/']", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     return collect_unique_anchor_jobs(page, "a[href^='/ko/o/']", limit, build_hybe_posting)
 
 
 def scrape_cj(page: Page, limit: int) -> list[JobPosting]:
     safe_goto(page, CJ_LIST_URL)
-    page.wait_for_selector("a[onclick*='goNewDetail']", timeout=60_000)
+    page.wait_for_selector("a[onclick*='goNewDetail']", timeout=BROWSER_SELECTOR_TIMEOUT_MS)
     anchors = page.locator("a[onclick*='goNewDetail']")
     results: list[JobPosting] = []
     seen_urls: set[str] = set()
@@ -888,23 +910,32 @@ def collect_jobs(limit_per_site: int) -> tuple[list[JobPosting], list[str]]:
         jobs.extend(items)
         print(f"[Wanted] 목록 수집 완료: {len(items)}건")
     except Exception as exc:
-        message = f"[Wanted] 목록 수집 실패: {exc}"
+        message = f"[Wanted] 목록 수집 실패 [{type(exc).__name__}]: {exc}"
         print(message)
+        traceback.print_exception(type(exc), exc, exc.__traceback__)
         errors.append(message)
 
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1440, "height": 2200})
-        for label, scraper in BROWSER_SOURCES:
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
             try:
-                items = scraper(page, limit_per_site)
-                jobs.extend(items)
-                print(f"[{label}] 목록 수집 완료: {len(items)}건")
-            except Exception as exc:
-                message = f"[{label}] 목록 수집 실패: {exc}"
-                print(message)
-                errors.append(message)
-        browser.close()
+                browser_jobs, browser_errors = collect_browser_sources(
+                    browser,
+                    list(BROWSER_SOURCES),
+                    limit=limit_per_site,
+                )
+                jobs.extend(browser_jobs)
+                errors.extend(browser_errors)
+            finally:
+                try:
+                    browser.close()
+                except Exception as exc:
+                    print(f"브라우저 종료 경고 [{type(exc).__name__}]: {exc}")
+    except Exception as exc:
+        message = f"[Playwright] 목록 수집 준비 실패 [{type(exc).__name__}]: {exc}"
+        print(message)
+        traceback.print_exception(type(exc), exc, exc.__traceback__)
+        errors.append(message)
 
     deduped: dict[str, JobPosting] = {}
     for job in jobs:
@@ -1058,17 +1089,41 @@ def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[
     detail_errors: list[str] = []
     detail_jobs = [job for job in detail_targets if job.source != "wanted"]
     if detail_jobs:
-        with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=True)
-            page = browser.new_page(viewport={"width": 1440, "height": 2200})
-            for job in detail_jobs:
+        try:
+            with sync_playwright() as playwright:
+                browser = playwright.chromium.launch(headless=True)
                 try:
-                    enrich_detail_generic(page, job)
-                except Exception as exc:
-                    message = f"[{job.source}] 상세 수집 실패: {job.url} ({exc})"
-                    print(message)
-                    detail_errors.append(message)
-            browser.close()
+                    for job in detail_jobs:
+                        page = None
+                        try:
+                            page = browser.new_page(viewport={"width": 1440, "height": 2200})
+                            enrich_detail_generic(page, job)
+                        except Exception as exc:
+                            message = (
+                                f"[{job.source}] 상세 수집 실패 [{type(exc).__name__}]: "
+                                f"{job.url} ({exc})"
+                            )
+                            print(message)
+                            detail_errors.append(message)
+                        finally:
+                            if page is not None:
+                                try:
+                                    page.close()
+                                except Exception as exc:
+                                    print(
+                                        f"[{job.source}] 상세 페이지 종료 경고 "
+                                        f"[{type(exc).__name__}]: {exc}"
+                                    )
+                finally:
+                    try:
+                        browser.close()
+                    except Exception as exc:
+                        print(f"상세 브라우저 종료 경고 [{type(exc).__name__}]: {exc}")
+        except Exception as exc:
+            message = f"[Playwright] 상세 수집 준비 실패 [{type(exc).__name__}]: {exc}"
+            print(message)
+            traceback.print_exception(type(exc), exc, exc.__traceback__)
+            detail_errors.append(message)
 
     if scrape_errors:
         print("부분 수집 실패:")
@@ -1129,13 +1184,16 @@ def save_report(report: str, mode: str) -> Path:
     return path
 
 
-def send_message_if_available(message: str) -> None:
+def send_message_if_available(message: str) -> bool:
     if not message:
-        return
+        return True
     if send_telegram is None:
         print("send_telegram import에 실패해 텔레그램 전송을 건너뜁니다.")
-        return
-    send_telegram(message)
+        return False
+    sent = send_telegram(message, fail_on_error=False)
+    if not sent:
+        print("텔레그램 전송이 재시도 후에도 실패했습니다.")
+    return sent
 
 
 def handle_immediate_alerts(
@@ -1156,12 +1214,18 @@ def handle_immediate_alerts(
             continue
         new_high_fit.append(record)
         seen.add(record["job_key"])
+    return new_high_fit[:notify_limit]
+
+
+def mark_records_seen(records: list[dict], *, backend: StateBackend) -> None:
+    """텔레그램 발송에 성공한 공고만 seen 상태로 확정한다."""
+    seen = set(str(item) for item in backend.get(HIGH_FIT_SEEN_KEY, []))
+    seen.update(str(record.get("job_key", "")) for record in records if record.get("job_key"))
     backend.put(
         HIGH_FIT_SEEN_KEY,
         list(seen)[-1000:],
         ttl_seconds=HIGH_FIT_TTL_SECONDS,
     )
-    return new_high_fit[:notify_limit]
 
 
 def persist_summary_candidates(
@@ -1197,17 +1261,33 @@ def drain_summary_candidates(
         summary_score=summary_score,
         date_label=date_label,
     )
-    selected = [
-        record for record in merged
-        if int(record.get("score", 0)) < high_fit_score
-    ][:summary_limit]
     seen = set(str(item) for item in backend.get(HIGH_FIT_SEEN_KEY, []))
-    for record in merged:
-        if int(record.get("score", 0)) >= high_fit_score:
-            seen.add(str(record.get("job_key", "")))
-    backend.put(HIGH_FIT_SEEN_KEY, list(seen)[-1000:], ttl_seconds=HIGH_FIT_TTL_SECONDS)
-    backend.put(summary_key_for(date_label), [], ttl_seconds=SUMMARY_TTL_SECONDS)
-    return selected
+    return [
+        record for record in merged
+        if str(record.get("job_key", "")) not in seen
+    ][:summary_limit]
+
+
+def finalize_summary_delivery(
+    records: list[dict],
+    *,
+    backend: StateBackend,
+    date_label: str,
+) -> None:
+    mark_records_seen(records, backend=backend)
+    delivered_keys = {
+        str(record.get("job_key", "")) for record in records if record.get("job_key")
+    }
+    existing = backend.get(summary_key_for(date_label), [])
+    remaining = [
+        record for record in (existing if isinstance(existing, list) else [])
+        if str(record.get("job_key", "")) not in delivered_keys
+    ]
+    backend.put(
+        summary_key_for(date_label),
+        remaining,
+        ttl_seconds=SUMMARY_TTL_SECONDS,
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -1256,7 +1336,9 @@ def main() -> None:
         )
         message = build_immediate_message(records, date_label)
         if message:
-            send_message_if_available(message)
+            if not send_message_if_available(message):
+                raise RuntimeError("AI 품질 채용공고 텔레그램 알림 전송에 실패했습니다.")
+            mark_records_seen(records, backend=backend)
         else:
             print("신규 고적합 AI 품질·Builder 공고가 없어 즉시 알림을 생략합니다.")
     elif args.mode == "summary":
@@ -1273,7 +1355,9 @@ def main() -> None:
             high_fit_score=args.high_fit_score,
             date_label=date_label,
         )
-        send_message_if_available(message)
+        if not send_message_if_available(message):
+            raise RuntimeError("AI 품질 채용공고 일일 요약 전송에 실패했습니다.")
+        finalize_summary_delivery(records, backend=backend, date_label=date_label)
     else:
         top_records = [match.to_record() for match in matches[: args.summary_limit]]
         print(json.dumps(top_records, ensure_ascii=False, indent=2))

@@ -6,16 +6,20 @@ from __future__ import annotations
 - 원티드 API로 AI/ML 관련 채용공고 검색
 - 직행 API로 AI/LLM/RAG 관련 채용공고 조회
 - 채용공고 본문에서 주요 업무 중심으로 요약해 전달
-- 매일 10:00 KST 발송
+- 월·수·금 10:00 KST 발송
 """
 
 import html
+import json
 import math
+import os
 import re
 import time
+import traceback
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Callable, TypeVar
 
 from config.loader import load_config
@@ -36,7 +40,140 @@ REQUEST_RETRY_COUNT = 2
 REQUEST_RETRY_DELAY_SECONDS = 1.5
 PUBLIC_API_TIMEOUT_SECONDS = 25
 PUBLIC_DETAIL_TIMEOUT_SECONDS = 20
+WANTED_OLD_RESULT_STOP_COUNT = 3
+DEFAULT_PUBLIC_SOURCE_MAX_PAGES = 5
+DEFAULT_LOOKBACK_DAYS = 4
+SEEN_STATE_KEY = "job-monitor/notified-seen"
+SEEN_STATE_TTL_SECONDS = 180 * 24 * 60 * 60
+MAX_SEEN_JOB_KEYS = 5000
+DEFAULT_STATE_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "job_monitor" / "seen_jobs.json"
+)
 T = TypeVar("T")
+
+
+class JobMonitorStateBackend:
+    """Cloudflare KV를 우선 사용하고 로컬 JSON으로 fallback한다."""
+
+    def __init__(self, local_path: Path | None = None) -> None:
+        self.base_url = os.environ.get("TELEGRAM_MEMORY_BRIDGE_URL", "").strip().rstrip("/")
+        self.token = os.environ.get("TELEGRAM_MEMORY_BRIDGE_TOKEN", "").strip()
+        self.local_path = Path(local_path or DEFAULT_STATE_PATH)
+
+    def get(self, key: str, default):
+        if self.base_url and self.token:
+            try:
+                value = self._bridge_get(key)
+                return default if value is None else value
+            except Exception as exc:
+                print(f"채용공고 상태 조회 실패, 로컬 fallback 사용: {exc}")
+        return self._load_local_state().get(key, default)
+
+    def put(self, key: str, value, ttl_seconds: int | None = None) -> None:
+        if self.base_url and self.token:
+            try:
+                self._bridge_put(key, value, ttl_seconds=ttl_seconds)
+                return
+            except Exception as exc:
+                print(f"채용공고 상태 저장 실패, 로컬 fallback 사용: {exc}")
+        state = self._load_local_state()
+        state[key] = value
+        self.local_path.parent.mkdir(parents=True, exist_ok=True)
+        self.local_path.write_text(
+            json.dumps(state, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    def _bridge_get(self, key: str):
+        request = urllib.request.Request(
+            self.base_url + "/state/get",
+            data=json.dumps({"key": key}, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json; charset=utf-8",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read() or b"{}")
+            if not payload.get("ok"):
+                raise RuntimeError(str(payload))
+            return payload.get("value") if payload.get("found") else None
+
+    def _bridge_put(self, key: str, value, ttl_seconds: int | None = None) -> None:
+        payload = {"key": key, "value": value}
+        if ttl_seconds:
+            payload["ttl_seconds"] = ttl_seconds
+        request = urllib.request.Request(
+            self.base_url + "/state/put",
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json; charset=utf-8",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=20) as response:
+            body = json.loads(response.read() or b"{}")
+            if not body.get("ok"):
+                raise RuntimeError(str(body))
+
+    def _load_local_state(self) -> dict:
+        if not self.local_path.exists():
+            return {}
+        try:
+            return json.loads(self.local_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+
+def lookback_start_date(today, lookback_days: int):
+    days = max(1, int(lookback_days))
+    return today - timedelta(days=days - 1)
+
+
+def build_job_key(job: dict) -> str:
+    source = str(job.get("source") or "unknown")
+    identity = (
+        str(job.get("id") or "").strip()
+        or str(job.get("link") or "").strip()
+        or f"{job.get('company', '')}:{job.get('title', '')}"
+    )
+    return f"{source}:{identity}"
+
+
+def filter_unseen_results(
+    results: dict[str, list[dict]],
+    seen_keys: set[str],
+) -> tuple[dict[str, list[dict]], list[str]]:
+    filtered: dict[str, list[dict]] = {}
+    new_keys: list[str] = []
+    selected_keys = set(seen_keys)
+    for label, jobs in results.items():
+        filtered[label] = []
+        for job in jobs:
+            key = build_job_key(job)
+            if key in selected_keys:
+                continue
+            selected_keys.add(key)
+            new_keys.append(key)
+            filtered[label].append(job)
+    return filtered, new_keys
+
+
+def mark_job_keys_seen(
+    backend: JobMonitorStateBackend,
+    existing_keys: set[str],
+    delivered_keys: list[str],
+) -> None:
+    if not delivered_keys:
+        return
+    ordered_keys = list(dict.fromkeys([*existing_keys, *delivered_keys]))
+    backend.put(
+        SEEN_STATE_KEY,
+        ordered_keys[-MAX_SEEN_JOB_KEYS:],
+        ttl_seconds=SEEN_STATE_TTL_SECONDS,
+    )
 
 
 def run_with_retry(label: str, callback: Callable[[], T]) -> T:
@@ -390,6 +527,7 @@ def search_wanted_jobs(
     size: int = 20,
     sort: str = "latest",
     today_only: bool = True,
+    lookback_days: int = 1,
 ) -> list[dict]:
     """원티드 채용공고 검색 (비공식 API)"""
     url = "https://www.wanted.co.kr/api/v4/jobs?" + urllib.parse.urlencode({
@@ -403,11 +541,32 @@ def search_wanted_jobs(
     data = wanted_request(url)
     jobs = []
     today = datetime.now(KST).date()
+    start_date = lookback_start_date(today, lookback_days)
+    consecutive_old_results = 0
+    date_lookup_attempts = 0
+    date_lookup_failures = 0
     for item in data.get("data", []):
         job_id = item.get("id", "")
         if today_only:
-            posted_at = fetch_wanted_posted_date(job_id)
-            if posted_at is None or posted_at.date() != today:
+            date_lookup_attempts += 1
+            try:
+                posted_at = fetch_wanted_posted_date(job_id)
+            except Exception as exc:
+                date_lookup_failures += 1
+                print(
+                    f"원티드 등록일 조회 건너뜀 [{job_id}] "
+                    f"[{type(exc).__name__}]: {exc}"
+                )
+                continue
+            if posted_at is None:
+                continue
+            if posted_at.date() < start_date:
+                consecutive_old_results += 1
+                if consecutive_old_results >= WANTED_OLD_RESULT_STOP_COUNT:
+                    break
+                continue
+            consecutive_old_results = 0
+            if posted_at.date() > today:
                 continue
 
         detail = fetch_wanted_job_detail(job_id)
@@ -421,6 +580,8 @@ def search_wanted_jobs(
         })
         if len(jobs) >= limit:
             break
+    if date_lookup_attempts and date_lookup_failures == date_lookup_attempts:
+        raise RuntimeError("원티드 등록일 조회가 모두 실패했습니다.")
     return jobs
 
 
@@ -636,6 +797,7 @@ def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
     size = int(source.get("size", 20))
     max_results = int(source.get("max_results", 5))
     today_only = bool(source.get("today_only", False))
+    lookback_days = int(source.get("lookback_days", 1))
     depth_twos = source.get("depth_twos") or []
 
     query: list[tuple[str, str]] = [
@@ -656,13 +818,15 @@ def search_zighang_jobs(source: dict) -> tuple[str, list[dict]]:
 
     content = (data.get("data") or {}).get("content") or []
     today = datetime.now(KST).date()
+    start_date = lookback_start_date(today, lookback_days)
 
     jobs = []
     for item in content:
         job_id = item.get("id", "")
         created_at = parse_zighang_created_at(str(item.get("createdAt") or ""))
-        if today_only and (created_at is None or created_at.date() != today):
-            continue
+        if today_only:
+            if created_at is None or not start_date <= created_at.date() <= today:
+                continue
         detail = fetch_zighang_job_detail(job_id) if job_id else {}
         company = (item.get("company") or {}).get("name", "")
         career_label = format_career_range(item.get("careerMin"), item.get("careerMax"))
@@ -693,7 +857,9 @@ def search_cleaneye_jobs(source: dict) -> tuple[str, list[dict]]:
     """클린아이 공공기관 채용 조회"""
     label = source.get("label") or "클린아이 공공채용"
     today_only = bool(source.get("today_only", True))
+    lookback_days = int(source.get("lookback_days", 1))
     today = datetime.now(KST).date()
+    start_date = lookback_start_date(today, lookback_days)
     today_str = today.strftime("%Y-%m-%d")
     ent_recruit_list = source.get("ent_recruit_list") or []
     job_type_list = source.get("job_type_list") or ["702001"]
@@ -707,7 +873,12 @@ def search_cleaneye_jobs(source: dict) -> tuple[str, list[dict]]:
     base_payload.extend([
         ("yearincome", str(source.get("yearincome", ""))),
         ("status", str(source.get("status", ""))),
-        ("pubDate", today_str if today_only else str(source.get("pub_date", ""))),
+        (
+            "pubDate",
+            today_str
+            if today_only and lookback_days == 1
+            else str(source.get("pub_date", "")),
+        ),
         ("pubEndDate", str(source.get("pub_end_date", ""))),
         ("entName", str(source.get("ent_name", ""))),
     ])
@@ -717,16 +888,23 @@ def search_cleaneye_jobs(source: dict) -> tuple[str, list[dict]]:
     per_page = int(pagination.get("recordCountPerPage") or len(first_page.get("list", [])) or 10)
     total_count = int(pagination.get("totalRecordCount") or first_page.get("cnt") or 0)
     total_pages = max(1, math.ceil(total_count / max(per_page, 1))) if total_count else 1
+    max_pages = max(1, int(source.get("max_pages", DEFAULT_PUBLIC_SOURCE_MAX_PAGES)))
+    pages_to_fetch = min(total_pages, max_pages)
 
     items = list(first_page.get("list", []))
-    for page_index in range(2, total_pages + 1):
+    for page_index in range(2, pages_to_fetch + 1):
         page_data = cleaneye_request(base_payload + [("pageIndex", str(page_index))])
         items.extend(page_data.get("list", []))
 
     if today_only:
         items = [
             item for item in items
-            if (parse_cleaneye_date(item.get("pubDate", "")) or datetime.min.replace(tzinfo=KST)).date() == today
+            if start_date
+            <= (
+                parse_cleaneye_date(item.get("pubDate", ""))
+                or datetime.min.replace(tzinfo=KST)
+            ).date()
+            <= today
         ]
 
     deduped = []
@@ -788,8 +966,11 @@ def search_alio_jobs(source: dict) -> tuple[str, list[dict]]:
     """ALIO 공공기관 채용 조회"""
     label = source.get("label") or "ALIO 공공기관 채용"
     today_only = bool(source.get("today_only", True))
+    lookback_days = int(source.get("lookback_days", 1))
     today = datetime.now(KST).date()
+    start_date = lookback_start_date(today, lookback_days)
     date_value = today.strftime("%Y.%m.%d")
+    start_date_value = start_date.strftime("%Y.%m.%d")
     max_results = int(source.get("max_results", 5))
     page_set = int(source.get("page_set", 50))
     work_types = source.get("work_types") or ["R1010", "R1030"]
@@ -797,7 +978,10 @@ def search_alio_jobs(source: dict) -> tuple[str, list[dict]]:
     query: list[tuple[str, str]] = [
         ("pageNo", "1"),
         ("idx", ""),
-        ("s_date", date_value if today_only else str(source.get("start_date", ""))),
+        (
+            "s_date",
+            start_date_value if today_only else str(source.get("start_date", "")),
+        ),
         ("e_date", date_value if today_only else str(source.get("end_date", ""))),
         ("org_type", str(source.get("org_type", ""))),
         ("org_name", str(source.get("org_name", ""))),
@@ -817,7 +1001,12 @@ def search_alio_jobs(source: dict) -> tuple[str, list[dict]]:
     if today_only:
         items = [
             item for item in items
-            if (parse_alio_date(item.get("reg_date", "")) or datetime.min.replace(tzinfo=KST)).date() == today
+            if start_date
+            <= (
+                parse_alio_date(item.get("reg_date", ""))
+                or datetime.min.replace(tzinfo=KST)
+            ).date()
+            <= today
         ]
 
     jobs = []
@@ -885,9 +1074,9 @@ def build_partial_failure_message(results: dict[str, list], failed_labels: list[
 
     lines.append("")
     if successful_labels:
-        lines.append("정상 수집된 소스 기준으로는 오늘 등록된 새 채용공고가 없습니다.")
+        lines.append("정상 수집된 소스 기준으로는 새로 알릴 채용공고가 없습니다.")
     else:
-        lines.append("정상 수집된 소스가 없어 오늘 결과를 확정할 수 없습니다.")
+        lines.append("정상 수집된 소스가 없어 이번 결과를 확정할 수 없습니다.")
     lines.append("외부 사이트 응답 지연 가능성이 있어 다음 실행에서 다시 확인합니다.")
     return "\n".join(lines)
 
@@ -911,7 +1100,8 @@ def main():
                 results[result_label] = jobs
                 print(f"[{result_label}] {len(jobs)}건")
             except Exception as e:
-                print(f"직행 검색 실패 [{label}]: {e}")
+                print(f"직행 검색 실패 [{label}] [{type(e).__name__}]: {e}")
+                traceback.print_exception(type(e), e, e.__traceback__)
                 results[label] = []
                 failures += 1
                 failed_labels.append(label)
@@ -925,7 +1115,8 @@ def main():
                 results[result_label] = jobs
                 print(f"[{result_label}] {len(jobs)}건")
             except Exception as e:
-                print(f"클린아이 검색 실패 [{label}]: {e}")
+                print(f"클린아이 검색 실패 [{label}] [{type(e).__name__}]: {e}")
+                traceback.print_exception(type(e), e, e.__traceback__)
                 results[label] = []
                 failures += 1
                 failed_labels.append(label)
@@ -939,7 +1130,8 @@ def main():
                 results[result_label] = jobs
                 print(f"[{result_label}] {len(jobs)}건")
             except Exception as e:
-                print(f"ALIO 검색 실패 [{label}]: {e}")
+                print(f"ALIO 검색 실패 [{label}] [{type(e).__name__}]: {e}")
+                traceback.print_exception(type(e), e, e.__traceback__)
                 results[label] = []
                 failures += 1
                 failed_labels.append(label)
@@ -954,11 +1146,13 @@ def main():
                     size=int(src.get("size", 20)),
                     sort=str(src.get("sort", "latest")),
                     today_only=bool(src.get("today_only", True)),
+                    lookback_days=int(src.get("lookback_days", 1)),
                 )
                 results[keyword] = jobs
                 print(f"[{keyword}] {len(jobs)}건")
             except Exception as e:
-                print(f"원티드 검색 실패 [{keyword}]: {e}")
+                print(f"원티드 검색 실패 [{keyword}] [{type(e).__name__}]: {e}")
+                traceback.print_exception(type(e), e, e.__traceback__)
                 results[keyword] = []
                 failures += 1
                 failed_labels.append(keyword)
@@ -966,9 +1160,21 @@ def main():
     if attempted and failures == attempted:
         raise RuntimeError("채용공고 검색이 모두 실패했습니다.")
 
+    state_backend = JobMonitorStateBackend()
+    stored_seen_keys = state_backend.get(SEEN_STATE_KEY, [])
+    if not isinstance(stored_seen_keys, list):
+        print("채용공고 seen 상태 형식이 올바르지 않아 초기화합니다.")
+        stored_seen_keys = []
+    seen_keys = {str(key) for key in stored_seen_keys}
+    collected_count = sum(len(jobs) for jobs in results.values())
+    results, delivered_keys = filter_unseen_results(results, seen_keys)
+    new_count = sum(len(jobs) for jobs in results.values())
+    print(f"수집 {collected_count}건 중 신규·중복제거 {new_count}건")
+
     message = build_message(results, failed_labels=failed_labels)
     if message:
         send_telegram(message)
+        mark_job_keys_seen(state_backend, seen_keys, delivered_keys)
         print("채용공고 알림 발송 완료")
     elif failed_labels:
         send_telegram(build_partial_failure_message(results, failed_labels))
@@ -976,7 +1182,7 @@ def main():
     else:
         no_jobs_message = (
             f"<b>💼 채용공고 모니터링</b> ({datetime.now(KST).strftime('%Y-%m-%d')})\n\n"
-            "오늘 등록된 새 채용공고가 없습니다."
+            "최근 조회 범위에서 새로 알릴 채용공고가 없습니다."
         )
         send_telegram(no_jobs_message)
         print("새 채용공고 없음 알림 발송 완료")

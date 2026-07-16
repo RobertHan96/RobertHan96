@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 import urllib.parse
 import urllib.request
 
@@ -110,16 +111,28 @@ def send_telegram(
     message: str,
     parse_mode: str = "HTML",
     fail_on_error: bool = True,
+    retry_count: int = 2,
+    retry_delay_seconds: float = 1.5,
 ) -> bool:
     """텔레그램 메시지 발송"""
     chunks = split_message_lines(message)
     for chunk in chunks:
-        ok = _send_single_telegram(
-            message=chunk,
-            parse_mode=parse_mode,
-            fail_on_error=fail_on_error,
-        )
-        if not ok:
+        sent = False
+        for attempt in range(retry_count + 1):
+            sent = _send_single_telegram(
+                message=chunk,
+                parse_mode=parse_mode,
+                fail_on_error=False,
+            )
+            if sent:
+                break
+            if attempt < retry_count:
+                print(f"텔레그램 발송 재시도 {attempt + 1}/{retry_count}")
+                time.sleep(retry_delay_seconds)
+        if not sent:
+            attempts = retry_count + 1
+            if fail_on_error:
+                raise RuntimeError(f"텔레그램 발송이 {attempts}회 모두 실패했습니다.")
             return False
     maybe_log_outgoing_message(message, parse_mode)
     return True

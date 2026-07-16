@@ -2,8 +2,8 @@ name: "태스크7-2: AI 품질 채용공고 즉시 알림"
 
 on:
   schedule:
-    # 09:15, 13:15, 17:15, 21:15 KST
-    - cron: "15 0,4,8,12 * * *"
+    # 월·수·금 18:30 KST = UTC 09:30
+    - cron: "30 9 * * 1,3,5"
   workflow_dispatch:
     inputs:
       ignore_seen:
@@ -15,7 +15,9 @@ on:
 jobs:
   ai-quality-job-monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
+    env:
+      PYTHONUNBUFFERED: "1"
 
     steps:
       - name: Checkout
@@ -39,6 +41,8 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          OPENAI_TIMEOUT_SECONDS: ${{ vars.OPENAI_TIMEOUT_SECONDS }}
+          OPENAI_MAX_RETRIES: ${{ vars.OPENAI_MAX_RETRIES }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
@@ -56,7 +60,7 @@ jobs:
           python -m jobs.run_ai_quality_job_monitor \
             --mode immediate \
             --limit-per-site 20 \
-            --detail-top-n 12 \
+            --detail-top-n 8 \
             --min-score 60 \
             --high-fit-score 65 \
             --summary-score 60 \

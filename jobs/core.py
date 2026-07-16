@@ -6,6 +6,7 @@ import json
 import os
 import re
 import time
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -46,6 +47,9 @@ DEFAULT_REPORT_DIR = str(ROOT_DIR / "jobs" / "reports")
 REPORT_DIR = Path(os.environ.get("JOB_MONITOR_REPORT_DIR", DEFAULT_REPORT_DIR))
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 DEFAULT_OPENAI_MODEL = "gpt-4.1-mini"
+DEFAULT_OPENAI_TIMEOUT_SECONDS = 90.0
+DEFAULT_OPENAI_MAX_RETRIES = 1
+BROWSER_NAVIGATION_TIMEOUT_MS = 45_000
 DEFAULT_NOTIFY_MIN_SCORE = 80
 DEFAULT_STATE_PATH = ROOT_DIR / "data" / "job_monitors" / "job_fit_state.json"
 HIGH_FIT_SEEN_KEY = "job-fit/high-fit-seen"
@@ -174,7 +178,7 @@ def source_home(source: str) -> str:
 
 
 def safe_goto(page: Page, url: str) -> None:
-    page.goto(url, wait_until="domcontentloaded", timeout=120_000)
+    page.goto(url, wait_until="domcontentloaded", timeout=BROWSER_NAVIGATION_TIMEOUT_MS)
     page.wait_for_timeout(2_000)
 
 
@@ -346,7 +350,7 @@ def scrape_jobda(page: Page, limit: int) -> list[JobPosting]:
     )
 
 
-def scrape_zighang(page: Page, limit: int) -> list[JobPosting]:
+def scrape_zighang(_page: Page | None, limit: int) -> list[JobPosting]:
     query: list[tuple[str, str]] = [
         ("page", "0"),
         ("size", str(max(limit, 20))),
@@ -406,10 +410,10 @@ def enrich_detail(page: Page, job: JobPosting) -> None:
 
 
 def collect_site_jobs(
-    page: Page,
+    page: Page | None,
     *,
     label: str,
-    scraper: Callable[[Page, int], list[JobPosting]],
+    scraper: Callable[[Page | None, int], list[JobPosting]],
     limit: int,
 ) -> tuple[list[JobPosting], str | None]:
     try:
@@ -417,9 +421,45 @@ def collect_site_jobs(
         print(f"[{label}] 목록 수집 완료: {len(jobs)}건")
         return jobs, None
     except Exception as exc:
-        message = f"[{label}] 목록 수집 실패: {exc}"
+        message = f"[{label}] 목록 수집 실패 [{type(exc).__name__}]: {exc}"
         print(message)
+        traceback.print_exception(type(exc), exc, exc.__traceback__)
         return [], message
+
+
+def collect_browser_sources(
+    browser,
+    sources: list[tuple[str, Callable[[Page, int], list[JobPosting]]]],
+    *,
+    limit: int,
+) -> tuple[list[JobPosting], list[str]]:
+    """소스마다 새 페이지를 사용해 탐색 실패와 페이지 상태를 격리한다."""
+    jobs: list[JobPosting] = []
+    errors: list[str] = []
+    for label, scraper in sources:
+        page = None
+        try:
+            page = browser.new_page(viewport={"width": 1440, "height": 2200})
+            items, error = collect_site_jobs(
+                page,
+                label=label,
+                scraper=scraper,
+                limit=limit,
+            )
+            jobs.extend(items)
+            if error:
+                errors.append(error)
+        except Exception as exc:
+            message = f"[{label}] 브라우저 준비 실패 [{type(exc).__name__}]: {exc}"
+            print(message)
+            errors.append(message)
+        finally:
+            if page is not None:
+                try:
+                    page.close()
+                except Exception as exc:
+                    print(f"[{label}] 페이지 종료 경고 [{type(exc).__name__}]: {exc}")
+    return jobs, errors
 
 
 def score_text(text: str, profile: CandidateProfile) -> tuple[int, list[str]]:
@@ -494,11 +534,33 @@ def resolve_openai_model() -> str:
     return get_first_env("OPENAI_MODEL", "JOB_FIT_MODEL") or DEFAULT_OPENAI_MODEL
 
 
+def resolve_openai_timeout_seconds() -> float:
+    raw_value = get_first_env("OPENAI_TIMEOUT_SECONDS")
+    try:
+        value = float(raw_value) if raw_value else DEFAULT_OPENAI_TIMEOUT_SECONDS
+    except ValueError:
+        value = DEFAULT_OPENAI_TIMEOUT_SECONDS
+    return min(max(value, 10.0), 300.0)
+
+
+def resolve_openai_max_retries() -> int:
+    raw_value = get_first_env("OPENAI_MAX_RETRIES")
+    try:
+        value = int(raw_value) if raw_value else DEFAULT_OPENAI_MAX_RETRIES
+    except ValueError:
+        value = DEFAULT_OPENAI_MAX_RETRIES
+    return min(max(value, 0), 3)
+
+
 def get_openai_client():
     api_key = get_first_env("OPENAI_API_KEY")
     if not api_key or OpenAI is None:
         return None
-    return OpenAI(api_key=api_key)
+    return OpenAI(
+        api_key=api_key,
+        timeout=resolve_openai_timeout_seconds(),
+        max_retries=resolve_openai_max_retries(),
+    )
 
 
 def normalize_project_hits(values: Iterable[str], profile: CandidateProfile) -> list[str]:
@@ -802,50 +864,87 @@ def build_match(job: JobPosting, profile: CandidateProfile) -> JobMatch:
 
 def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[JobMatch]:
     scrape_errors: list[str] = []
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1440, "height": 2200})
+    jobs: list[JobPosting] = []
 
-        jobs: list[JobPosting] = []
-        for label, scraper in [
-            ("InThisWork", scrape_inthiswork),
-            ("Jobda", scrape_jobda),
-            ("Zighang", scrape_zighang),
-        ]:
-            items, error = collect_site_jobs(
-                page,
-                label=label,
-                scraper=scraper,
-                limit=limit_per_site,
-            )
-            jobs.extend(items)
-            if error:
-                scrape_errors.append(error)
+    zighang_jobs, zighang_error = collect_site_jobs(
+        None,
+        label="Zighang",
+        scraper=scrape_zighang,
+        limit=limit_per_site,
+    )
+    jobs.extend(zighang_jobs)
+    if zighang_error:
+        scrape_errors.append(zighang_error)
 
-        browser.close()
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            try:
+                browser_jobs, browser_errors = collect_browser_sources(
+                    browser,
+                    [("InThisWork", scrape_inthiswork), ("Jobda", scrape_jobda)],
+                    limit=limit_per_site,
+                )
+                jobs.extend(browser_jobs)
+                scrape_errors.extend(browser_errors)
+            finally:
+                try:
+                    browser.close()
+                except Exception as exc:
+                    print(f"브라우저 종료 경고 [{type(exc).__name__}]: {exc}")
+    except Exception as exc:
+        message = f"[Playwright] 목록 수집 준비 실패 [{type(exc).__name__}]: {exc}"
+        print(message)
+        traceback.print_exception(type(exc), exc, exc.__traceback__)
+        scrape_errors.append(message)
 
-        if not jobs and scrape_errors:
-            raise RuntimeError("채용공고 source 수집이 모두 실패했습니다.")
+    if not jobs and scrape_errors:
+        raise RuntimeError("채용공고 source 수집이 모두 실패했습니다.")
 
-        quick_ranked = sorted(
-            jobs,
-            key=lambda job: score_text(job.combined_text, CANDIDATE)[0],
-            reverse=True,
-        )
+    quick_ranked = sorted(
+        jobs,
+        key=lambda job: score_text(job.combined_text, CANDIDATE)[0],
+        reverse=True,
+    )
 
     detail_targets = quick_ranked[:detail_top_n]
     detail_errors: list[str] = []
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1440, "height": 2200})
-        for job in detail_targets:
-            try:
-                enrich_detail(page, job)
-            except Exception as exc:
-                message = f"[{job.source}] 상세 수집 실패: {job.url} ({exc})"
-                print(message)
-                detail_errors.append(message)
-        browser.close()
+    if detail_targets:
+        try:
+            with sync_playwright() as playwright:
+                browser = playwright.chromium.launch(headless=True)
+                try:
+                    for job in detail_targets:
+                        page = None
+                        try:
+                            page = browser.new_page(viewport={"width": 1440, "height": 2200})
+                            enrich_detail(page, job)
+                        except Exception as exc:
+                            message = (
+                                f"[{job.source}] 상세 수집 실패 [{type(exc).__name__}]: "
+                                f"{job.url} ({exc})"
+                            )
+                            print(message)
+                            detail_errors.append(message)
+                        finally:
+                            if page is not None:
+                                try:
+                                    page.close()
+                                except Exception as exc:
+                                    print(
+                                        f"[{job.source}] 상세 페이지 종료 경고 "
+                                        f"[{type(exc).__name__}]: {exc}"
+                                    )
+                finally:
+                    try:
+                        browser.close()
+                    except Exception as exc:
+                        print(f"상세 브라우저 종료 경고 [{type(exc).__name__}]: {exc}")
+        except Exception as exc:
+            message = f"[Playwright] 상세 수집 준비 실패 [{type(exc).__name__}]: {exc}"
+            print(message)
+            traceback.print_exception(type(exc), exc, exc.__traceback__)
+            detail_errors.append(message)
 
     if scrape_errors:
         print("부분 수집 실패:")
@@ -1072,12 +1171,22 @@ def select_new_high_fit_matches(
         seen.add(key)
         if len(selected) >= limit:
             break
+    return selected
+
+
+def mark_high_fit_matches_seen(
+    matches: list[JobMatch],
+    *,
+    backend: StateBackend,
+) -> None:
+    """알림 전송에 성공한 공고만 seen 상태로 확정한다."""
+    seen = set(str(item) for item in backend.get(HIGH_FIT_SEEN_KEY, []))
+    seen.update(build_job_key(match.job) for match in matches)
     backend.put(
         HIGH_FIT_SEEN_KEY,
         list(seen)[-1000:],
         ttl_seconds=HIGH_FIT_TTL_SECONDS,
     )
-    return selected
 
 
 def build_high_fit_titles_message(
@@ -1100,9 +1209,10 @@ def maybe_send_high_fit_titles(matches: list[JobMatch], min_score: int, limit: i
     if send_telegram is None:
         print("send_telegram import에 실패해 제목 알림을 건너뜁니다.")
         return
+    backend = StateBackend()
     new_matches = select_new_high_fit_matches(
         matches,
-        backend=StateBackend(),
+        backend=backend,
         min_score=min_score,
         limit=limit,
     )
@@ -1110,7 +1220,9 @@ def maybe_send_high_fit_titles(matches: list[JobMatch], min_score: int, limit: i
     if not message:
         print("신규 고적합 채용공고가 없어 제목 알림을 생략합니다.")
         return
-    send_telegram(message)
+    sent = send_telegram(message)
+    if sent:
+        mark_high_fit_matches_seen(new_matches, backend=backend)
 
 
 def parse_args() -> argparse.Namespace:
@@ -1154,9 +1266,12 @@ def main() -> None:
     report = render_report(matches, limit=args.report_limit)
     path = save_report(report)
     if args.upload_report:
-        uploaded = upload_report_to_bridge(path, matches)
-        if uploaded:
-            print(f"Cloudflare 업로드 완료: {uploaded.get('key', '-')}")
+        try:
+            uploaded = upload_report_to_bridge(path, matches)
+            if uploaded:
+                print(f"Cloudflare 업로드 완료: {uploaded.get('key', '-')}")
+        except Exception as exc:
+            print(f"::warning::Cloudflare 보고서 업로드 실패 [{type(exc).__name__}]: {exc}")
 
     if args.notify_high_fit_titles:
         maybe_send_high_fit_titles(
