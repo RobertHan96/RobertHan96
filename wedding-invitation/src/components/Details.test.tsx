@@ -39,9 +39,24 @@ describe('wedding details', () => {
     expect(screen.getByRole('heading', { name: '교통 안내' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '마음 전하실 곳' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '참석 여부 전달' })).toBeInTheDocument()
-    expect(screen.getAllByText('안내를 준비하고 있습니다')).toHaveLength(2)
+    expect(screen.getAllByText('안내를 준비하고 있습니다')).toHaveLength(1)
     expect(screen.getByText('참석 여부 전달은 추후 오픈됩니다')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '카카오톡 공유 준비 중' })).toBeDisabled()
+  })
+
+  it('shows transportation details and map service links', () => {
+    render(<App />)
+
+    expect(screen.getByText('2호선 잠실역 8번 출구 약 300m')).toBeInTheDocument()
+    expect(screen.getByText('8호선 잠실역 9번 출구 약 30m')).toBeInTheDocument()
+    expect(screen.getByText('간선 302, 310, 341, 360')).toBeInTheDocument()
+    expect(screen.getByText('지선 2311, 3411')).toBeInTheDocument()
+    expect(screen.getByText('광역·직행 1000, 1100, 1700')).toBeInTheDocument()
+    expect(screen.getByText('신주소 송파구 올림픽로 319')).toBeInTheDocument()
+    expect(screen.getByText('구주소 송파구 신천동 11-7')).toBeInTheDocument()
+    expect(screen.getByText('교통회관 지상·지하 주차장 이용')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '네이버지도' })).toHaveAttribute('href', 'https://naver.me/F1rxJcrX')
+    expect(screen.getByRole('link', { name: '카카오맵' })).toHaveAttribute('href', 'https://place.map.kakao.com/17651361')
   })
 
   it('opens the single map image without gallery navigation controls', async () => {

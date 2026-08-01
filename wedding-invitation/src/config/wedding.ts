@@ -39,9 +39,29 @@ export const wedding: WeddingConfig = {
       src: '/images/location/map.jpeg',
       alt: '더컨벤션 잠실 오시는 길 약도',
     },
-    links: { naver: '', kakao: '', tmap: '' },
+    links: {
+      naver: 'https://naver.me/F1rxJcrX',
+      kakao: 'https://place.map.kakao.com/17651361',
+      tmap: '',
+    },
   },
-  transportation: { subway: '', bus: '', car: '', parking: '' },
+  transportation: {
+    subway: [
+      '2호선 잠실역 8번 출구 약 300m',
+      '8호선 잠실역 9번 출구 약 30m',
+    ],
+    bus: [
+      '간선 302, 310, 341, 360',
+      '지선 2311, 3411',
+      '광역·직행 1000, 1100, 1700',
+      '*그 외 다양한 노선 이용 가능',
+    ],
+    car: [
+      '신주소 송파구 올림픽로 319',
+      '구주소 송파구 신천동 11-7',
+    ],
+    parking: ['교통회관 지상·지하 주차장 이용'],
+  },
   accounts: { groom: [], bride: [] },
   rsvp: { enabled: false, maxCompanions: 5 },
   gallery: {

@@ -5,6 +5,7 @@ import { Invitation } from './components/Invitation'
 import { Location } from './components/Location'
 import { PendingDetails } from './components/PendingDetails'
 import { Footer, Share } from './components/Share'
+import { Transportation } from './components/Transportation'
 import { WeddingDay } from './components/WeddingDay'
 import { wedding } from './config/wedding'
 
@@ -37,6 +38,7 @@ function App() {
       <Gallery gallery={wedding.gallery} />
       <WeddingDay />
       <Location />
+      <Transportation />
       <PendingDetails />
       <Share />
       <Footer />

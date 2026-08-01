@@ -518,6 +518,54 @@ img {
   cursor: pointer;
 }
 
+.transportation-list {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.transportation-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 13px;
+  padding: 20px 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.transportation-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid rgba(79, 96, 72, 0.3);
+  border-radius: 50%;
+  color: var(--sage);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.7rem;
+}
+
+.transportation-card h3 {
+  margin: 2px 0 11px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.transportation-card p {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
+.transportation-card .transportation-note {
+  margin-top: 8px;
+  color: #8a887f;
+  font-size: 0.68rem;
+}
+
 .outline-button {
   justify-self: center;
   margin-top: 11px;
@@ -550,7 +598,7 @@ img {
 
 .map-link-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 7px;
   margin-top: 14px;
 }

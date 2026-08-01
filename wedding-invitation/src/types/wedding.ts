@@ -32,7 +32,7 @@ export type WeddingConfig = {
     mapImage: GalleryImage
     links: { naver: string; kakao: string; tmap: string }
   }
-  transportation: { subway: string; bus: string; car: string; parking: string }
+  transportation: { subway: string[]; bus: string[]; car: string[]; parking: string[] }
   accounts: { groom: unknown[]; bride: unknown[] }
   rsvp: { enabled: boolean; maxCompanions: number }
   gallery: { baby: GalleryImage[]; wedding: GalleryImage[]; comingSoon: boolean }

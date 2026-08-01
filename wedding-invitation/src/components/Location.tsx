@@ -16,7 +16,11 @@ export function Location() {
     window.setTimeout(() => setCopied(false), 1800)
   }
 
-  const mapLinks = Object.entries(venue.links).filter(([, href]) => Boolean(href))
+  const mapLinks = [
+    { label: '네이버지도', href: venue.links.naver },
+    { label: '카카오맵', href: venue.links.kakao },
+    { label: 'T맵', href: venue.links.tmap },
+  ].filter(({ href }) => Boolean(href))
   return (
     <section className="paper-section location-section reveal-section">
       <SectionHeading eyebrow="LOCATION" title="오시는 길" />
@@ -33,7 +37,7 @@ export function Location() {
       </button>
       {mapLinks.length > 0 ? (
         <div className="map-link-list">
-          {mapLinks.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name}</a>)}
+          {mapLinks.map(({ label, href }) => <a key={label} href={href} target="_blank" rel="noreferrer">{label}</a>)}
         </div>
       ) : (
         <p className="pending-note">길찾기 링크 준비 중</p>

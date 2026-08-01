@@ -27,7 +27,7 @@ npm run build
 - 약도와 공유 이미지: `public/images/location/map.jpeg`
 - 전체 디자인: `src/index.css`
 
-현재 교통 안내, 계좌, RSVP, 지도 앱 링크, 카카오 JavaScript 키는 미입력 상태입니다. 화면에는 준비 중 상태로 표시되며 정보가 확정된 뒤 기능을 연결합니다.
+현재 계좌, RSVP, T맵 링크, 카카오 JavaScript 키는 미입력 상태입니다. 화면에는 준비 중 상태로 표시되며 정보가 확정된 뒤 기능을 연결합니다.
 
 ## Cloudflare Pages
 

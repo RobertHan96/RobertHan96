@@ -15,7 +15,6 @@ function PendingSection({ eyebrow, title, message = '안내를 준비하고 있�
 export function PendingDetails() {
   return (
     <>
-      <PendingSection eyebrow="TRANSPORTATION" title="교통 안내" />
       <PendingSection eyebrow="ACCOUNT" title="마음 전하실 곳" />
       <PendingSection eyebrow="RSVP" title="참석 여부 전달" message="참석 여부 전달은 추후 오픈됩니다" />
     </>
