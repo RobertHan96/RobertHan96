@@ -39,7 +39,10 @@ describe('wedding details', () => {
     expect(screen.getByRole('heading', { name: '교통 안내' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '마음 전하실 곳' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '참석 여부 전달' })).toBeInTheDocument()
-    expect(screen.getAllByText('안내를 준비하고 있습니다')).toHaveLength(1)
+    expect(screen.getByText('계좌 안내를 준비하고 있습니다')).toBeInTheDocument()
+    expect(
+      screen.getByText('축하의 마음만 감사히 받겠습니다. 화환은 정중히 사양하오니 너른 양해 부탁드립니다.'),
+    ).toBeInTheDocument()
     expect(screen.getByText('참석 여부 전달은 추후 오픈됩니다')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '카카오톡 공유 준비 중' })).toBeDisabled()
   })

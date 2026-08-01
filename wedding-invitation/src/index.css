@@ -93,7 +93,7 @@ img {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: calc(56px + env(safe-area-inset-top)) 24px 72px;
+  padding: calc(56px + env(safe-area-inset-top)) 24px 46px;
   text-align: center;
   background:
     radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.9), transparent 46%),
@@ -115,7 +115,7 @@ img {
 }
 
 .hero-section::after {
-  bottom: 22px;
+  bottom: 12px;
 }
 
 .script-kicker {
@@ -639,6 +639,14 @@ img {
 .pending-card p {
   margin: 0;
   font-size: 0.8rem;
+}
+
+.pending-card .pending-notice {
+  max-width: 290px;
+  margin-top: 8px;
+  color: var(--ink);
+  line-height: 1.85;
+  word-break: keep-all;
 }
 
 .share-actions {
