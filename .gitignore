@@ -1,4 +1,6 @@
 public/
+!wedding-invitation/public/
+!wedding-invitation/public/**
 resources/
 .hugo_build.lock
 .env
