@@ -33,17 +33,15 @@ describe('wedding details', () => {
     expect(writeText).toHaveBeenCalledWith('https://roberthan96.pages.dev/')
   })
 
-  it('shows preparation states for details that are not provided yet', () => {
+  it('shows the account preparation state without an RSVP section', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: '교통 안내' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '마음 전하실 곳' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '참석 여부 전달' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '참석 여부 전달' })).not.toBeInTheDocument()
     expect(screen.getByText('계좌 안내를 준비하고 있습니다')).toBeInTheDocument()
-    expect(
-      screen.getByText('축하의 마음만 감사히 받겠습니다. 화환은 정중히 사양하오니 너른 양해 부탁드립니다.'),
-    ).toBeInTheDocument()
-    expect(screen.getByText('참석 여부 전달은 추후 오픈됩니다')).toBeInTheDocument()
+    expect(screen.getByText('화환은 정중히 사양하오니 너른 양해 부탁드립니다.')).toBeInTheDocument()
+    expect(screen.queryByText('참석 여부 전달은 추후 오픈됩니다')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '카카오 JavaScript 키 설정 필요' })).toBeDisabled()
   })
 

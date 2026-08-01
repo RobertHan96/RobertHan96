@@ -33,6 +33,10 @@ export function Gallery({ gallery }: GalleryProps) {
           </button>
         ))}
       </div>
+      <p className="story-copy">
+        <span>아이들은 자라서</span>
+        <span>서로의 가장 좋은 친구가 되었습니다.</span>
+      </p>
       {gallery.comingSoon && (
         <div className="coming-soon">
           <strong>TO BE CONTINUED...</strong>

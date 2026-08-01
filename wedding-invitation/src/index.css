@@ -237,7 +237,7 @@ img {
 
 .paper-section {
   position: relative;
-  padding: 92px 28px;
+  padding: 55px 28px;
   border-top: 1px solid var(--line);
   text-align: center;
 }
@@ -286,8 +286,8 @@ img {
 }
 
 .invitation-section {
-  padding-top: 106px;
-  padding-bottom: 106px;
+  padding-top: 64px;
+  padding-bottom: 64px;
 }
 
 .invitation-copy {
@@ -387,10 +387,20 @@ img {
   background: var(--paper-deep);
 }
 
+.story-copy {
+  display: grid;
+  gap: 5px;
+  margin: 32px 0 0;
+  color: var(--ink);
+  font-size: 0.88rem;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+
 .coming-soon {
   display: grid;
   gap: 6px;
-  margin-top: 38px;
+  margin-top: 27px;
   color: var(--sage);
   font-family: 'Cormorant Garamond', Georgia, serif;
   letter-spacing: 0.08em;
@@ -612,8 +622,8 @@ img {
 }
 
 .pending-section {
-  padding-top: 72px;
-  padding-bottom: 72px;
+  padding-top: 43px;
+  padding-bottom: 43px;
 }
 
 .pending-section .section-heading {
@@ -686,7 +696,7 @@ img {
 .invitation-footer {
   display: grid;
   gap: 8px;
-  padding: 54px 24px calc(50px + env(safe-area-inset-bottom));
+  padding: 32px 24px calc(30px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   color: var(--ink-soft);
   text-align: center;

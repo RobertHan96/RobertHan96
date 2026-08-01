@@ -11,6 +11,8 @@ describe('Gallery', () => {
 
     expect(screen.getByAltText('신랑 한영신의 어린 시절')).toBeInTheDocument()
     expect(screen.getByAltText('신부 이다예의 어린 시절')).toBeInTheDocument()
+    expect(screen.getByText('아이들은 자라서')).toBeInTheDocument()
+    expect(screen.getByText('서로의 가장 좋은 친구가 되었습니다.')).toBeInTheDocument()
     expect(screen.getByText('TO BE CONTINUED...')).toBeInTheDocument()
     expect(screen.getByText('Wedding photos coming soon')).toBeInTheDocument()
   })
