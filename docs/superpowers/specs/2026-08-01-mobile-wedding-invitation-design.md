@@ -98,5 +98,14 @@
 
 - Cloudflare Pages Functions와 D1 RSVP 저장
 - 관리자 페이지, 방명록, 로그인, BGM, 하객 업로드, 결제
-- 실제 계좌, 교통, 지도 링크, 카카오 JavaScript 키 연결
+- 실제 계좌와 RSVP 저장
 
+## 카카오톡 공유 추가 설계
+
+- 배포 주소는 `https://roberthan96.pages.dev/`로 고정한다.
+- Kakao JavaScript SDK `2.8.1`과 기본 피드 템플릿을 사용한다.
+- JavaScript 키는 `src/config/wedding.ts`의 `share.kakaoJavascriptKey` 한 곳에 직접 입력한다.
+- 공유 메시지는 제목, 예식 일시·장소, 배포된 약도 이미지, `청첩장 보기` 버튼으로 구성한다.
+- 키가 없으면 공유 버튼을 비활성화하고 키 설정이 필요하다는 문구를 표시한다.
+- SDK 호출에 실패하면 배포 링크를 클립보드에 복사하고 사용자에게 상태를 안내한다.
+- Open Graph 이미지도 카카오 크롤러가 읽을 수 있는 절대 URL로 변경한다.

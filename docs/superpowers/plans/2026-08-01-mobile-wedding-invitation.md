@@ -103,3 +103,21 @@
 - [ ] Verify no console errors, no horizontal overflow, gallery navigation, copy feedback, calendar highlight, and preparation states.
 - [ ] Commit only wedding invitation files and implementation documentation on the feature branch.
 
+### Task 8: Kakao Talk sharing
+
+**Files:**
+- Create: `wedding-invitation/src/lib/kakao.ts`
+- Create: `wedding-invitation/src/lib/kakao.test.ts`
+- Create: `wedding-invitation/src/types/kakao.d.ts`
+- Modify: `wedding-invitation/src/components/Share.tsx`
+- Modify: `wedding-invitation/src/components/Details.test.tsx`
+- Modify: `wedding-invitation/src/config/wedding.ts`
+- Modify: `wedding-invitation/src/types/wedding.ts`
+- Modify: `wedding-invitation/index.html`
+
+- [ ] Add failing tests for SDK initialization, the feed template payload, the configured share URL, and the disabled-key state.
+- [ ] Run the focused tests and confirm they fail because the Kakao helper is absent.
+- [ ] Add the Kakao SDK global type, initialize the SDK once, and call `Kakao.Share.sendDefault()` with the wedding feed template.
+- [ ] Connect the existing button to the helper and copy the deployment URL when SDK sharing fails.
+- [ ] Add the official SDK `2.8.1` script with SRI and change Open Graph URLs to absolute deployment URLs.
+- [ ] Run all tests, lint, and production build, then verify the active and missing-key button states.

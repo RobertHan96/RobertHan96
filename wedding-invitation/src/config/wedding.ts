@@ -82,8 +82,9 @@ export const wedding: WeddingConfig = {
   },
   share: {
     title: '한영신 ♥ 이다예, 결혼합니다',
-    description: '2026년 11월 15일 더컨벤션 잠실',
-    ogImage: '/images/location/map.jpeg',
+    description: '2026년 11월 15일 오후 3시 50분 · 더컨벤션 잠실',
+    ogImage: 'https://roberthan96.pages.dev/images/location/map.jpeg',
+    url: 'https://roberthan96.pages.dev/',
     kakaoJavascriptKey: '',
   },
 }

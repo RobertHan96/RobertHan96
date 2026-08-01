@@ -30,7 +30,7 @@ describe('wedding details', () => {
     expect(writeText).toHaveBeenCalledWith('서울 송파구 올림픽로 319 3층')
 
     await user.click(screen.getByRole('button', { name: '청첩장 링크 복사' }))
-    expect(writeText).toHaveBeenCalledWith(window.location.href)
+    expect(writeText).toHaveBeenCalledWith('https://roberthan96.pages.dev/')
   })
 
   it('shows preparation states for details that are not provided yet', () => {
@@ -44,7 +44,7 @@ describe('wedding details', () => {
       screen.getByText('축하의 마음만 감사히 받겠습니다. 화환은 정중히 사양하오니 너른 양해 부탁드립니다.'),
     ).toBeInTheDocument()
     expect(screen.getByText('참석 여부 전달은 추후 오픈됩니다')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '카카오톡 공유 준비 중' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '카카오 JavaScript 키 설정 필요' })).toBeDisabled()
   })
 
   it('shows transportation details and map service links', () => {

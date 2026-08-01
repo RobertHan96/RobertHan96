@@ -36,5 +36,5 @@ export type WeddingConfig = {
   accounts: { groom: unknown[]; bride: unknown[] }
   rsvp: { enabled: boolean; maxCompanions: number }
   gallery: { baby: GalleryImage[]; wedding: GalleryImage[]; comingSoon: boolean }
-  share: { title: string; description: string; ogImage: string; kakaoJavascriptKey: string }
+  share: { title: string; description: string; ogImage: string; url: string; kakaoJavascriptKey: string }
 }

@@ -666,9 +666,21 @@ img {
 }
 
 .kakao-button {
+  background: #fee500;
+  color: #191919;
+}
+
+.kakao-button:disabled {
   background: #eee8dc;
   color: #9b978e;
   cursor: not-allowed;
+}
+
+.share-status {
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.7;
 }
 
 .invitation-footer {
