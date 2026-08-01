@@ -114,10 +114,12 @@
 - Modify: `wedding-invitation/src/config/wedding.ts`
 - Modify: `wedding-invitation/src/types/wedding.ts`
 - Modify: `wedding-invitation/index.html`
+- Create: `wedding-invitation/.env.example`
 
 - [ ] Add failing tests for SDK initialization, the feed template payload, the configured share URL, and the disabled-key state.
 - [ ] Run the focused tests and confirm they fail because the Kakao helper is absent.
 - [ ] Add the Kakao SDK global type, initialize the SDK once, and call `Kakao.Share.sendDefault()` with the wedding feed template.
 - [ ] Connect the existing button to the helper and copy the deployment URL when SDK sharing fails.
 - [ ] Add the official SDK `2.8.1` script with SRI and change Open Graph URLs to absolute deployment URLs.
+- [ ] Read the JavaScript key from the `VITE_KAKAO_JAVASCRIPT_KEY` build environment variable without committing the key.
 - [ ] Run all tests, lint, and production build, then verify the active and missing-key button states.

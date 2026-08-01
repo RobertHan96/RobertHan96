@@ -104,7 +104,7 @@
 
 - 배포 주소는 `https://roberthan96.pages.dev/`로 고정한다.
 - Kakao JavaScript SDK `2.8.1`과 기본 피드 템플릿을 사용한다.
-- JavaScript 키는 `src/config/wedding.ts`의 `share.kakaoJavascriptKey` 한 곳에 직접 입력한다.
+- JavaScript 키는 Cloudflare Pages의 `VITE_KAKAO_JAVASCRIPT_KEY` 빌드 환경변수로 주입한다.
 - 공유 메시지는 제목, 예식 일시·장소, 배포된 약도 이미지, `청첩장 보기` 버튼으로 구성한다.
 - 키가 없으면 공유 버튼을 비활성화하고 키 설정이 필요하다는 문구를 표시한다.
 - SDK 호출에 실패하면 배포 링크를 클립보드에 복사하고 사용자에게 상태를 안내한다.

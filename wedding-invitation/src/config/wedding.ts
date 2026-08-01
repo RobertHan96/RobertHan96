@@ -85,6 +85,6 @@ export const wedding: WeddingConfig = {
     description: '2026년 11월 15일 오후 3시 50분 · 더컨벤션 잠실',
     ogImage: 'https://roberthan96.pages.dev/images/location/map.jpeg',
     url: 'https://roberthan96.pages.dev/',
-    kakaoJavascriptKey: '',
+    kakaoJavascriptKey: import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY ?? '',
   },
 }

@@ -27,17 +27,18 @@ npm run build
 - 약도와 공유 이미지: `public/images/location/map.jpeg`
 - 전체 디자인: `src/index.css`
 
-현재 계좌, RSVP, T맵 링크, 카카오 JavaScript 키는 미입력 상태입니다. 계좌와 RSVP는 준비 중으로 표시되며, 카카오 공유 버튼은 키를 입력하면 활성화됩니다.
+현재 계좌, RSVP, T맵 링크는 미입력 상태입니다. 계좌와 RSVP는 준비 중으로 표시되며, 카카오 공유 버튼은 빌드 환경에 JavaScript 키가 있으면 활성화됩니다.
 
 ## 카카오톡 공유 설정
 
 1. 카카오디벨로퍼스에서 앱을 만들고 `[앱] > [플랫폼 키] > [JavaScript 키]`를 발급합니다.
 2. 같은 JavaScript 키 설정의 `JavaScript SDK 도메인`에 `https://roberthan96.pages.dev`를 등록합니다.
 3. `[앱] > [제품 링크 관리] > [웹 도메인]`에도 `https://roberthan96.pages.dev`를 등록합니다.
-4. `src/config/wedding.ts`의 `share.kakaoJavascriptKey`에 발급받은 JavaScript 키를 입력합니다.
-5. 커밋과 배포 후 실제 카카오톡 앱에서 공유 버튼과 메시지 링크를 확인합니다.
+4. Cloudflare Pages의 Production 환경변수에 `VITE_KAKAO_JAVASCRIPT_KEY` 이름으로 JavaScript 키를 등록합니다.
+5. 로컬 테스트가 필요하면 `.env.example`을 참고해 `.env.local`에 같은 변수를 등록합니다.
+6. 새 배포를 실행한 후 실제 카카오톡 앱에서 공유 버튼과 메시지 링크를 확인합니다.
 
-JavaScript 키는 브라우저에서 사용하는 공개 플랫폼 키입니다. REST API 키나 어드민 키를 입력하면 안 됩니다.
+JavaScript 키는 브라우저에서 사용하는 공개 플랫폼 키입니다. Vite 빌드 결과에는 값이 포함되므로 비밀 저장 목적이 아니라 환경별 설정을 위한 방식이며, REST API 키나 어드민 키를 입력하면 안 됩니다.
 
 ## Cloudflare Pages
 
