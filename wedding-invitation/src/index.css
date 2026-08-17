@@ -669,21 +669,6 @@ img {
   border-color: var(--sage-deep);
 }
 
-.guest-consent {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  color: var(--ink-soft);
-  font-size: 0.65rem;
-  line-height: 1.6;
-  cursor: pointer;
-}
-
-.guest-consent input {
-  margin-top: 3px;
-  accent-color: var(--sage-deep);
-}
-
 .guest-upload-button,
 .guest-admin-login button {
   min-height: 46px;
@@ -708,6 +693,15 @@ img {
   background: rgba(255, 255, 255, 0.4);
   font-size: 0.72rem;
   line-height: 1.7;
+}
+
+.guest-snap-closed {
+  display: grid;
+  gap: 14px;
+}
+
+.guest-snap-closed p {
+  margin: 0;
 }
 
 .guest-snap-status {

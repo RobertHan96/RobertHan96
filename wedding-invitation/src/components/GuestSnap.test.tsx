@@ -1,10 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { GuestSnap } from './GuestSnap'
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+})
 
 const config = {
   enabled: true,
@@ -15,16 +18,18 @@ const config = {
 }
 
 describe('GuestSnap', () => {
-  it('shows a wedding-day notice before uploads open', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ photos: [] }), { status: 200 })))
+  it('shows a disabled upload button before uploads open', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     render(<GuestSnap config={config} now={new Date('2026-08-17T00:00:00Z')} />)
 
     expect(screen.getByRole('heading', { name: '게스트 스냅' })).toBeInTheDocument()
     expect(screen.getByText('예식 당일부터 사진을 남길 수 있습니다.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '사진 보내기' })).toBeDisabled()
     expect(screen.queryByLabelText('게스트 사진 선택')).not.toBeInTheDocument()
+    expect(screen.queryByText(/사진 제공과 신랑·신부의 보관 및 공개에 동의합니다/)).not.toBeInTheDocument()
   })
 
-  it('uploads selected photos one at a time after consent', async () => {
+  it('uploads selected photos one at a time without a consent checkbox', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ photos: [] }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, id: 'photo-1', status: 'pending' }), { status: 201 }))
@@ -37,7 +42,7 @@ describe('GuestSnap', () => {
     await user.upload(screen.getByLabelText('게스트 사진 선택'), photo)
     await user.type(screen.getByLabelText('이름 (선택)'), '친구')
     await user.type(screen.getByLabelText('메시지 (선택)'), '결혼 축하해!')
-    await user.click(screen.getByRole('checkbox', { name: /사진 제공과 신랑·신부의 보관 및 공개에 동의합니다/ }))
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '사진 1장 보내기' }))
 
     await waitFor(() => expect(screen.getByText('사진 1장을 잘 받았습니다.')).toBeInTheDocument())
@@ -46,6 +51,19 @@ describe('GuestSnap', () => {
     expect(uploadRequest![0]).toBe('/api/guest-snap/photos')
     const uploadOptions = uploadRequest![1] as RequestInit
     expect((uploadOptions.body as FormData).get('guestName')).toBe('친구')
+  })
+
+  it('automatically enables uploads when the opening time arrives', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-11-14T14:59:30Z'))
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+
+    render(<GuestSnap config={config} />)
+    expect(screen.getByRole('button', { name: '사진 보내기' })).toBeDisabled()
+
+    await act(async () => { vi.advanceTimersByTime(60_000) })
+
+    expect(screen.getByLabelText('게스트 사진 선택')).toBeInTheDocument()
   })
 
   it('renders Turnstile explicitly when a site key is configured', async () => {

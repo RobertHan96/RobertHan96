@@ -46,12 +46,12 @@ type GuestSnapProps = {
   now?: Date
 }
 
-export function GuestSnap({ config, forceOpen = false, now = new Date() }: GuestSnapProps) {
+export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
+  const [clock, setClock] = useState(() => new Date())
   const [photos, setPhotos] = useState<GuestPhoto[]>([])
   const [files, setFiles] = useState<File[]>([])
   const [guestName, setGuestName] = useState('')
   const [message, setMessage] = useState('')
-  const [consented, setConsented] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState('')
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -59,7 +59,7 @@ export function GuestSnap({ config, forceOpen = false, now = new Date() }: Guest
   const [errors, setErrors] = useState<string[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const turnstileWidgetId = useRef<string | undefined>(undefined)
-  const uploadOpen = isGuestSnapOpen(config.enabled, config.uploadOpensAt, now, forceOpen)
+  const uploadOpen = isGuestSnapOpen(config.enabled, config.uploadOpensAt, now ?? clock, forceOpen)
 
   const loadPhotos = async () => {
     try {
@@ -73,6 +73,12 @@ export function GuestSnap({ config, forceOpen = false, now = new Date() }: Guest
   }
 
   useEffect(() => { void loadPhotos() }, [])
+
+  useEffect(() => {
+    if (now || forceOpen || !config.enabled) return
+    const timer = window.setInterval(() => setClock(new Date()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [config.enabled, forceOpen, now])
 
   useEffect(() => {
     if (!config.turnstileSiteKey) return
@@ -100,7 +106,7 @@ export function GuestSnap({ config, forceOpen = false, now = new Date() }: Guest
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    if (!files.length || !consented || (config.turnstileSiteKey && !turnstileToken)) return
+    if (!files.length || (config.turnstileSiteKey && !turnstileToken)) return
     setUploading(true)
     setErrors([])
     setStatus('')
@@ -124,7 +130,6 @@ export function GuestSnap({ config, forceOpen = false, now = new Date() }: Guest
       setStatus(`사진 ${completed}장을 잘 받았습니다.`)
       setFiles([])
       setMessage('')
-      setConsented(false)
       setTurnstileToken('')
       window.turnstile?.reset(turnstileWidgetId.current)
       await loadPhotos()
@@ -170,23 +175,22 @@ export function GuestSnap({ config, forceOpen = false, now = new Date() }: Guest
             <span>메시지 (선택)</span>
             <textarea value={message} maxLength={300} rows={3} onChange={(event) => setMessage(event.target.value)} />
           </label>
-          <label className="guest-consent">
-            <input type="checkbox" checked={consented} onChange={(event) => setConsented(event.target.checked)} />
-            <span>사진 제공과 신랑·신부의 보관 및 공개에 동의합니다.</span>
-          </label>
           {config.turnstileSiteKey && (
             <div className="cf-turnstile" id="guest-snap-turnstile" />
           )}
           <button
             className="guest-upload-button"
             type="submit"
-            disabled={!files.length || !consented || uploading || Boolean(config.turnstileSiteKey && !turnstileToken)}
+            disabled={!files.length || uploading || Boolean(config.turnstileSiteKey && !turnstileToken)}
           >
             {uploading ? `${progress} / ${files.length} 업로드 중` : `사진 ${files.length}장 보내기`}
           </button>
         </form>
       ) : (
-        <p className="guest-snap-closed">예식 당일부터 사진을 남길 수 있습니다.</p>
+        <div className="guest-snap-closed">
+          <p>예식 당일부터 사진을 남길 수 있습니다.</p>
+          <button className="guest-upload-button" type="button" disabled>사진 보내기</button>
+        </div>
       )}
 
       {errors.length > 0 && <div className="guest-snap-errors" role="alert">{errors.map((error) => <p key={error}>{error}</p>)}</div>}

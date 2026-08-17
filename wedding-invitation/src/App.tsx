@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 import { Couple } from './components/Couple'
 import { Gallery } from './components/Gallery'
 import { GuestSnap } from './components/GuestSnap'
@@ -40,7 +42,7 @@ function App() {
       <WeddingDay />
       <Location />
       <Transportation />
-      <GuestSnap config={wedding.guestSnap} forceOpen={import.meta.env.DEV} />
+      <GuestSnap config={wedding.guestSnap} />
       <PendingDetails />
       <Share />
       <Footer />
@@ -49,4 +51,3 @@ function App() {
 }
 
 export default App
-import { useEffect } from 'react'
