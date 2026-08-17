@@ -105,6 +105,40 @@ describe('GuestSnap', () => {
 
     render(<GuestSnap config={{ ...config, turnstileSiteKey: 'site-key' }} forceOpen />)
 
-    await waitFor(() => expect(renderTurnstile).toHaveBeenCalledWith('#guest-snap-turnstile', expect.objectContaining({ sitekey: 'site-key' })))
+    await waitFor(() => expect(renderTurnstile).toHaveBeenCalledWith('#guest-snap-turnstile', expect.objectContaining({
+      sitekey: 'site-key',
+      appearance: 'interaction-only',
+    })))
+  })
+
+  it('shows a friendly error and resets Turnstile when the server response is not JSON', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response('<html>Bad gateway</html>', {
+      status: 502,
+      headers: { 'Content-Type': 'text/html' },
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    let verify: ((token: string) => void) | undefined
+    const resetTurnstile = vi.fn()
+    window.turnstile = {
+      render: vi.fn((_selector, options) => {
+        verify = options.callback
+        return 'widget-1'
+      }),
+      reset: resetTurnstile,
+    }
+    const user = userEvent.setup()
+    render(<GuestSnap config={{ ...config, turnstileSiteKey: 'site-key' }} forceOpen />)
+
+    await waitFor(() => expect(verify).toBeDefined())
+    act(() => verify?.('verified-token'))
+    await user.upload(
+      screen.getByLabelText('게스트 사진 선택'),
+      new File(['photo'], '사진.jpg', { type: 'image/jpeg' }),
+    )
+    await user.click(screen.getByRole('button', { name: '사진 1장 보내기' }))
+
+    await waitFor(() => expect(screen.getByText('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')).toBeInTheDocument())
+    expect(resetTurnstile).toHaveBeenCalledWith('widget-1')
+    expect(screen.getByRole('button', { name: '사진 1장 보내기' })).toBeDisabled()
   })
 })

@@ -155,26 +155,27 @@ img {
 .hero-ceremony {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 5px 9px;
-  align-items: baseline;
-  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
   color: var(--ink-soft);
   font-size: 0.83rem;
   letter-spacing: 0.04em;
   animation: hero-rise 0.8s 0.25s ease-out both;
 }
 
+.hero-date-time {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
 .hero-ceremony strong {
-  grid-column: 1 / -1;
   margin-top: 5px;
   color: var(--ink);
   font-weight: 600;
-}
-
-.hero-ceremony strong + span {
-  grid-column: 1 / -1;
 }
 
 .hero-family {
@@ -196,9 +197,9 @@ img {
   margin: 0;
 }
 
-.hero-family strong {
+.hero-family .hero-person {
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 400;
   white-space: nowrap;
 }
 

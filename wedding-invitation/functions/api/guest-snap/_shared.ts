@@ -62,11 +62,15 @@ export async function verifyTurnstile(request: Request, token: string, secret?: 
   const remoteIp = request.headers.get('CF-Connecting-IP')
   if (remoteIp) form.set('remoteip', remoteIp)
 
-  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    body: form,
-  })
-  if (!response.ok) return false
-  const result = await response.json() as { success?: boolean }
-  return result.success === true
+  try {
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: form,
+    })
+    if (!response.ok) return false
+    const result = await response.json() as { success?: boolean }
+    return result.success === true
+  } catch {
+    return false
+  }
 }

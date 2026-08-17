@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { validateGuestImage } from './_shared'
+import { validateGuestImage, verifyTurnstile } from './_shared'
+
+afterEach(() => vi.unstubAllGlobals())
 
 describe('guest snap server rules', () => {
   it('accepts supported images and rejects oversized or unknown files', () => {
@@ -9,5 +11,15 @@ describe('guest snap server rules', () => {
 
     const oversized = new File([new Uint8Array(21 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' })
     expect(validateGuestImage(oversized)).toEqual({ ok: false, error: '사진 한 장은 20MB 이하여야 합니다.' })
+  })
+
+  it('rejects safely when Turnstile verification is unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network unavailable') }))
+
+    await expect(verifyTurnstile(
+      new Request('https://roberthan96.pages.dev/api/guest-snap/photos'),
+      'token',
+      'secret',
+    )).resolves.toBe(false)
   })
 })

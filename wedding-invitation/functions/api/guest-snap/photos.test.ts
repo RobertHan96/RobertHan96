@@ -109,4 +109,32 @@ describe('guest snap photo API', () => {
       ids: [expect.any(String), expect.any(String)],
     })
   })
+
+  it('returns a JSON error when R2 storage fails', async () => {
+    const photo = { name: 'guest.jpg', type: 'image/jpeg', size: 5, stream: () => new ReadableStream() }
+    const form = {
+      get: (key: string) => key === 'photo' ? photo : null,
+      getAll: (key: string) => key === 'photo' ? [photo] : [],
+    } as unknown as FormData
+
+    const response = await onRequestPost({
+      request: {
+        url: 'http://localhost/api/guest-snap/photos',
+        headers: new Headers(),
+        formData: async () => form,
+      } as Request,
+      env: {
+        GUEST_SNAP_BUCKET: {
+          put: vi.fn(async () => { throw new Error('R2 unavailable') }),
+        },
+      },
+      params: {},
+    })
+
+    expect(response.status).toBe(503)
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: '사진 저장에 실패했습니다. 잠시 후 다시 시도해주세요.',
+    })
+  })
 })

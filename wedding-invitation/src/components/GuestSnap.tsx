@@ -7,7 +7,12 @@ import { SectionHeading } from './SectionHeading'
 declare global {
   interface Window {
     turnstile?: {
-      render: (selector: string, options: { sitekey: string; callback: (token: string) => void; theme: string }) => string
+      render: (selector: string, options: {
+        sitekey: string
+        callback: (token: string) => void
+        theme: string
+        appearance: 'interaction-only'
+      }) => string
       reset: (widgetId?: string) => void
     }
   }
@@ -64,6 +69,7 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
           sitekey: config.turnstileSiteKey,
           callback: setTurnstileToken,
           theme: 'light',
+          appearance: 'interaction-only',
         })
       })
       .catch(() => setErrors(['보안 확인을 불러오지 못했습니다. 페이지를 새로고침해주세요.']))
@@ -86,6 +92,7 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
     setStatus('')
     setProgress(0)
 
+    let uploadErrorMessage = '사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.'
     try {
       const body = new FormData()
       let preparedCount = 0
@@ -97,15 +104,20 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
       }
       body.set('turnstileToken', turnstileToken)
       const response = await fetch('/api/guest-snap/photos', { method: 'POST', body })
-      const result = await response.json() as { error?: string }
-      if (!response.ok) throw new Error(result.error || '사진 업로드에 실패했습니다.')
+      const result = await response.json().catch(() => ({})) as { ok?: boolean; error?: string }
+      if (!response.ok || result.ok !== true) {
+        uploadErrorMessage = result.error || uploadErrorMessage
+        throw new Error(uploadErrorMessage)
+      }
 
       setStatus(`사진 ${files.length}장을 잘 받았습니다.`)
       setFiles([])
       setTurnstileToken('')
       window.turnstile?.reset(turnstileWidgetId.current)
-    } catch (error) {
-      setErrors([error instanceof Error ? error.message : '사진 업로드에 실패했습니다.'])
+    } catch {
+      setTurnstileToken('')
+      window.turnstile?.reset(turnstileWidgetId.current)
+      setErrors([uploadErrorMessage])
     } finally {
       setUploading(false)
     }

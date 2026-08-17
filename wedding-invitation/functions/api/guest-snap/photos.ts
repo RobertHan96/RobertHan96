@@ -52,15 +52,20 @@ export async function onRequestPost({ request, env }: PagesContext): Promise<Res
   const createdAt = new Date().toISOString()
   const ids = validatedPhotos.map(() => crypto.randomUUID())
 
-  await Promise.all(validatedPhotos.map(async ({ photo, validation }, index) => {
-    if (!validation.ok) return
-    const id = ids[index]
-    const objectKey = `guest-snap/${createdAt.slice(0, 10)}/${id}.${validation.extension}`
-    await env.GUEST_SNAP_BUCKET.put(objectKey, photo.stream(), {
-      httpMetadata: { contentType: photo.type, cacheControl: 'private, max-age=0' },
-      customMetadata: { photoId: id, uploadedAt: createdAt },
-    })
-  }))
+  try {
+    await Promise.all(validatedPhotos.map(async ({ photo, validation }, index) => {
+      if (!validation.ok) return
+      const id = ids[index]
+      const objectKey = `guest-snap/${createdAt.slice(0, 10)}/${id}.${validation.extension}`
+      await env.GUEST_SNAP_BUCKET.put(objectKey, photo.stream(), {
+        httpMetadata: { contentType: photo.type, cacheControl: 'private, max-age=0' },
+        customMetadata: { photoId: id, uploadedAt: createdAt },
+      })
+    }))
+  } catch (error) {
+    console.error('Guest snap R2 upload failed', error)
+    return json({ ok: false, error: '사진 저장에 실패했습니다. 잠시 후 다시 시도해주세요.' }, 503)
+  }
 
   return json({ ok: true, id: ids[0], ids }, 201)
 }

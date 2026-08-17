@@ -23,19 +23,21 @@ export function Hero({ wedding }: HeroProps) {
         <span>{wedding.bride.name}</span> <small>그리고</small> <span>{wedding.groom.name}</span>
       </h1>
       <div className="hero-ceremony">
-        <time dateTime={wedding.date.iso}>{wedding.date.display}</time>
-        <span>{wedding.date.time}</span>
+        <div className="hero-date-time">
+          <time dateTime={wedding.date.iso}>{wedding.date.display}</time>
+          <span>{wedding.date.time}</span>
+        </div>
         <strong>{wedding.venue.name}</strong>
         <span>{wedding.venue.hall}</span>
       </div>
       <div className="hero-family">
         <p>
           <span>{wedding.parents.bride.father.name} · {wedding.parents.bride.mother.name}의 딸</span>
-          <strong>신부 {wedding.bride.name},</strong>
+          <span className="hero-person">신부 {wedding.bride.name},</span>
         </p>
         <p>
           <span>{wedding.parents.groom.father.name} · {wedding.parents.groom.mother.name}의 아들</span>
-          <strong>신랑 {wedding.groom.name}</strong>
+          <span className="hero-person">신랑 {wedding.groom.name}</span>
         </p>
       </div>
     </section>
