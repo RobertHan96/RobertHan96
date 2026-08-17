@@ -1,5 +1,6 @@
 import { Couple } from './components/Couple'
 import { Gallery } from './components/Gallery'
+import { GuestSnap } from './components/GuestSnap'
 import { Hero } from './components/Hero'
 import { Invitation } from './components/Invitation'
 import { Location } from './components/Location'
@@ -39,6 +40,7 @@ function App() {
       <WeddingDay />
       <Location />
       <Transportation />
+      <GuestSnap config={wedding.guestSnap} forceOpen={import.meta.env.DEV} />
       <PendingDetails />
       <Share />
       <Footer />

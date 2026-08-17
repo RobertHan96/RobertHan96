@@ -62,9 +62,23 @@ export const wedding: WeddingConfig = {
     ],
     parking: ['교통회관 지상·지하 주차장 이용'],
   },
-  accounts: { groom: [], bride: [] },
+  accounts: {
+    groom: [{ bank: '신한은행', holder: '한영신', number: '110-467-266513' }],
+    bride: [{ bank: '우리은행', holder: '이다예', number: '1002-353-385470' }],
+  },
   rsvp: { enabled: false, maxCompanions: 5 },
+  guestSnap: {
+    enabled: true,
+    uploadOpensAt: '2026-11-15T00:00:00+09:00',
+    maxFiles: 10,
+    maxFileSizeBytes: 20 * 1024 * 1024,
+    turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '',
+  },
   gallery: {
+    hero: {
+      src: '/images/wedding/cover.webp',
+      alt: '한영신과 이다예의 웨딩 대표 사진',
+    },
     baby: [
       {
         src: '/images/baby/groom.jpeg',
@@ -77,13 +91,49 @@ export const wedding: WeddingConfig = {
         objectPosition: '50% 42%',
       },
     ],
-    wedding: [],
-    comingSoon: true,
+    wedding: [
+      {
+        src: '/images/wedding/opening.webp',
+        alt: '정원에서 함께 웃는 한영신과 이다예',
+        layout: 'wide',
+      },
+      {
+        src: '/images/wedding/bride.webp',
+        alt: '웨딩드레스를 입은 이다예',
+        layout: 'half',
+      },
+      {
+        src: '/images/wedding/groom.webp',
+        alt: '부케를 든 한영신',
+        layout: 'half',
+      },
+      {
+        src: '/images/wedding/laugh.webp',
+        alt: '함께 웃는 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/veil.webp',
+        alt: '베일 아래 마주 보는 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/street.webp',
+        alt: '벽돌길에서 마주 선 한영신과 이다예',
+        layout: 'wide',
+      },
+      {
+        src: '/images/wedding/red-dance.webp',
+        alt: '정원에서 춤추는 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/red-laugh.webp',
+        alt: '베일 아래 함께 웃는 한영신과 이다예',
+      },
+    ],
   },
   share: {
     title: '한영신 ♥ 이다예, 결혼합니다',
     description: '2026년 11월 15일 오후 3시 50분 · 더컨벤션 잠실',
-    ogImage: 'https://roberthan96.pages.dev/images/location/map.jpeg',
+    ogImage: 'https://roberthan96.pages.dev/images/wedding/share.jpg',
     url: 'https://roberthan96.pages.dev/',
     kakaoJavascriptKey: import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY ?? '',
   },

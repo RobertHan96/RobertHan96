@@ -9,6 +9,7 @@ describe('wedding content', () => {
   it('renders the ceremony, invitation, and family information', () => {
     render(<App />)
 
+    expect(screen.getByAltText('한영신과 이다예의 웨딩 대표 사진')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '한영신 그리고 이다예' })).toBeInTheDocument()
     expect(screen.getAllByText('2026. 11. 15').length).toBeGreaterThan(0)
     expect(screen.getAllByText('더컨벤션 잠실').length).toBeGreaterThan(0)

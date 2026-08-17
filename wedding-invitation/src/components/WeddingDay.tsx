@@ -9,7 +9,7 @@ export function WeddingDay() {
   const weeks = buildCalendarWeeks(date.year, date.monthIndex)
   return (
     <section className="paper-section wedding-day-section reveal-section">
-      <SectionHeading eyebrow="WEDDING DAY" title="예식 일정을 안내합니다" />
+      <SectionHeading eyebrow="WEDDING DAY" title="예식 일정" />
       <div className="dday-pill">{formatDday(date.iso)}</div>
       <p className="calendar-title">NOVEMBER 2026</p>
       <div className="calendar" role="grid" aria-label="2026년 11월 예식 달력">

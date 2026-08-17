@@ -11,6 +11,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest",
+    "typecheck:functions": "tsc -p tsconfig.functions.json",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -6,15 +6,19 @@ import { wedding } from '../config/wedding'
 import { Gallery } from './Gallery'
 
 describe('Gallery', () => {
-  it('shows both childhood photos and the coming-soon message', () => {
-    render(<Gallery gallery={wedding.gallery} />)
+  it('shows every wedding photo in a compact thumbnail grid', () => {
+    const { container } = render(<Gallery gallery={wedding.gallery} />)
 
     expect(screen.getByAltText('신랑 한영신의 어린 시절')).toBeInTheDocument()
     expect(screen.getByAltText('신부 이다예의 어린 시절')).toBeInTheDocument()
-    expect(screen.getByText('아이들은 자라서')).toBeInTheDocument()
-    expect(screen.getByText('서로의 가장 좋은 친구가 되었습니다.')).toBeInTheDocument()
-    expect(screen.getByText('TO BE CONTINUED...')).toBeInTheDocument()
-    expect(screen.getByText('Wedding photos coming soon')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '그리고, 오늘의 우리' })).toBeInTheDocument()
+    expect(screen.getByAltText('정원에서 함께 웃는 한영신과 이다예')).toBeInTheDocument()
+    expect(screen.getByAltText('베일 아래 마주 보는 한영신과 이다예')).toBeInTheDocument()
+    expect(screen.getByAltText('베일 아래 함께 웃는 한영신과 이다예')).toBeInTheDocument()
+    expect(container.querySelectorAll('.wedding-thumbnail')).toHaveLength(wedding.gallery.wedding.length)
+    expect(container.querySelector('.wedding-photo-grid')).toBeInTheDocument()
+    expect(screen.queryByText('TO BE CONTINUED...')).not.toBeInTheDocument()
+    expect(screen.queryByText('Wedding photos coming soon')).not.toBeInTheDocument()
   })
 
   it('opens the viewer and moves to the next photo', async () => {

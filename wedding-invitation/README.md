@@ -27,7 +27,7 @@ npm run build
 - 약도와 공유 이미지: `public/images/location/map.jpeg`
 - 전체 디자인: `src/index.css`
 
-현재 계좌, RSVP, T맵 링크는 미입력 상태입니다. 계좌와 RSVP는 준비 중으로 표시되며, 카카오 공유 버튼은 빌드 환경에 JavaScript 키가 있으면 활성화됩니다.
+RSVP와 T맵 링크는 사용하지 않습니다. 카카오 공유 버튼은 빌드 환경에 JavaScript 키가 있으면 활성화됩니다.
 
 ## 카카오톡 공유 설정
 
@@ -51,7 +51,22 @@ Git 저장소를 Pages에 연결할 때 다음 값을 사용합니다.
 | Build output directory | `dist` |
 | Node version | `24` |
 
-Open Graph 이미지와 공유 링크는 `https://roberthan96.pages.dev/` 기준으로 설정되어 있습니다. 커스텀 도메인을 연결하면 `src/config/wedding.ts`와 `index.html`의 URL을 함께 변경해야 합니다. RSVP를 추가할 때만 Pages Functions와 D1을 연결합니다.
+Open Graph 이미지와 공유 링크는 `https://roberthan96.pages.dev/` 기준으로 설정되어 있습니다. 커스텀 도메인을 연결하면 `src/config/wedding.ts`와 `index.html`의 URL을 함께 변경해야 합니다.
+
+## 게스트 스냅 설정
+
+게스트 스냅은 Pages Functions, 비공개 R2, D1, Turnstile을 사용합니다.
+
+1. R2 버킷 `wedding-guest-snap`을 만들고 Pages 프로젝트에 `GUEST_SNAP_BUCKET` 이름으로 바인딩합니다.
+2. D1 데이터베이스 `wedding-guest-snap`을 만들고 `GUEST_SNAP_DB` 이름으로 바인딩합니다.
+3. `npx wrangler d1 migrations apply wedding-guest-snap --remote`로 `migrations/0001_guest_snap.sql`을 적용합니다.
+4. Turnstile 위젯을 만들고 공개 Site Key는 빌드 변수 `VITE_TURNSTILE_SITE_KEY`로 등록합니다.
+5. Turnstile Secret Key는 암호화된 변수 `TURNSTILE_SECRET_KEY`로 등록합니다.
+6. 관리자 비밀번호는 암호화된 변수 `GUEST_SNAP_ADMIN_PASSWORD`로 등록합니다.
+7. 일반 변수 `GUEST_SNAP_UPLOAD_OPENS_AT`에는 `2026-11-15T00:00:00+09:00`을 등록합니다.
+8. 바인딩과 변수를 등록한 뒤 Production을 다시 배포합니다.
+
+사진은 승인 전까지 외부에서 접근할 수 없으며 `/guest-snap-admin`에서 승인, 제외, 삭제합니다. 공개 버킷 URL은 활성화하지 않습니다. 로컬 Vite 서버에서는 UI만 확인할 수 있고 실제 Functions 테스트는 Cloudflare Pages의 Preview 배포에서 진행합니다.
 
 ## 개인정보 주의
 

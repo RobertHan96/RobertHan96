@@ -7,6 +7,21 @@ export type GalleryImage = {
   src: string
   alt: string
   objectPosition?: string
+  layout?: 'wide' | 'half'
+}
+
+export type Account = {
+  bank: string
+  holder: string
+  number: string
+}
+
+export type GuestSnapConfig = {
+  enabled: boolean
+  uploadOpensAt: string
+  maxFiles: number
+  maxFileSizeBytes: number
+  turnstileSiteKey: string
 }
 
 export type WeddingConfig = {
@@ -33,8 +48,9 @@ export type WeddingConfig = {
     links: { naver: string; kakao: string; tmap: string }
   }
   transportation: { subway: string[]; bus: string[]; car: string[]; parking: string[] }
-  accounts: { groom: unknown[]; bride: unknown[] }
+  accounts: { groom: Account[]; bride: Account[] }
   rsvp: { enabled: boolean; maxCompanions: number }
-  gallery: { baby: GalleryImage[]; wedding: GalleryImage[]; comingSoon: boolean }
+  guestSnap: GuestSnapConfig
+  gallery: { hero: GalleryImage; baby: GalleryImage[]; wedding: GalleryImage[] }
   share: { title: string; description: string; ogImage: string; url: string; kakaoJavascriptKey: string }
 }

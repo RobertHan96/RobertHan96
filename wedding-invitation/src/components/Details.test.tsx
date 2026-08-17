@@ -13,12 +13,18 @@ describe('wedding details', () => {
   })
 
   it('renders the calendar, selected date, venue, and map', () => {
-    render(<App />)
+    const { container } = render(<App />)
 
     expect(screen.getByText('NOVEMBER 2026')).toBeInTheDocument()
     expect(screen.getByText('15', { selector: '[aria-current="date"]' })).toBeInTheDocument()
     expect(screen.getByText('서울 송파구 올림픽로 319 3층')).toBeInTheDocument()
     expect(screen.getByAltText('더컨벤션 잠실 오시는 길 약도')).toBeInTheDocument()
+    expect(container).not.toHaveTextContent('✦')
+    expect(container).not.toHaveTextContent('WEDDING DAY')
+    expect(container).not.toHaveTextContent('LOCATION')
+    expect(container).not.toHaveTextContent('TRANSPORTATION')
+    expect(container).not.toHaveTextContent('ACCOUNT')
+    expect(container).not.toHaveTextContent('INVITATION')
   })
 
   it('copies the venue address and current invitation link', async () => {
@@ -33,16 +39,34 @@ describe('wedding details', () => {
     expect(writeText).toHaveBeenCalledWith('https://roberthan96.pages.dev/')
   })
 
-  it('shows the account preparation state without an RSVP section', () => {
-    render(<App />)
+  it('shows account details without an RSVP section', () => {
+    const { container } = render(<App />)
 
     expect(screen.getByRole('heading', { name: '교통 안내' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '마음 전하실 곳' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '♥ 마음 전하실 곳 ♥' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '참석 여부 전달' })).not.toBeInTheDocument()
-    expect(screen.getByText('계좌 안내를 준비하고 있습니다')).toBeInTheDocument()
+    expect(screen.getByText('신랑측')).toBeInTheDocument()
+    expect(screen.getByText('신부측')).toBeInTheDocument()
+    expect(screen.getByText('신한은행 · 한영신')).toBeInTheDocument()
+    expect(screen.getByText('110-467-266513')).toBeInTheDocument()
+    expect(screen.getByText('우리은행 · 이다예')).toBeInTheDocument()
+    expect(screen.getByText('1002-353-385470')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '신부 이다예 계좌번호 복사' })).toBeVisible()
+    expect(container.querySelector('details')).not.toBeInTheDocument()
     expect(screen.getByText('화환은 정중히 사양하오니 너른 양해 부탁드립니다.')).toBeInTheDocument()
     expect(screen.queryByText('참석 여부 전달은 추후 오픈됩니다')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '카카오 JavaScript 키 설정 필요' })).toBeDisabled()
+  })
+
+  it('copies the selected account number', async () => {
+    const user = userEvent.setup()
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText')
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: '신랑 한영신 계좌번호 복사' }))
+
+    expect(writeText).toHaveBeenCalledWith('110-467-266513')
+    expect(screen.getByRole('button', { name: '신랑 한영신 계좌번호 복사' })).toHaveTextContent('복사됨')
   })
 
   it('shows transportation details and map service links', () => {
