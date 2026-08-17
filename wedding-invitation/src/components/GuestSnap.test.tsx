@@ -66,6 +66,25 @@ describe('GuestSnap', () => {
     expect((uploadOptions.body as FormData).get('message')).toBeNull()
   })
 
+  it('uploads multiple photos in one Turnstile-verified request', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ ok: true, ids: ['photo-1', 'photo-2'] }), { status: 201 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    render(<GuestSnap config={config} forceOpen />)
+
+    const photos = [
+      new File(['photo-1'], '첫번째.jpg', { type: 'image/jpeg' }),
+      new File(['photo-2'], '두번째.jpg', { type: 'image/jpeg' }),
+    ]
+    await user.upload(screen.getByLabelText('게스트 사진 선택'), photos)
+    await user.click(screen.getByRole('button', { name: '사진 2장 보내기' }))
+
+    await waitFor(() => expect(screen.getByText('사진 2장을 잘 받았습니다.')).toBeInTheDocument())
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const uploadOptions = fetchMock.mock.calls[0]![1] as RequestInit
+    expect((uploadOptions.body as FormData).getAll('photo')).toHaveLength(2)
+  })
+
   it('automatically enables uploads when the opening time arrives', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-11-14T14:59:30Z'))

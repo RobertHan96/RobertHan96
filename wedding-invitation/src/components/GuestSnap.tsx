@@ -86,20 +86,21 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
     setStatus('')
     setProgress(0)
 
-    let completed = 0
     try {
+      const body = new FormData()
+      let preparedCount = 0
       for (const file of files) {
         const prepared = await optimizeGuestImage(file)
-        const body = new FormData()
-        body.set('photo', prepared, prepared.name)
-        body.set('turnstileToken', turnstileToken)
-        const response = await fetch('/api/guest-snap/photos', { method: 'POST', body })
-        const result = await response.json() as { error?: string }
-        if (!response.ok) throw new Error(result.error || `${file.name} 업로드에 실패했습니다.`)
-        completed += 1
-        setProgress(completed)
+        body.append('photo', prepared, prepared.name)
+        preparedCount += 1
+        setProgress(preparedCount)
       }
-      setStatus(`사진 ${completed}장을 잘 받았습니다.`)
+      body.set('turnstileToken', turnstileToken)
+      const response = await fetch('/api/guest-snap/photos', { method: 'POST', body })
+      const result = await response.json() as { error?: string }
+      if (!response.ok) throw new Error(result.error || '사진 업로드에 실패했습니다.')
+
+      setStatus(`사진 ${files.length}장을 잘 받았습니다.`)
       setFiles([])
       setTurnstileToken('')
       window.turnstile?.reset(turnstileWidgetId.current)

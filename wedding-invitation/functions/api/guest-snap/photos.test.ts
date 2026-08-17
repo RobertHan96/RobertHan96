@@ -51,12 +51,16 @@ describe('guest snap photo API', () => {
     const fields = new Map<string, FormDataEntryValue | typeof photo>([
       ['photo', photo],
     ])
+    const form = {
+      get: (key: string) => fields.get(key) ?? null,
+      getAll: (key: string) => key === 'photo' ? [photo] : [],
+    } as unknown as FormData
 
     const response = await onRequestPost({
       request: {
         url: 'http://localhost/api/guest-snap/photos',
         headers: new Headers(),
-        formData: async () => ({ get: (key: string) => fields.get(key) ?? null }) as FormData,
+        formData: async () => form,
       } as Request,
       env,
       params: {},
@@ -69,6 +73,40 @@ describe('guest snap photo API', () => {
       httpMetadata: { contentType: 'image/jpeg', cacheControl: 'private, max-age=0' },
       customMetadata: expect.objectContaining({ photoId: expect.any(String), uploadedAt: expect.any(String) }),
     }))
-    await expect(response.json()).resolves.toEqual({ ok: true, id: expect.any(String) })
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      id: expect.any(String),
+      ids: [expect.any(String)],
+    })
+  })
+
+  it('stores multiple photos after one security verification', async () => {
+    const { env, stored } = createEnv()
+    const photos = [
+      { name: 'first.jpg', type: 'image/jpeg', size: 5, stream: () => new ReadableStream() },
+      { name: 'second.jpg', type: 'image/jpeg', size: 5, stream: () => new ReadableStream() },
+    ]
+    const form = {
+      get: (key: string) => key === 'photo' ? photos[0] : null,
+      getAll: (key: string) => key === 'photo' ? photos : [],
+    } as unknown as FormData
+
+    const response = await onRequestPost({
+      request: {
+        url: 'http://localhost/api/guest-snap/photos',
+        headers: new Headers(),
+        formData: async () => form,
+      } as Request,
+      env,
+      params: {},
+    })
+
+    expect(response.status).toBe(201)
+    expect(stored).toHaveLength(2)
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      id: expect.any(String),
+      ids: [expect.any(String), expect.any(String)],
+    })
   })
 })
