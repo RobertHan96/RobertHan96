@@ -10,21 +10,15 @@ describe('wedding content', () => {
     render(<App />)
 
     expect(screen.getByAltText('한영신과 이다예의 웨딩 대표 사진')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '한영신 그리고 이다예' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '이다예 그리고 한영신' })).toBeInTheDocument()
     expect(screen.getAllByText('2026. 11. 15').length).toBeGreaterThan(0)
     expect(screen.getAllByText('더컨벤션 잠실').length).toBeGreaterThan(0)
     expect(screen.getByRole('heading', { name: '서로의 오늘이 되어' })).toBeInTheDocument()
     expect(screen.getByText('한성용 · 황진심의 아들')).toBeInTheDocument()
     expect(screen.getByText('이성환 · 오영근의 딸')).toBeInTheDocument()
-  })
-
-  it('renders telephone and message links for the couple', () => {
-    render(<App />)
-
-    expect(screen.getByRole('link', { name: '신랑에게 전화' })).toHaveAttribute('href', 'tel:01022345619')
-    expect(screen.getByRole('link', { name: '신랑에게 문자' })).toHaveAttribute('href', 'sms:01022345619')
-    expect(screen.getByRole('link', { name: '신부에게 전화' })).toHaveAttribute('href', 'tel:01071685132')
-    expect(screen.getByRole('link', { name: '신부에게 문자' })).toHaveAttribute('href', 'sms:01071685132')
+    expect(screen.queryByRole('heading', { name: '두 사람을 소개합니다' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '예식 일정' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /에게 전화/ })).not.toBeInTheDocument()
   })
 
   it('reveals a section when it enters the viewport', () => {

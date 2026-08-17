@@ -177,6 +177,31 @@ img {
   grid-column: 1 / -1;
 }
 
+.hero-family {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  margin-top: 18px;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  line-height: 1.65;
+  animation: hero-rise 0.8s 0.32s ease-out both;
+}
+
+.hero-family p {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.hero-family strong {
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .paper-section {
   position: relative;
   padding: 55px 28px;
@@ -226,60 +251,6 @@ img {
 
 .invitation-copy span {
   display: block;
-}
-
-.contact-list {
-  display: grid;
-  gap: 12px;
-}
-
-.contact-row {
-  display: flex;
-  min-height: 92px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 19px 18px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.56);
-  text-align: left;
-}
-
-.contact-row p {
-  margin: 0 0 8px;
-  color: var(--ink-soft);
-  font-size: 0.75rem;
-}
-
-.contact-row strong {
-  font-size: 1.03rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-}
-
-.contact-row strong span {
-  margin-right: 7px;
-  color: var(--sage);
-  font-size: 0.72rem;
-}
-
-.contact-actions {
-  display: grid;
-  grid-template-columns: repeat(2, 42px);
-  gap: 6px;
-}
-
-.contact-actions a {
-  display: grid;
-  min-height: 42px;
-  place-items: center;
-  border: 1px solid rgba(79, 96, 72, 0.3);
-  border-radius: 50%;
-  color: var(--sage-deep);
-  font-family: sans-serif;
-  font-size: 0.68rem;
-  text-decoration: none;
 }
 
 .polaroid-gallery {
@@ -434,6 +405,17 @@ img {
   color: var(--ink);
   font-size: 1rem;
   font-weight: 500;
+}
+
+.ceremony-summary-top {
+  margin: 0 0 22px;
+}
+
+.ceremony-summary-top time {
+  color: var(--ink);
+  font-size: 1.24rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
 }
 
 .venue-copy {

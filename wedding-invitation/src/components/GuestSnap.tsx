@@ -55,7 +55,7 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
   }, [config.enabled, forceOpen, now])
 
   useEffect(() => {
-    if (!config.turnstileSiteKey) return
+    if (!uploadOpen || !config.turnstileSiteKey) return
     let cancelled = false
     void loadTurnstile()
       .then(() => {
@@ -68,7 +68,7 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
       })
       .catch(() => setErrors(['보안 확인을 불러오지 못했습니다. 페이지를 새로고침해주세요.']))
     return () => { cancelled = true }
-  }, [config.turnstileSiteKey])
+  }, [config.turnstileSiteKey, uploadOpen])
 
   const handleSelection = (selected: File[]) => {
     const result = validateGuestFiles(selected, config.maxFiles, config.maxFileSizeBytes)
@@ -113,7 +113,7 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
   return (
     <section className="paper-section guest-snap-section reveal-section">
       <SectionHeading eyebrow="GUEST SNAP" title="게스트 스냅" />
-      <p className="guest-snap-intro">여러분의 시선으로 담은 오늘을 저희에게도 나누어 주세요.</p>
+      <p className="guest-snap-intro">여러분의 시선으로 담은 사진을 공유해주세요.</p>
 
       {uploadOpen ? (
         <form className="guest-snap-form" onSubmit={(event) => void handleSubmit(event)}>

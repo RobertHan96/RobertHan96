@@ -11,7 +11,7 @@ describe('Gallery', () => {
 
     expect(screen.getByAltText('신랑 한영신의 어린 시절')).toBeInTheDocument()
     expect(screen.getByAltText('신부 이다예의 어린 시절')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '그리고, 오늘의 우리' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '오늘의 우리' })).toBeInTheDocument()
     expect(screen.getByAltText('정원에서 함께 웃는 한영신과 이다예')).toBeInTheDocument()
     expect(screen.getByAltText('베일 아래 마주 보는 한영신과 이다예')).toBeInTheDocument()
     expect(screen.getByAltText('베일 아래 함께 웃는 한영신과 이다예')).toBeInTheDocument()

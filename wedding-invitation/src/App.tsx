@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 
-import { Couple } from './components/Couple'
 import { Gallery } from './components/Gallery'
 import { GuestSnap } from './components/GuestSnap'
 import { Hero } from './components/Hero'
@@ -37,7 +36,6 @@ function App() {
     <main className="invitation-shell">
       <Hero wedding={wedding} />
       <Invitation invitation={wedding.invitation} />
-      <Couple wedding={wedding} />
       <Gallery gallery={wedding.gallery} />
       <WeddingDay />
       <Location />

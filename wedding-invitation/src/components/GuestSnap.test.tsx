@@ -23,10 +23,25 @@ describe('GuestSnap', () => {
     render(<GuestSnap config={config} now={new Date('2026-08-17T00:00:00Z')} />)
 
     expect(screen.getByRole('heading', { name: '게스트 스냅' })).toBeInTheDocument()
+    expect(screen.getByText('여러분의 시선으로 담은 사진을 공유해주세요.')).toBeInTheDocument()
     expect(screen.getByText('예식 당일부터 사진을 남길 수 있습니다.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '사진 보내기' })).toBeDisabled()
     expect(screen.queryByLabelText('게스트 사진 선택')).not.toBeInTheDocument()
     expect(screen.queryByText(/사진 제공과 신랑·신부의 보관 및 공개에 동의합니다/)).not.toBeInTheDocument()
+  })
+
+  it('does not initialize Turnstile while uploads are closed', async () => {
+    const renderTurnstile = vi.fn(() => 'widget-1')
+    window.turnstile = { render: renderTurnstile, reset: vi.fn() }
+
+    render(<GuestSnap
+      config={{ ...config, turnstileSiteKey: 'site-key' }}
+      now={new Date('2026-08-17T00:00:00Z')}
+    />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '사진 보내기' })).toBeDisabled())
+    expect(renderTurnstile).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('uploads selected photos without collecting personal text', async () => {
