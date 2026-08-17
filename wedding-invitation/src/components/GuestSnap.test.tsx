@@ -29,28 +29,26 @@ describe('GuestSnap', () => {
     expect(screen.queryByText(/사진 제공과 신랑·신부의 보관 및 공개에 동의합니다/)).not.toBeInTheDocument()
   })
 
-  it('uploads selected photos one at a time without a consent checkbox', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ photos: [] }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, id: 'photo-1', status: 'pending' }), { status: 201 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ photos: [] }), { status: 200 }))
+  it('uploads selected photos without collecting personal text', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ ok: true, id: 'photo-1' }), { status: 201 }))
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
     render(<GuestSnap config={config} forceOpen />)
 
     const photo = new File(['photo'], '친구사진.jpg', { type: 'image/jpeg' })
     await user.upload(screen.getByLabelText('게스트 사진 선택'), photo)
-    await user.type(screen.getByLabelText('이름 (선택)'), '친구')
-    await user.type(screen.getByLabelText('메시지 (선택)'), '결혼 축하해!')
+    expect(screen.queryByLabelText('이름 (선택)')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('메시지 (선택)')).not.toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '사진 1장 보내기' }))
 
     await waitFor(() => expect(screen.getByText('사진 1장을 잘 받았습니다.')).toBeInTheDocument())
-    const uploadRequest = fetchMock.mock.calls.find((call) => call[1]?.method === 'POST')
-    expect(uploadRequest).toBeDefined()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const uploadRequest = fetchMock.mock.calls[0]
     expect(uploadRequest![0]).toBe('/api/guest-snap/photos')
     const uploadOptions = uploadRequest![1] as RequestInit
-    expect((uploadOptions.body as FormData).get('guestName')).toBe('친구')
+    expect((uploadOptions.body as FormData).get('guestName')).toBeNull()
+    expect((uploadOptions.body as FormData).get('message')).toBeNull()
   })
 
   it('automatically enables uploads when the opening time arrives', async () => {

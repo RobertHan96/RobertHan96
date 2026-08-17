@@ -69,7 +69,7 @@ export const wedding: WeddingConfig = {
   rsvp: { enabled: false, maxCompanions: 5 },
   guestSnap: {
     enabled: true,
-    uploadOpensAt: '2026-11-15T00:00:00+09:00',
+    uploadOpensAt: import.meta.env.VITE_GUEST_SNAP_UPLOAD_OPENS_AT ?? '2026-11-15T00:00:00+09:00',
     maxFiles: 10,
     maxFileSizeBytes: 20 * 1024 * 1024,
     turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '',

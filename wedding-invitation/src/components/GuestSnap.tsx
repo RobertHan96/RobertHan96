@@ -2,16 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react'
 
 import { isGuestSnapOpen, optimizeGuestImage, validateGuestFiles } from '../lib/guestSnap'
 import type { GuestSnapConfig } from '../types/wedding'
-import { ImageViewer } from './ImageViewer'
 import { SectionHeading } from './SectionHeading'
-
-type GuestPhoto = {
-  id: string
-  guestName: string | null
-  message: string | null
-  createdAt: string
-  mediaUrl: string
-}
 
 declare global {
   interface Window {
@@ -48,31 +39,14 @@ type GuestSnapProps = {
 
 export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
   const [clock, setClock] = useState(() => new Date())
-  const [photos, setPhotos] = useState<GuestPhoto[]>([])
   const [files, setFiles] = useState<File[]>([])
-  const [guestName, setGuestName] = useState('')
-  const [message, setMessage] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState('')
   const [errors, setErrors] = useState<string[]>([])
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const turnstileWidgetId = useRef<string | undefined>(undefined)
   const uploadOpen = isGuestSnapOpen(config.enabled, config.uploadOpensAt, now ?? clock, forceOpen)
-
-  const loadPhotos = async () => {
-    try {
-      const response = await fetch('/api/guest-snap/photos', { headers: { Accept: 'application/json' } })
-      if (!response.ok) return
-      const data = await response.json() as { photos?: GuestPhoto[] }
-      setPhotos(data.photos ?? [])
-    } catch {
-      // The static Vite preview has no Pages Functions backend.
-    }
-  }
-
-  useEffect(() => { void loadPhotos() }, [])
 
   useEffect(() => {
     if (now || forceOpen || !config.enabled) return
@@ -118,8 +92,6 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
         const prepared = await optimizeGuestImage(file)
         const body = new FormData()
         body.set('photo', prepared, prepared.name)
-        body.set('guestName', guestName)
-        body.set('message', message)
         body.set('turnstileToken', turnstileToken)
         const response = await fetch('/api/guest-snap/photos', { method: 'POST', body })
         const result = await response.json() as { error?: string }
@@ -129,18 +101,14 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
       }
       setStatus(`사진 ${completed}장을 잘 받았습니다.`)
       setFiles([])
-      setMessage('')
       setTurnstileToken('')
       window.turnstile?.reset(turnstileWidgetId.current)
-      await loadPhotos()
     } catch (error) {
       setErrors([error instanceof Error ? error.message : '사진 업로드에 실패했습니다.'])
     } finally {
       setUploading(false)
     }
   }
-
-  const viewerImages = photos.map((photo) => ({ src: photo.mediaUrl, alt: photo.message || '하객이 남긴 결혼식 사진' }))
 
   return (
     <section className="paper-section guest-snap-section reveal-section">
@@ -167,14 +135,6 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
             </div>
           )}
 
-          <label className="guest-field">
-            <span>이름 (선택)</span>
-            <input value={guestName} maxLength={40} onChange={(event) => setGuestName(event.target.value)} />
-          </label>
-          <label className="guest-field">
-            <span>메시지 (선택)</span>
-            <textarea value={message} maxLength={300} rows={3} onChange={(event) => setMessage(event.target.value)} />
-          </label>
           {config.turnstileSiteKey && (
             <div className="cf-turnstile" id="guest-snap-turnstile" />
           )}
@@ -195,20 +155,6 @@ export function GuestSnap({ config, forceOpen = false, now }: GuestSnapProps) {
 
       {errors.length > 0 && <div className="guest-snap-errors" role="alert">{errors.map((error) => <p key={error}>{error}</p>)}</div>}
       {status && <p className="guest-snap-status" role="status">{status}</p>}
-
-      {photos.length > 0 && (
-        <div className="guest-photo-gallery" aria-label="게스트 스냅 갤러리">
-          {photos.map((photo, index) => (
-            <button type="button" key={photo.id} onClick={() => setSelectedIndex(index)} aria-label={`게스트 사진 ${index + 1} 크게 보기`}>
-              <img src={photo.mediaUrl} alt={photo.message || '하객이 남긴 결혼식 사진'} loading="lazy" width="500" height="500" />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {selectedIndex !== null && (
-        <ImageViewer images={viewerImages} index={selectedIndex} onMove={setSelectedIndex} onClose={() => setSelectedIndex(null)} />
-      )}
     </section>
   )
 }

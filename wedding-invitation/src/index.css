@@ -630,47 +630,7 @@ img {
   white-space: nowrap;
 }
 
-.guest-field {
-  display: grid;
-  gap: 6px;
-}
-
-.guest-field > span {
-  color: var(--ink-soft);
-  font-size: 0.68rem;
-}
-
-.guest-field input,
-.guest-field textarea,
-.guest-admin-login input {
-  width: 100%;
-  border: 1px solid rgba(79, 96, 72, 0.22);
-  border-radius: 0;
-  background: rgba(255, 255, 255, 0.58);
-  color: var(--ink);
-  font-size: 0.78rem;
-  outline: 0;
-}
-
-.guest-field input,
-.guest-admin-login input {
-  min-height: 43px;
-  padding: 0 12px;
-}
-
-.guest-field textarea {
-  padding: 11px 12px;
-  resize: vertical;
-}
-
-.guest-field input:focus,
-.guest-field textarea:focus,
-.guest-admin-login input:focus {
-  border-color: var(--sage-deep);
-}
-
-.guest-upload-button,
-.guest-admin-login button {
+.guest-upload-button {
   min-height: 46px;
   border: 0;
   background: var(--sage-deep);
@@ -678,8 +638,7 @@ img {
   font-size: 0.76rem;
 }
 
-.guest-upload-button:disabled,
-.guest-admin-login button:disabled {
+.guest-upload-button:disabled {
   background: #c8c9c1;
   cursor: not-allowed;
 }
@@ -716,139 +675,6 @@ img {
 
 .guest-snap-errors p {
   margin: 0;
-}
-
-.guest-photo-gallery {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 5px;
-  margin-top: 24px;
-}
-
-.guest-photo-gallery button {
-  padding: 0;
-  overflow: hidden;
-  border: 0;
-  background: var(--paper-deep);
-  cursor: zoom-in;
-}
-
-.guest-photo-gallery img {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-}
-
-.guest-admin-shell {
-  min-height: 100svh;
-  padding: calc(32px + env(safe-area-inset-top)) 22px 40px;
-  background: var(--paper);
-}
-
-.guest-admin-login {
-  display: grid;
-  max-width: 330px;
-  gap: 18px;
-  margin: 15vh auto 0;
-  text-align: center;
-}
-
-.guest-admin-login > p,
-.guest-admin-header p {
-  margin: 0;
-  color: var(--sage);
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.25em;
-}
-
-.guest-admin-login h1,
-.guest-admin-header h1 {
-  margin: 4px 0 0;
-  font-size: 1.5rem;
-  font-weight: 400;
-}
-
-.guest-admin-login form,
-.guest-admin-login label {
-  display: grid;
-  gap: 8px;
-}
-
-.guest-admin-login label span {
-  color: var(--ink-soft);
-  font-size: 0.7rem;
-  text-align: left;
-}
-
-.guest-admin-login a {
-  color: var(--ink-soft);
-  font-size: 0.68rem;
-}
-
-.guest-admin-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.guest-admin-header button,
-.guest-admin-actions button {
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  background: transparent;
-  font-size: 0.65rem;
-}
-
-.guest-admin-grid {
-  display: grid;
-  gap: 15px;
-}
-
-.guest-admin-card {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  background: #fffdfa;
-}
-
-.guest-admin-card > img {
-  width: 100%;
-  max-height: 430px;
-  object-fit: contain;
-  background: #e9e5da;
-}
-
-.guest-admin-card-copy {
-  display: grid;
-  gap: 5px;
-  padding: 14px;
-}
-
-.guest-admin-card-copy span,
-.guest-admin-card-copy small {
-  color: var(--ink-soft);
-  font-size: 0.64rem;
-}
-
-.guest-admin-card-copy p {
-  margin: 4px 0;
-  font-size: 0.76rem;
-}
-
-.guest-admin-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-  padding: 0 14px 14px;
-}
-
-.guest-admin-error,
-.guest-admin-empty {
-  color: #9b4f49;
-  font-size: 0.72rem;
-  text-align: center;
 }
 
 .account-section {
