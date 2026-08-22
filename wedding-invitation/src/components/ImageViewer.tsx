@@ -40,7 +40,7 @@ export function ImageViewer({ images, index, onClose }: ImageViewerProps) {
         buttonZoom: () => null,
       }}
       styles={{
-        container: { backgroundColor: 'rgba(28, 30, 26, 0.96)' },
+        container: { backgroundColor: '#fff' },
       }}
       zoom={{
         maxZoomPixelRatio: 2,

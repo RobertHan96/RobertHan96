@@ -15,6 +15,7 @@ describe('ImageViewer', () => {
     expect(await screen.findByAltText('두 번째 사진')).toBeInTheDocument()
     expect(container.querySelector('.viewer-close')).not.toBeInTheDocument()
     expect(document.querySelectorAll('.yarl__button')).toHaveLength(0)
+    expect(document.querySelector('.yarl__container')).toHaveStyle({ backgroundColor: '#fff' })
   })
 
   it('closes with the Escape key', async () => {
