@@ -38,6 +38,16 @@ export function ImageViewer({ images, index, onClose }: ImageViewerProps) {
         buttonNext: () => null,
         buttonClose: () => null,
         buttonZoom: () => null,
+        controls: () => (
+          <button
+            type="button"
+            className="image-viewer-close"
+            aria-label="사진 닫기"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        ),
       }}
       styles={{
         container: { backgroundColor: '#fff' },

@@ -9,13 +9,19 @@ const images = [
 ]
 
 describe('ImageViewer', () => {
-  it('fills the lightbox with the selected image and no visible controls', async () => {
-    const { container } = render(<ImageViewer images={images} index={1} onClose={vi.fn()} />)
+  it('fills the lightbox with the selected image and only a small close control', async () => {
+    const onClose = vi.fn()
+    const { container } = render(<ImageViewer images={images} index={1} onClose={onClose} />)
 
     expect(await screen.findByAltText('두 번째 사진')).toBeInTheDocument()
     expect(container.querySelector('.viewer-close')).not.toBeInTheDocument()
+    const closeButton = screen.getByRole('button', { name: '사진 닫기' })
+    expect(closeButton).toHaveClass('image-viewer-close')
     expect(document.querySelectorAll('.yarl__button')).toHaveLength(0)
     expect(document.querySelector('.yarl__container')).toHaveStyle({ backgroundColor: '#fff' })
+
+    fireEvent.click(closeButton)
+    expect(onClose).toHaveBeenCalledOnce()
   })
 
   it('closes with the Escape key', async () => {

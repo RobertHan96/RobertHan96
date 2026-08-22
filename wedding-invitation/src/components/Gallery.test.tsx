@@ -22,7 +22,7 @@ describe('Gallery', () => {
     expect(screen.queryByText('Wedding photos coming soon')).not.toBeInTheDocument()
   })
 
-  it('opens the selected photo without visible controls and closes with Escape', async () => {
+  it('opens the selected photo with only a close control and closes with Escape', async () => {
     const user = userEvent.setup()
     render(<Gallery gallery={wedding.gallery} />)
 
@@ -32,7 +32,7 @@ describe('Gallery', () => {
     expect(lightbox?.querySelector('img[alt="신랑 한영신의 어린 시절"]')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '이전 사진' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '다음 사진' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '사진 닫기' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '사진 닫기' })).toBeInTheDocument()
 
     const lightboxContainer = lightbox?.querySelector('.yarl__container')
     expect(lightboxContainer).toBeInTheDocument()
