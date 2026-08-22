@@ -4,7 +4,7 @@ import { wedding } from '../config/wedding'
 import { buildKakaoSharePayload, sendKakaoShare } from './kakao'
 
 const share = {
-  title: '이다예 한영신 결혼합니다',
+  title: '이다예 ♥ 한영신 결혼합니다',
   description: '2026년 11월 15일 오후 3시 50분 · 더컨벤션 잠실',
   ogImage: 'https://roberthan96.pages.dev/images/location/map.jpeg',
   url: 'https://roberthan96.pages.dev/',
@@ -17,7 +17,7 @@ describe('Kakao Talk sharing', () => {
   })
 
   it('builds a feed template with the deployed invitation URL', () => {
-    expect(wedding.share.title).toBe('이다예 한영신 결혼합니다')
+    expect(wedding.share.title).toBe('이다예 ♥ 한영신 결혼합니다')
     expect(buildKakaoSharePayload(share)).toEqual({
       objectType: 'feed',
       content: {
