@@ -286,7 +286,7 @@ img {
 }
 
 .wedding-gallery-section {
-  padding-inline: 18px;
+  padding-inline: 10px;
   background: rgba(239, 234, 221, 0.32);
 }
 
@@ -296,8 +296,8 @@ img {
 
 .wedding-photo-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
 }
 
 .wedding-thumbnail {
@@ -709,16 +709,22 @@ img {
   margin: 0;
 }
 
+.account-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .account-meta {
+  margin-top: 4px !important;
   color: var(--ink-soft);
   font-size: 0.7rem;
 }
 
 .account-number {
-  margin-top: 4px !important;
   color: var(--ink);
   font-size: 0.84rem;
   letter-spacing: 0.025em;
+  white-space: nowrap;
 }
 
 .account-copy-button {

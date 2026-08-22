@@ -11,7 +11,8 @@ type ImageViewerProps = {
 }
 
 export function ImageViewer({ images, index, onClose, onMove }: ImageViewerProps) {
-  const touchStart = useRef<number | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const multiTouchGesture = useRef(false)
   const current = images[index]
   const move = (offset: number) => onMove((index + offset + images.length) % images.length)
 
@@ -37,11 +38,39 @@ export function ImageViewer({ images, index, onClose, onMove }: ImageViewerProps
       aria-modal="true"
       aria-label="사진 크게 보기"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
-      onTouchStart={(event) => { touchStart.current = event.changedTouches[0].clientX }}
+      onTouchStart={(event) => {
+        if (event.touches.length !== 1) {
+          multiTouchGesture.current = true
+          touchStart.current = null
+          return
+        }
+        if (multiTouchGesture.current) return
+        const touch = event.touches[0]
+        touchStart.current = { x: touch.clientX, y: touch.clientY }
+      }}
+      onTouchMove={(event) => {
+        if (event.touches.length > 1) {
+          multiTouchGesture.current = true
+          touchStart.current = null
+        }
+      }}
       onTouchEnd={(event) => {
+        if (multiTouchGesture.current) {
+          if (event.touches.length === 0) multiTouchGesture.current = false
+          touchStart.current = null
+          return
+        }
         if (touchStart.current === null) return
-        const distance = event.changedTouches[0].clientX - touchStart.current
-        if (Math.abs(distance) > 45) move(distance > 0 ? -1 : 1)
+        const touch = event.changedTouches[0]
+        const distanceX = touch.clientX - touchStart.current.x
+        const distanceY = touch.clientY - touchStart.current.y
+        if (Math.abs(distanceX) > 45 && Math.abs(distanceX) > Math.abs(distanceY) * 1.2) {
+          move(distanceX > 0 ? -1 : 1)
+        }
+        touchStart.current = null
+      }}
+      onTouchCancel={() => {
+        multiTouchGesture.current = false
         touchStart.current = null
       }}
     >

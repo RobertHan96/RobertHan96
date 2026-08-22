@@ -38,7 +38,7 @@ export function Gallery({ gallery }: GalleryProps) {
 
       <section className="paper-section wedding-gallery-section reveal-section">
         <SectionHeading eyebrow="WEDDING GALLERY" title="오늘의 우리" />
-        <div className="wedding-photo-grid">
+        <div className="wedding-photo-grid" data-layout="3x6">
           {gallery.wedding.map((image, index) => (
             <button
               type="button"

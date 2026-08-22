@@ -63,8 +63,12 @@ export const wedding: WeddingConfig = {
     parking: ['교통회관 지상·지하 주차장 이용'],
   },
   accounts: {
-    groom: [{ bank: '신한은행', holder: '한영신', number: '110-467-266513' }],
-    bride: [{ bank: '우리은행', holder: '이다예', number: '1002-353-385470' }],
+    groom: [{ bank: '신한은행', relation: '신랑', holder: '한영신', number: '110-467-266513' }],
+    bride: [
+      { bank: '우리은행', relation: '신부', holder: '이다예', number: '1002-353-385470' },
+      { bank: '우리은행', relation: '신부 어머니', holder: '오영근', number: '1002-230-989004' },
+      { bank: '신한은행', relation: '신부 아버지', holder: '이성환', number: '110-360-443299' },
+    ],
   },
   rsvp: { enabled: false, maxCompanions: 5 },
   guestSnap: {
@@ -76,7 +80,7 @@ export const wedding: WeddingConfig = {
   },
   gallery: {
     hero: {
-      src: '/images/wedding/cover.webp',
+      src: '/images/wedding/photo-08.webp',
       alt: '한영신과 이다예의 웨딩 대표 사진',
     },
     baby: [
@@ -93,39 +97,75 @@ export const wedding: WeddingConfig = {
     ],
     wedding: [
       {
-        src: '/images/wedding/opening.webp',
-        alt: '정원에서 함께 웃는 한영신과 이다예',
-        layout: 'wide',
+        src: '/images/wedding/photo-08.webp',
+        alt: '아치 앞에 나란히 선 한영신과 이다예',
       },
       {
-        src: '/images/wedding/bride.webp',
-        alt: '웨딩드레스를 입은 이다예',
-        layout: 'half',
+        src: '/images/wedding/photo-09.webp',
+        alt: '장난스럽게 웃는 한영신과 이다예',
       },
       {
-        src: '/images/wedding/groom.webp',
-        alt: '부케를 든 한영신',
-        layout: 'half',
+        src: '/images/wedding/photo-10.webp',
+        alt: '꽃으로 둘러싸인 소파에 앉은 이다예',
       },
       {
-        src: '/images/wedding/laugh.webp',
-        alt: '함께 웃는 한영신과 이다예',
+        src: '/images/wedding/photo-11.webp',
+        alt: '꽃으로 둘러싸인 소파에 앉은 한영신',
       },
       {
-        src: '/images/wedding/veil.webp',
-        alt: '베일 아래 마주 보는 한영신과 이다예',
+        src: '/images/wedding/photo-12.webp',
+        alt: '창가에서 웨딩드레스를 펼친 이다예',
       },
       {
-        src: '/images/wedding/street.webp',
-        alt: '벽돌길에서 마주 선 한영신과 이다예',
-        layout: 'wide',
+        src: '/images/wedding/photo-13.webp',
+        alt: '베일 너머 마주 보는 한영신과 이다예',
       },
       {
-        src: '/images/wedding/red-dance.webp',
-        alt: '정원에서 춤추는 한영신과 이다예',
+        src: '/images/wedding/photo-14.webp',
+        alt: '꽃 장식 앞에 나란히 앉은 한영신과 이다예',
       },
       {
-        src: '/images/wedding/red-laugh.webp',
+        src: '/images/wedding/photo-15.webp',
+        alt: '슬림 웨딩드레스의 뒷모습을 보이는 이다예',
+      },
+      {
+        src: '/images/wedding/photo-04.webp',
+        alt: '검은 의상을 입고 나란히 선 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/photo-05.webp',
+        alt: '벽돌 담장 앞에 마주 선 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/photo-07.webp',
+        alt: '벽돌 담장 앞에서 함께 웃는 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/photo-06.webp',
+        alt: '손을 잡고 걷는 한영신과 이다예의 흑백 사진',
+      },
+      {
+        src: '/images/wedding/photo-01.webp',
+        alt: '부케를 든 웨딩드레스 차림의 이다예',
+      },
+      {
+        src: '/images/wedding/photo-02.webp',
+        alt: '부케를 든 턱시도 차림의 한영신',
+      },
+      {
+        src: '/images/wedding/photo-03.webp',
+        alt: '정원에서 함께 앉아 있는 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/photo-16.webp',
+        alt: '붉은 드레스를 입고 장난스럽게 포즈를 취한 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/photo-17.webp',
+        alt: '정원에서 붉은 드레스를 입고 마주 선 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/photo-18.webp',
         alt: '베일 아래 함께 웃는 한영신과 이다예',
       },
     ],

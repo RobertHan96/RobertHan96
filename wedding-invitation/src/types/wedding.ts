@@ -12,6 +12,7 @@ export type GalleryImage = {
 
 export type Account = {
   bank: string
+  relation: string
   holder: string
   number: string
 }

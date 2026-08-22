@@ -8,15 +8,16 @@ import { Gallery } from './Gallery'
 describe('Gallery', () => {
   it('shows every wedding photo in a compact thumbnail grid', () => {
     const { container } = render(<Gallery gallery={wedding.gallery} />)
+    const expectedOrder = [8, 9, 10, 11, 12, 13, 14, 15, 4, 5, 7, 6, 1, 2, 3, 16, 17, 18]
+      .map((number) => `/images/wedding/photo-${String(number).padStart(2, '0')}.webp`)
 
     expect(screen.getByAltText('신랑 한영신의 어린 시절')).toBeInTheDocument()
     expect(screen.getByAltText('신부 이다예의 어린 시절')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '오늘의 우리' })).toBeInTheDocument()
-    expect(screen.getByAltText('정원에서 함께 웃는 한영신과 이다예')).toBeInTheDocument()
-    expect(screen.getByAltText('베일 아래 마주 보는 한영신과 이다예')).toBeInTheDocument()
-    expect(screen.getByAltText('베일 아래 함께 웃는 한영신과 이다예')).toBeInTheDocument()
-    expect(container.querySelectorAll('.wedding-thumbnail')).toHaveLength(wedding.gallery.wedding.length)
-    expect(container.querySelector('.wedding-photo-grid')).toBeInTheDocument()
+    expect(wedding.gallery.hero.src).toBe('/images/wedding/photo-08.webp')
+    expect(wedding.gallery.wedding.map((image) => image.src)).toEqual(expectedOrder)
+    expect(container.querySelectorAll('.wedding-thumbnail')).toHaveLength(18)
+    expect(container.querySelector('.wedding-photo-grid')).toHaveAttribute('data-layout', '3x6')
     expect(screen.queryByText('TO BE CONTINUED...')).not.toBeInTheDocument()
     expect(screen.queryByText('Wedding photos coming soon')).not.toBeInTheDocument()
   })
