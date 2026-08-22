@@ -27,4 +27,66 @@ describe('ImageViewer', () => {
 
     expect(onClose).toHaveBeenCalledOnce()
   })
+
+  it('moves to adjacent photos with a horizontal swipe', () => {
+    const onNext = vi.fn()
+    render(<ImageViewer image={images[0]} onClose={vi.fn()} onNext={onNext} />)
+    const viewer = screen.getByRole('dialog', { name: '사진 크게 보기' })
+
+    fireEvent.touchStart(viewer, {
+      touches: [{ clientX: 220, clientY: 200 }],
+      changedTouches: [{ clientX: 220, clientY: 200 }],
+    })
+    fireEvent.touchEnd(viewer, {
+      touches: [],
+      changedTouches: [{ clientX: 120, clientY: 205 }],
+    })
+
+    expect(onNext).toHaveBeenCalledOnce()
+  })
+
+  it('does not move photos when a pinch gesture ends', () => {
+    const onPrevious = vi.fn()
+    const onNext = vi.fn()
+    render(
+      <ImageViewer
+        image={images[0]}
+        onClose={vi.fn()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+      />,
+    )
+    const viewer = screen.getByRole('dialog', { name: '사진 크게 보기' })
+
+    fireEvent.touchStart(viewer, {
+      touches: [{ clientX: 90, clientY: 200 }, { clientX: 210, clientY: 200 }],
+      changedTouches: [{ clientX: 90, clientY: 200 }, { clientX: 210, clientY: 200 }],
+    })
+    fireEvent.touchEnd(viewer, {
+      touches: [],
+      changedTouches: [{ clientX: 190, clientY: 200 }, { clientX: 110, clientY: 200 }],
+    })
+
+    expect(onPrevious).not.toHaveBeenCalled()
+    expect(onNext).not.toHaveBeenCalled()
+  })
+
+  it('moves to adjacent photos with keyboard arrows', () => {
+    const onPrevious = vi.fn()
+    const onNext = vi.fn()
+    render(
+      <ImageViewer
+        image={images[0]}
+        onClose={vi.fn()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+      />,
+    )
+
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+
+    expect(onPrevious).toHaveBeenCalledOnce()
+    expect(onNext).toHaveBeenCalledOnce()
+  })
 })

@@ -9,6 +9,11 @@ type GalleryProps = { gallery: WeddingConfig['gallery'] }
 export function Gallery({ gallery }: GalleryProps) {
   const images = [...gallery.baby, ...gallery.wedding]
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const moveViewer = (offset: number) => {
+    setSelectedIndex((current) => (
+      current === null ? null : (current + offset + images.length) % images.length
+    ))
+  }
 
   return (
     <>
@@ -63,6 +68,8 @@ export function Gallery({ gallery }: GalleryProps) {
         <ImageViewer
           image={images[selectedIndex]}
           onClose={() => setSelectedIndex(null)}
+          onPrevious={() => moveViewer(-1)}
+          onNext={() => moveViewer(1)}
         />
       )}
     </>
