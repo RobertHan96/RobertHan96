@@ -43,7 +43,7 @@ export function Location() {
         <p className="pending-note">길찾기 링크 준비 중</p>
       )}
       {viewerOpen && (
-        <ImageViewer image={venue.mapImage} onClose={() => setViewerOpen(false)} />
+        <ImageViewer images={[venue.mapImage]} index={0} onClose={() => setViewerOpen(false)} />
       )}
     </section>
   )

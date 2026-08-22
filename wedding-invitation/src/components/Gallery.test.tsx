@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
@@ -22,19 +22,21 @@ describe('Gallery', () => {
     expect(screen.queryByText('Wedding photos coming soon')).not.toBeInTheDocument()
   })
 
-  it('opens only the selected photo and closes the viewer', async () => {
+  it('opens the selected photo without visible controls and closes with Escape', async () => {
     const user = userEvent.setup()
     render(<Gallery gallery={wedding.gallery} />)
 
     await user.click(screen.getByRole('button', { name: '신랑 한영신의 어린 시절 크게 보기' }))
-    const viewer = screen.getByRole('dialog', { name: '사진 크게 보기' })
-    expect(viewer).toBeInTheDocument()
-    expect(viewer.parentElement).toBe(document.body)
-    expect(screen.getByAltText('확대: 신랑 한영신의 어린 시절')).toBeInTheDocument()
+    const lightbox = document.querySelector('.yarl__root')
+    expect(lightbox).toBeInTheDocument()
+    expect(lightbox?.querySelector('img[alt="신랑 한영신의 어린 시절"]')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '이전 사진' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '다음 사진' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '사진 닫기' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: '사진 닫기' }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const lightboxContainer = lightbox?.querySelector('.yarl__container')
+    expect(lightboxContainer).toBeInTheDocument()
+    fireEvent.keyDown(lightboxContainer!, { key: 'Escape', code: 'Escape', keyCode: 27 })
+    await waitFor(() => expect(document.querySelector('.yarl__root')).not.toBeInTheDocument())
   })
 })

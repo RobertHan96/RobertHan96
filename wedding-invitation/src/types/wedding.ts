@@ -6,6 +6,8 @@ export type Person = {
 export type GalleryImage = {
   src: string
   alt: string
+  width: number
+  height: number
   objectPosition?: string
   layout?: 'wide' | 'half'
 }

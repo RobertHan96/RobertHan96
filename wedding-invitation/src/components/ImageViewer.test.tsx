@@ -1,92 +1,44 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ImageViewer } from './ImageViewer'
 
 const images = [
-  { src: '/first.webp', alt: '첫 번째 사진' },
-  { src: '/second.webp', alt: '두 번째 사진' },
+  { src: '/first.webp', alt: '첫 번째 사진', width: 1200, height: 1800 },
+  { src: '/second.webp', alt: '두 번째 사진', width: 1800, height: 1200 },
 ]
 
 describe('ImageViewer', () => {
-  it('shows only the selected image and close button', () => {
-    render(<ImageViewer image={images[0]} onClose={vi.fn()} />)
+  it('fills the lightbox with the selected image and no visible controls', async () => {
+    const { container } = render(<ImageViewer images={images} index={1} onClose={vi.fn()} />)
 
-    expect(screen.getByRole('img', { name: '확대: 첫 번째 사진' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '사진 닫기' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '이전 사진' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '다음 사진' })).not.toBeInTheDocument()
-    expect(screen.queryByText('1 / 2')).not.toBeInTheDocument()
+    expect(await screen.findByAltText('두 번째 사진')).toBeInTheDocument()
+    expect(container.querySelector('.viewer-close')).not.toBeInTheDocument()
+    expect(document.querySelectorAll('.yarl__button')).toHaveLength(0)
   })
 
-  it('closes with the Escape key', () => {
+  it('closes with the Escape key', async () => {
     const onClose = vi.fn()
-    render(<ImageViewer image={images[0]} onClose={onClose} />)
+    render(<ImageViewer images={images} index={0} onClose={onClose} />)
+    await screen.findByAltText('첫 번째 사진')
 
-    fireEvent.keyDown(window, { key: 'Escape' })
+    const lightbox = document.querySelector('.yarl__container')
+    expect(lightbox).toBeInTheDocument()
+    fireEvent.keyDown(lightbox!, { key: 'Escape', code: 'Escape', keyCode: 27 })
 
-    expect(onClose).toHaveBeenCalledOnce()
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce())
   })
 
-  it('moves to adjacent photos with a horizontal swipe', () => {
-    const onNext = vi.fn()
-    render(<ImageViewer image={images[0]} onClose={vi.fn()} onNext={onNext} />)
-    const viewer = screen.getByRole('dialog', { name: '사진 크게 보기' })
+  it('closes when the empty backdrop around the image is tapped', async () => {
+    const onClose = vi.fn()
+    render(<ImageViewer images={images} index={0} onClose={onClose} />)
+    await screen.findByAltText('첫 번째 사진')
+    const backdrop = document.querySelector('.yarl__slide_current .yarl__slide_wrapper')
+    expect(backdrop).toBeInTheDocument()
 
-    fireEvent.touchStart(viewer, {
-      touches: [{ clientX: 220, clientY: 200 }],
-      changedTouches: [{ clientX: 220, clientY: 200 }],
-    })
-    fireEvent.touchEnd(viewer, {
-      touches: [],
-      changedTouches: [{ clientX: 120, clientY: 205 }],
-    })
+    fireEvent.pointerDown(backdrop!, { pointerId: 1, pointerType: 'touch' })
+    fireEvent.pointerUp(backdrop!, { pointerId: 1, pointerType: 'touch' })
 
-    expect(onNext).toHaveBeenCalledOnce()
-  })
-
-  it('does not move photos when a pinch gesture ends', () => {
-    const onPrevious = vi.fn()
-    const onNext = vi.fn()
-    render(
-      <ImageViewer
-        image={images[0]}
-        onClose={vi.fn()}
-        onPrevious={onPrevious}
-        onNext={onNext}
-      />,
-    )
-    const viewer = screen.getByRole('dialog', { name: '사진 크게 보기' })
-
-    fireEvent.touchStart(viewer, {
-      touches: [{ clientX: 90, clientY: 200 }, { clientX: 210, clientY: 200 }],
-      changedTouches: [{ clientX: 90, clientY: 200 }, { clientX: 210, clientY: 200 }],
-    })
-    fireEvent.touchEnd(viewer, {
-      touches: [],
-      changedTouches: [{ clientX: 190, clientY: 200 }, { clientX: 110, clientY: 200 }],
-    })
-
-    expect(onPrevious).not.toHaveBeenCalled()
-    expect(onNext).not.toHaveBeenCalled()
-  })
-
-  it('moves to adjacent photos with keyboard arrows', () => {
-    const onPrevious = vi.fn()
-    const onNext = vi.fn()
-    render(
-      <ImageViewer
-        image={images[0]}
-        onClose={vi.fn()}
-        onPrevious={onPrevious}
-        onNext={onNext}
-      />,
-    )
-
-    fireEvent.keyDown(window, { key: 'ArrowLeft' })
-    fireEvent.keyDown(window, { key: 'ArrowRight' })
-
-    expect(onPrevious).toHaveBeenCalledOnce()
-    expect(onNext).toHaveBeenCalledOnce()
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce())
   })
 })

@@ -1,83 +1,51 @@
-import { useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import Lightbox from 'yet-another-react-lightbox'
+import Zoom from 'yet-another-react-lightbox/plugins/zoom'
+import 'yet-another-react-lightbox/styles.css'
 
 import type { GalleryImage } from '../types/wedding'
 
 type ImageViewerProps = {
-  image: GalleryImage
+  images: GalleryImage[]
+  index: number
   onClose: () => void
-  onPrevious?: () => void
-  onNext?: () => void
 }
 
-export function ImageViewer({ image, onClose, onPrevious, onNext }: ImageViewerProps) {
-  const touchStart = useRef<{ x: number; y: number } | null>(null)
-  const multiTouchGesture = useRef(false)
-
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-      if (event.key === 'ArrowLeft') onPrevious?.()
-      if (event.key === 'ArrowRight') onNext?.()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [onClose, onNext, onPrevious])
-
-  return createPortal(
-    <div
-      className="image-viewer"
-      role="dialog"
-      aria-modal="true"
-      aria-label="사진 크게 보기"
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
-      onTouchStart={(event) => {
-        if (event.touches.length !== 1) {
-          multiTouchGesture.current = true
-          touchStart.current = null
-          return
-        }
-        if (multiTouchGesture.current) return
-        const touch = event.touches[0]
-        touchStart.current = { x: touch.clientX, y: touch.clientY }
+export function ImageViewer({ images, index, onClose }: ImageViewerProps) {
+  return (
+    <Lightbox
+      open
+      close={onClose}
+      index={index}
+      slides={images}
+      plugins={[Zoom]}
+      labels={{
+        Lightbox: '사진 크게 보기',
+        'Photo gallery': '사진 모음',
       }}
-      onTouchMove={(event) => {
-        if (event.touches.length > 1) {
-          multiTouchGesture.current = true
-          touchStart.current = null
-        }
+      carousel={{
+        finite: images.length <= 1,
+        imageFit: 'contain',
+        padding: 0,
       }}
-      onTouchEnd={(event) => {
-        if (multiTouchGesture.current) {
-          if (event.touches.length === 0) multiTouchGesture.current = false
-          touchStart.current = null
-          return
-        }
-        if (touchStart.current === null) return
-        const touch = event.changedTouches[0]
-        const distanceX = touch.clientX - touchStart.current.x
-        const distanceY = touch.clientY - touchStart.current.y
-        if (Math.abs(distanceX) > 45 && Math.abs(distanceX) > Math.abs(distanceY) * 1.2) {
-          if (distanceX > 0) onPrevious?.()
-          else onNext?.()
-        }
-        touchStart.current = null
+      controller={{
+        aria: true,
+        closeOnBackdropClick: true,
+        closeOnPullDown: true,
       }}
-      onTouchCancel={() => {
-        multiTouchGesture.current = false
-        touchStart.current = null
+      toolbar={{ buttons: [] }}
+      render={{
+        buttonPrev: () => null,
+        buttonNext: () => null,
+        buttonClose: () => null,
+        buttonZoom: () => null,
       }}
-    >
-      <button type="button" className="viewer-close" aria-label="사진 닫기" onClick={onClose}>×</button>
-      <figure>
-        <img src={image.src} alt={`확대: ${image.alt}`} style={{ objectPosition: image.objectPosition }} />
-      </figure>
-    </div>,
-    document.body,
+      styles={{
+        container: { backgroundColor: 'rgba(28, 30, 26, 0.96)' },
+      }}
+      zoom={{
+        maxZoomPixelRatio: 2,
+        pinchZoomV4: true,
+      }}
+    />
   )
 }
