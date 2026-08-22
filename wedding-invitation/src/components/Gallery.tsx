@@ -61,9 +61,7 @@ export function Gallery({ gallery }: GalleryProps) {
 
       {selectedIndex !== null && (
         <ImageViewer
-          images={images}
-          index={selectedIndex}
-          onMove={setSelectedIndex}
+          image={images[selectedIndex]}
           onClose={() => setSelectedIndex(null)}
         />
       )}

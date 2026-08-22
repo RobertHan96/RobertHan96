@@ -80,7 +80,7 @@ export const wedding: WeddingConfig = {
   },
   gallery: {
     hero: {
-      src: '/images/wedding/photo-08.webp',
+      src: '/images/wedding/photo-14.webp',
       alt: '한영신과 이다예의 웨딩 대표 사진',
     },
     baby: [

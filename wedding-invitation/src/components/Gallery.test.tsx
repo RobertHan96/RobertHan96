@@ -14,7 +14,7 @@ describe('Gallery', () => {
     expect(screen.getByAltText('신랑 한영신의 어린 시절')).toBeInTheDocument()
     expect(screen.getByAltText('신부 이다예의 어린 시절')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '오늘의 우리' })).toBeInTheDocument()
-    expect(wedding.gallery.hero.src).toBe('/images/wedding/photo-08.webp')
+    expect(wedding.gallery.hero.src).toBe('/images/wedding/photo-14.webp')
     expect(wedding.gallery.wedding.map((image) => image.src)).toEqual(expectedOrder)
     expect(container.querySelectorAll('.wedding-thumbnail')).toHaveLength(18)
     expect(container.querySelector('.wedding-photo-grid')).toHaveAttribute('data-layout', '3x6')
@@ -22,7 +22,7 @@ describe('Gallery', () => {
     expect(screen.queryByText('Wedding photos coming soon')).not.toBeInTheDocument()
   })
 
-  it('opens the viewer and moves to the next photo', async () => {
+  it('opens only the selected photo and closes the viewer', async () => {
     const user = userEvent.setup()
     render(<Gallery gallery={wedding.gallery} />)
 
@@ -31,9 +31,8 @@ describe('Gallery', () => {
     expect(viewer).toBeInTheDocument()
     expect(viewer.parentElement).toBe(document.body)
     expect(screen.getByAltText('확대: 신랑 한영신의 어린 시절')).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: '다음 사진' }))
-    expect(screen.getByAltText('확대: 신부 이다예의 어린 시절')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '이전 사진' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '다음 사진' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '사진 닫기' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

@@ -9,54 +9,22 @@ const images = [
 ]
 
 describe('ImageViewer', () => {
-  it('does not move photos when a pinch gesture ends', () => {
-    const onMove = vi.fn()
-    render(<ImageViewer images={images} index={0} onMove={onMove} onClose={vi.fn()} />)
-    const viewer = screen.getByRole('dialog', { name: '사진 크게 보기' })
+  it('shows only the selected image and close button', () => {
+    render(<ImageViewer image={images[0]} onClose={vi.fn()} />)
 
-    fireEvent.touchStart(viewer, {
-      touches: [{ clientX: 90, clientY: 200 }, { clientX: 210, clientY: 200 }],
-      changedTouches: [{ clientX: 90, clientY: 200 }, { clientX: 210, clientY: 200 }],
-    })
-    fireEvent.touchEnd(viewer, {
-      touches: [],
-      changedTouches: [{ clientX: 190, clientY: 200 }, { clientX: 110, clientY: 200 }],
-    })
-
-    expect(onMove).not.toHaveBeenCalled()
+    expect(screen.getByRole('img', { name: '확대: 첫 번째 사진' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '사진 닫기' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '이전 사진' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '다음 사진' })).not.toBeInTheDocument()
+    expect(screen.queryByText('1 / 2')).not.toBeInTheDocument()
   })
 
-  it('moves photos for a single-finger horizontal swipe', () => {
-    const onMove = vi.fn()
-    render(<ImageViewer images={images} index={0} onMove={onMove} onClose={vi.fn()} />)
-    const viewer = screen.getByRole('dialog', { name: '사진 크게 보기' })
+  it('closes with the Escape key', () => {
+    const onClose = vi.fn()
+    render(<ImageViewer image={images[0]} onClose={onClose} />)
 
-    fireEvent.touchStart(viewer, {
-      touches: [{ clientX: 220, clientY: 200 }],
-      changedTouches: [{ clientX: 220, clientY: 200 }],
-    })
-    fireEvent.touchEnd(viewer, {
-      touches: [],
-      changedTouches: [{ clientX: 120, clientY: 205 }],
-    })
+    fireEvent.keyDown(window, { key: 'Escape' })
 
-    expect(onMove).toHaveBeenCalledWith(1)
-  })
-
-  it('does not move photos for a mostly vertical drag', () => {
-    const onMove = vi.fn()
-    render(<ImageViewer images={images} index={0} onMove={onMove} onClose={vi.fn()} />)
-    const viewer = screen.getByRole('dialog', { name: '사진 크게 보기' })
-
-    fireEvent.touchStart(viewer, {
-      touches: [{ clientX: 160, clientY: 100 }],
-      changedTouches: [{ clientX: 160, clientY: 100 }],
-    })
-    fireEvent.touchEnd(viewer, {
-      touches: [],
-      changedTouches: [{ clientX: 220, clientY: 260 }],
-    })
-
-    expect(onMove).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalledOnce()
   })
 })
