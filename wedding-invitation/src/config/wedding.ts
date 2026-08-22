@@ -109,6 +109,14 @@ export const wedding: WeddingConfig = {
         alt: '꽃으로 둘러싸인 소파에 앉은 이다예',
       },
       {
+        src: '/images/wedding/photo-14.webp',
+        alt: '꽃 장식 앞에 나란히 앉은 한영신과 이다예',
+      },
+      {
+        src: '/images/wedding/photo-15.webp',
+        alt: '슬림 웨딩드레스의 뒷모습을 보이는 이다예',
+      },
+      {
         src: '/images/wedding/photo-11.webp',
         alt: '꽃으로 둘러싸인 소파에 앉은 한영신',
       },
@@ -119,14 +127,6 @@ export const wedding: WeddingConfig = {
       {
         src: '/images/wedding/photo-13.webp',
         alt: '베일 너머 마주 보는 한영신과 이다예',
-      },
-      {
-        src: '/images/wedding/photo-14.webp',
-        alt: '꽃 장식 앞에 나란히 앉은 한영신과 이다예',
-      },
-      {
-        src: '/images/wedding/photo-15.webp',
-        alt: '슬림 웨딩드레스의 뒷모습을 보이는 이다예',
       },
       {
         src: '/images/wedding/photo-04.webp',

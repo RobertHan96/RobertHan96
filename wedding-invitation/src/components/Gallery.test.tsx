@@ -8,7 +8,7 @@ import { Gallery } from './Gallery'
 describe('Gallery', () => {
   it('shows every wedding photo in a compact thumbnail grid', () => {
     const { container } = render(<Gallery gallery={wedding.gallery} />)
-    const expectedOrder = [8, 9, 10, 11, 12, 13, 14, 15, 4, 5, 7, 6, 1, 2, 3, 16, 17, 18]
+    const expectedOrder = [8, 9, 10, 14, 15, 11, 12, 13, 4, 5, 7, 6, 1, 2, 3, 16, 17, 18]
       .map((number) => `/images/wedding/photo-${String(number).padStart(2, '0')}.webp`)
 
     expect(screen.getByAltText('신랑 한영신의 어린 시절')).toBeInTheDocument()
