@@ -10,7 +10,7 @@ describe('wedding content', () => {
     const { container } = render(<App />)
 
     expect(screen.getByAltText('한영신과 이다예의 웨딩 대표 사진')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '이다예 그리고 한영신' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '이다예 ♥ 한영신' })).toBeInTheDocument()
     expect(screen.getAllByText('2026. 11. 15').length).toBeGreaterThan(0)
     expect(container.querySelector('.hero-date-time')).toHaveTextContent('2026. 11. 15오후 3시 50분')
     expect(screen.getAllByText('더컨벤션 잠실').length).toBeGreaterThan(0)

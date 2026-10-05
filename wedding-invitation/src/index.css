@@ -18,6 +18,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-weight: 700;
 }
 
 * {
@@ -105,6 +106,58 @@ img {
     repeating-linear-gradient(92deg, transparent 0 5px, rgba(79, 96, 72, 0.035) 5px 6px);
 }
 
+.bgm-player {
+  position: fixed;
+  z-index: 30;
+  top: calc(42px + env(safe-area-inset-top));
+  right: max(14px, calc((100vw - 430px) / 2 + 14px));
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.bgm-player-button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(79, 96, 72, 0.32);
+  border-radius: 50%;
+  background: rgba(251, 248, 240, 0.9);
+  box-shadow: 0 9px 22px rgba(53, 59, 47, 0.15);
+  color: var(--sage-deep);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.bgm-player-icon {
+  width: 21px;
+  height: 21px;
+  fill: currentColor;
+}
+
+.bgm-player-wave,
+.bgm-player-slash {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.bgm-player p {
+  max-width: 126px;
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(155, 79, 73, 0.2);
+  background: rgba(251, 248, 240, 0.9);
+  color: #9b4f49;
+  font-size: 0.62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
 .hero-section {
   position: relative;
   display: flex;
@@ -112,6 +165,7 @@ img {
   align-items: center;
   overflow: hidden;
   padding: calc(38px + env(safe-area-inset-top)) 20px 34px;
+  color: var(--ink);
   text-align: center;
   background:
     radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.9), transparent 46%),
@@ -122,7 +176,7 @@ img {
   position: relative;
   z-index: 2;
   margin: 0 0 18px;
-  color: var(--sage-deep);
+  color: inherit;
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 1.2rem;
   font-style: italic;
@@ -153,23 +207,18 @@ img {
 .hero-section h1 {
   position: relative;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 11px;
   margin: 28px 0 15px;
-  color: var(--ink);
-  font-size: clamp(1.55rem, 7vw, 1.85rem);
-  font-weight: 400;
+  color: inherit;
+  font-size: calc(0.83rem + 1.33px);
+  font-weight: 700;
   letter-spacing: 0.08em;
   animation: hero-rise 0.8s 0.18s ease-out both;
 }
 
-.hero-section h1 small {
+.hero-section h1 span {
+  margin: 0 4px;
   color: var(--blush);
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-size: inherit;
 }
 
 .hero-ceremony {
@@ -179,8 +228,8 @@ img {
   flex-direction: column;
   gap: 5px;
   align-items: center;
-  color: var(--ink-soft);
-  font-size: 0.83rem;
+  color: inherit;
+  font-size: calc(0.83rem + 1.33px);
   letter-spacing: 0.04em;
   animation: hero-rise 0.8s 0.25s ease-out both;
 }
@@ -194,8 +243,8 @@ img {
 
 .hero-ceremony strong {
   margin-top: 5px;
-  color: var(--ink);
-  font-weight: 600;
+  color: inherit;
+  font-weight: 700;
 }
 
 .hero-family {
@@ -204,8 +253,8 @@ img {
   display: grid;
   gap: 4px;
   margin-top: 18px;
-  color: var(--ink-soft);
-  font-size: 0.7rem;
+  color: inherit;
+  font-size: calc(0.83rem + 1.33px);
   line-height: 1.65;
   animation: hero-rise 0.8s 0.32s ease-out both;
 }
@@ -218,8 +267,8 @@ img {
 }
 
 .hero-family .hero-person {
-  color: var(--ink);
-  font-weight: 400;
+  color: inherit;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -253,7 +302,7 @@ img {
   margin: 0;
   color: var(--ink);
   font-size: 1.42rem;
-  font-weight: 400;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
@@ -356,7 +405,7 @@ img {
   background: #b96f67;
   box-shadow: 0 7px 18px rgba(137, 73, 67, 0.2);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
@@ -400,7 +449,7 @@ img {
   position: relative;
   z-index: 0;
   color: #fff !important;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .wedding-date::before {
@@ -425,7 +474,7 @@ img {
 .ceremony-summary strong {
   color: var(--ink);
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .ceremony-summary-top {
@@ -435,7 +484,7 @@ img {
 .ceremony-summary-top time {
   color: var(--ink);
   font-size: 1.24rem;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: 0.07em;
 }
 
@@ -447,7 +496,7 @@ img {
 
 .venue-copy strong {
   font-size: 1.08rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .venue-copy span,
@@ -502,7 +551,7 @@ img {
   margin: 2px 0 11px;
   color: var(--ink);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .transportation-card p {
@@ -597,7 +646,7 @@ img {
 
 .guest-photo-picker span {
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .guest-photo-picker small {
@@ -708,7 +757,7 @@ img {
   margin: 0 16px 3px;
   color: var(--sage-deep);
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
   text-align: left;
 }
 
@@ -861,10 +910,6 @@ img {
 
   .paper-section {
     padding-inline: 22px;
-  }
-
-  .contact-row {
-    padding-inline: 14px;
   }
 }
 

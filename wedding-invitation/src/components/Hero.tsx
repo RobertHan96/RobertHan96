@@ -20,7 +20,7 @@ export function Hero({ wedding }: HeroProps) {
         />
       </figure>
       <h1 id="couple-title">
-        <span>{wedding.bride.name}</span> <small>그리고</small> <span>{wedding.groom.name}</span>
+        {wedding.bride.name} <span>♥</span> {wedding.groom.name}
       </h1>
       <div className="hero-ceremony">
         <div className="hero-date-time">

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { BgmPlayer } from './components/BgmPlayer'
 import { Gallery } from './components/Gallery'
 import { GuestSnap } from './components/GuestSnap'
 import { Hero } from './components/Hero'
@@ -34,6 +35,7 @@ function App() {
 
   return (
     <main className="invitation-shell">
+      <BgmPlayer bgm={wedding.bgm} />
       <Hero wedding={wedding} />
       <Invitation invitation={wedding.invitation} />
       <Gallery gallery={wedding.gallery} />

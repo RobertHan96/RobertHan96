@@ -27,6 +27,11 @@ export type GuestSnapConfig = {
   turnstileSiteKey: string
 }
 
+export type BgmConfig = {
+  title: string
+  src: string
+}
+
 export type WeddingConfig = {
   groom: Person
   bride: Person
@@ -54,6 +59,7 @@ export type WeddingConfig = {
   accounts: { groom: Account[]; bride: Account[] }
   rsvp: { enabled: boolean; maxCompanions: number }
   guestSnap: GuestSnapConfig
+  bgm: BgmConfig
   gallery: { hero: GalleryImage; baby: GalleryImage[]; wedding: GalleryImage[] }
   share: { title: string; description: string; ogImage: string; url: string; kakaoJavascriptKey: string }
 }

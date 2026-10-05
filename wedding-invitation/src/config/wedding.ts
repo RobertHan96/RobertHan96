@@ -80,6 +80,10 @@ export const wedding: WeddingConfig = {
     maxFileSizeBytes: 20 * 1024 * 1024,
     turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '',
   },
+  bgm: {
+    title: 'Love wins all 피아노 ver.',
+    src: '/audio/love-wins-all-piano.mp3',
+  },
   gallery: {
     hero: {
       src: '/images/wedding/photo-14.webp',
