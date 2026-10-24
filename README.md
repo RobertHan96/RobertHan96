@@ -132,6 +132,32 @@ TSLA,Tesla,us,true,true,true,3.0,twelvedata,TSLA,marketaux,TSLA,us,en
 
 ***
 
+### BTC 김치 프리미엄 알림
+
+- 워크플로: `.github/workflows/crypto-premium.yml` (`BTC 김치 프리미엄 알림`)
+- 주말을 포함해 매시 7·22·37·52분에 확인합니다. GitHub Actions 실행은 지연될 수 있습니다.
+- 업비트 `BTC/KRW`와 바이낸스 공개 시세 API의 `BTC/USDT`를 비교합니다.
+- Coinbase의 USD 기준환율에서 KRW와 USDT를 읽어 `USDT = USD` 가정 없이 원화로 환산합니다.
+- 계산식: `(업비트 원화 가격 / (바이낸스 USDT 가격 / USD당 USDT × USD당 원화) - 1) × 100`
+- `-1% 이하` 진입 시 텔레그램으로 한 번 알립니다. `-0.5% 이상` 회복한 뒤 다시 내려오면 재알림합니다.
+- 조건이 유지되거나 기준을 충족하지 않으면 메시지를 보내지 않습니다. 회복 알림도 보내지 않습니다.
+- 시세가 3분 이상 오래됐거나 두 거래소 시각 차이가 60초를 넘으면 계산을 중단합니다. 조회 실패는 Actions 로그에 남깁니다.
+- 발송 상태는 기존 Cloudflare KV에 저장합니다. 상태 조회 실패 시 발송을 중단하며, 별도 저장소·거래소 API 키는 필요 없습니다.
+
+GitHub의 기존 `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_MEMORY_BRIDGE_TOKEN` Secret과 `TELEGRAM_MEMORY_BRIDGE_URL` Variable 또는 Secret을 재사용합니다. 임계값은 `scripts/automation/config/settings.yaml`의 `crypto_premium`에서 수정합니다.
+
+수동 확인은 Actions에서 `BTC 김치 프리미엄 알림`을 선택하고 `Run workflow`를 실행합니다. 기본 `dry_run: true`는 실제 시세만 조회하고 발송과 KV 변경을 생략합니다. 실제 모니터 실행은 `dry_run`을 해제합니다. 조건을 충족하지 않으면 이 경우에도 메시지는 오지 않습니다.
+
+```bash
+python3 -m scripts.automation.crypto_premium --dry-run
+```
+
+표시값은 체결가와 Coinbase 기준환율을 이용한 참고 지표입니다. Coinbase 환율 응답에는 환율 자체의 갱신 시각이 없으며, 거래·환전·출금 수수료와 호가 잔량은 계산에 포함하지 않습니다.
+
+공식 API 문서: [업비트 현재가](https://docs.upbit.com/kr/reference/list-tickers), [바이낸스 공개 시세](https://developers.binance.com/en/docs/products/spot/faqs/market_data_only), [Coinbase 환율](https://docs.cdp.coinbase.com/coinbase-app/track-apis/exchange-rates).
+
+***
+
 ### 🧠 투자자료 RAG 가이드
 
 투자 관련 PDF, 메모, 이미지 자료를 계속 쌓아두고 Telegram에서 질문하면, OpenAI File Search 기반으로 관련 자료를 검색해 답변하도록 확장할 수 있습니다.  

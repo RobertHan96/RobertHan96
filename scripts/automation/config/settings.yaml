@@ -48,6 +48,14 @@ stock_price:
   # TWELVE_DATA_API_KEY: Twelve Data API 키
   # 일부 한국 종목은 무료 플랜에서 제한될 수 있어 row 단위 provider 선택을 권장
 
+# BTC 김치 프리미엄 알림 (주말 포함 15분 간격)
+crypto_premium:
+  # BTC: 업비트 KRW / (바이낸스 USDT를 USD/KRW 기준환율로 환산) - 1
+  threshold_pct: -1.0
+  # 반복 발송 방지: 이 값 이상으로 회복해야 다음 -1% 이하 진입 시 재알림
+  recovery_pct: -0.5
+  max_quote_age_seconds: 180
+
 # 태스크1에 병합된 기술 뉴스 (LLM 요약)
 tech_news:
   merge_into_stock_task:

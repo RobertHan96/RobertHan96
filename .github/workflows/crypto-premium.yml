@@ -1,0 +1,48 @@
+name: "BTC 김치 프리미엄 알림"
+
+on:
+  schedule:
+    # 주말 포함 15분 간격. GitHub Actions 상황에 따라 실행이 지연될 수 있음.
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "시세만 확인하고 텔레그램 전송·상태 저장 생략"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-kimchi-premium
+  cancel-in-progress: false
+
+jobs:
+  crypto-premium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install configuration dependency
+        run: python -m pip install 'PyYAML>=6.0,<7'
+      - name: Check BTC premium
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL || secrets.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
+          TELEGRAM_MEMORY_SOURCE: "crypto-premium"
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            python -m scripts.automation.crypto_premium --dry-run
+          else
+            python -m scripts.automation.crypto_premium
+          fi
