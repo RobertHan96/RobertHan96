@@ -146,6 +146,8 @@ TSLA,Tesla,us,true,true,true,3.0,twelvedata,TSLA,marketaux,TSLA,us,en
 
 GitHub의 기존 `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_MEMORY_BRIDGE_TOKEN` Secret과 `TELEGRAM_MEMORY_BRIDGE_URL` Variable 또는 Secret을 재사용합니다. 임계값은 `scripts/automation/config/settings.yaml`의 `crypto_premium`에서 수정합니다.
 
+상태 조회에서 `401 unauthorized`가 나면 GitHub와 Worker의 브리지 토큰이 다른지 확인합니다. Actions의 `Sync Telegram Bridge Token`을 수동 실행하면 기존 GitHub Secret을 해당 URL의 Worker에 동기화하고 KV 읽기를 검증합니다. 기존 `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` Secret을 사용하며 Worker 코드·다른 시크릿·KV 데이터는 변경하지 않습니다. `workers.dev` 기본 주소를 대상으로 하며, 정상 인증되는 경우 변경 없이 종료합니다.
+
 수동 확인은 Actions에서 `BTC 김치 프리미엄 알림`을 선택하고 `Run workflow`를 실행합니다. 기본 `dry_run: true`는 실제 시세만 조회하고 발송과 KV 변경을 생략합니다. 실제 모니터 실행은 `dry_run`을 해제합니다. 조건을 충족하지 않으면 이 경우에도 메시지는 오지 않습니다.
 
 ```bash

@@ -1,0 +1,28 @@
+name: "Sync Telegram Bridge Token"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telegram-bridge-token-sync
+  cancel-in-progress: false
+
+jobs:
+  sync-token:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Sync existing bridge token and verify KV access
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL || secrets.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
+        run: python -m scripts.automation.sync_bridge_token
