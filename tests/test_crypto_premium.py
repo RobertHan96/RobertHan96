@@ -136,6 +136,26 @@ class PremiumNotificationTests(unittest.TestCase):
 
 class PremiumTransportTests(unittest.TestCase):
     @patch.dict("os.environ", {
+        "TELEGRAM_MEMORY_BRIDGE_URL": "https://bridge.example",
+        "TELEGRAM_MEMORY_BRIDGE_TOKEN": "test-token",
+    })
+    @patch("scripts.automation.crypto_premium.request_json")
+    def test_state_requests_identify_service_without_changing_authentication(self, request):
+        def cloudflare_request(_url, **kwargs):
+            headers = kwargs["headers"]
+            if headers.get("User-Agent") != "RH96-premium-monitor/1.0":
+                raise RuntimeError("403: error code: 1010")
+            self.assertEqual("Bearer test-token", headers["Authorization"])
+            self.assertEqual("application/json", headers["Accept"])
+            return {"ok": True, "found": False}
+
+        request.side_effect = cloudflare_request
+        backend = monitor.BridgeState()
+        self.assertEqual({"active": False}, backend.get())
+        backend.put({"active": True})
+        self.assertEqual(2, request.call_count)
+
+    @patch.dict("os.environ", {
         "TELEGRAM_MEMORY_BRIDGE_URL": "https://bridge.example/",
         "TELEGRAM_MEMORY_BRIDGE_TOKEN": "test-token",
     })

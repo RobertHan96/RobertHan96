@@ -25,6 +25,7 @@ UPBIT_URL = "https://api.upbit.com/v1/ticker?markets=KRW-BTC"
 BINANCE_URL = "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT&type=MINI"
 FX_URL = "https://api.coinbase.com/v2/exchange-rates?currency=USD"
 STATE_KEY = "crypto-premium/btc-upbit-binance/v1"
+USER_AGENT = "RH96-premium-monitor/1.0"
 KST = timezone(timedelta(hours=9))
 
 
@@ -72,7 +73,7 @@ def fetch_json(url: str, label: str):
         try:
             return request_json(
                 url, timeout=10, label=label,
-                headers={"User-Agent": "RH96-premium-monitor/1.0", "Accept": "application/json"},
+                headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
             )
         except (RuntimeError, OSError) as exc:
             cause = exc.__cause__ or exc
@@ -128,7 +129,13 @@ class BridgeState:
     def request(self, path: str, payload: dict) -> dict:
         response = request_json(
             self.base_url + path, method="POST", timeout=15,
-            headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"},
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                # Python 기본 식별자는 Cloudflare Browser Integrity Check에 차단될 수 있다.
+                "User-Agent": USER_AGENT,
+            },
             data=json.dumps(payload).encode("utf-8"), label="프리미엄 상태 저장소",
         )
         if not isinstance(response, dict) or response.get("ok") is not True:
