@@ -24,11 +24,13 @@ except Exception:  # pragma: no cover - jobs 단독 실행 허용
 
 from .ai_quality_profile import AI_QUALITY_CANDIDATE, AI_QUALITY_SEED_ROLES
 from .core import (
+    AllSourcesFailedError,
     JobPosting,
     build_match,
     clean_lines,
     collect_browser_sources,
     get_first_env,
+    notify_collection_failure,
     safe_goto,
     score_text,
     shrink,
@@ -370,10 +372,9 @@ def build_daily_summary_message(
     high_fit_score: int,
     date_label: str,
 ) -> str:
-    lines = [f"<b>🧭 AI 품질·Builder 공고 일일 요약</b> ({date_label})", ""]
     if not records:
-        lines.append("오늘 새로 포착한 AI 품질·Builder 관련 공고가 없습니다.")
-        return "\n".join(lines)
+        return ""
+    lines = [f"<b>🧭 AI 품질·Builder 공고 일일 요약</b> ({date_label})", ""]
 
     high_fit = [item for item in records if int(item.get("score", 0)) >= high_fit_score]
     review = [item for item in records if int(item.get("score", 0)) < high_fit_score]
@@ -904,9 +905,11 @@ def enrich_detail_generic(page: Page, job: JobPosting) -> None:
 def collect_jobs(limit_per_site: int) -> tuple[list[JobPosting], list[str]]:
     jobs: list[JobPosting] = []
     errors: list[str] = []
+    successful_sources = 0
 
     try:
         items = scrape_wanted(limit_per_site)
+        successful_sources += 1
         jobs.extend(items)
         print(f"[Wanted] 목록 수집 완료: {len(items)}건")
     except Exception as exc:
@@ -926,6 +929,7 @@ def collect_jobs(limit_per_site: int) -> tuple[list[JobPosting], list[str]]:
                 )
                 jobs.extend(browser_jobs)
                 errors.extend(browser_errors)
+                successful_sources += len(BROWSER_SOURCES) - len(browser_errors)
             finally:
                 try:
                     browser.close()
@@ -936,6 +940,9 @@ def collect_jobs(limit_per_site: int) -> tuple[list[JobPosting], list[str]]:
         print(message)
         traceback.print_exception(type(exc), exc, exc.__traceback__)
         errors.append(message)
+
+    if successful_sources == 0:
+        raise AllSourcesFailedError("AI 품질 채용공고 source 수집이 모두 실패했습니다.")
 
     deduped: dict[str, JobPosting] = {}
     for job in jobs:
@@ -1075,8 +1082,6 @@ def summary_key_for(date_label: str) -> str:
 
 def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[AIQualityMatch]:
     jobs, scrape_errors = collect_jobs(limit_per_site)
-    if not jobs and scrape_errors:
-        raise RuntimeError("AI 품질 채용공고 source 수집이 모두 실패했습니다.")
 
     open_jobs = [job for job in jobs if not is_closed_job(job)]
     filtered_closed_count = len(jobs) - len(open_jobs)
@@ -1310,11 +1315,16 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    matches = run_monitor(
-        limit_per_site=args.limit_per_site,
-        detail_top_n=args.detail_top_n,
-        min_score=args.min_score,
-    )
+    try:
+        matches = run_monitor(
+            limit_per_site=args.limit_per_site,
+            detail_top_n=args.detail_top_n,
+            min_score=args.min_score,
+        )
+    except AllSourcesFailedError:
+        if args.mode in {"immediate", "summary"}:
+            notify_collection_failure("AI 품질·Builder 채용 모니터링", send_telegram)
+        raise
     report = render_report(matches, mode=args.mode)
     path = save_report(report, mode=args.mode)
     date_label = now_kst().strftime("%Y-%m-%d")
@@ -1355,9 +1365,12 @@ def main() -> None:
             high_fit_score=args.high_fit_score,
             date_label=date_label,
         )
-        if not send_message_if_available(message):
-            raise RuntimeError("AI 품질 채용공고 일일 요약 전송에 실패했습니다.")
-        finalize_summary_delivery(records, backend=backend, date_label=date_label)
+        if message:
+            if not send_message_if_available(message):
+                raise RuntimeError("AI 품질 채용공고 일일 요약 전송에 실패했습니다.")
+            finalize_summary_delivery(records, backend=backend, date_label=date_label)
+        else:
+            print("신규 AI 품질·Builder 공고가 없어 요약 알림을 생략합니다.")
     else:
         top_records = [match.to_record() for match in matches[: args.summary_limit]]
         print(json.dumps(top_records, ensure_ascii=False, indent=2))

@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from jobs.ai_quality_profile import AI_QUALITY_CANDIDATE
 from jobs.ai_quality_monitor import (
@@ -18,6 +19,52 @@ from jobs.core import JobPosting, score_text
 
 
 class AIQualityMonitorTests(unittest.TestCase):
+    def test_empty_summary_does_not_create_a_notification(self) -> None:
+        self.assertEqual("", build_daily_summary_message(
+            [], high_fit_score=65, date_label="2026-10-24",
+        ))
+
+    @patch("jobs.ai_quality_monitor.collect_browser_sources", return_value=([], ["LG timeout"]))
+    @patch("jobs.ai_quality_monitor.sync_playwright")
+    @patch("jobs.ai_quality_monitor.scrape_wanted", return_value=[])
+    def test_empty_successful_sources_are_not_a_total_failure(self, _wanted, _browser, _sources):
+        from jobs import ai_quality_monitor
+
+        self.assertEqual([], ai_quality_monitor.run_monitor(5, 1, 0))
+
+    @patch("jobs.ai_quality_monitor.sync_playwright", side_effect=RuntimeError("Chromium 장애"))
+    @patch("jobs.ai_quality_monitor.scrape_wanted", side_effect=TimeoutError("Wanted timeout"))
+    def test_all_failed_sources_raise_collection_error(self, _wanted, _browser):
+        from jobs import ai_quality_monitor, core
+
+        with self.assertRaises(core.AllSourcesFailedError):
+            ai_quality_monitor.collect_jobs(5)
+
+    @patch("jobs.ai_quality_monitor.send_telegram")
+    @patch("jobs.ai_quality_monitor.parse_args")
+    @patch("jobs.ai_quality_monitor.run_monitor")
+    def test_main_alerts_only_for_total_collection_failure(self, monitor, _args, send):
+        from jobs import ai_quality_monitor, core
+
+        _args.return_value.mode = "immediate"
+        monitor.side_effect = core.AllSourcesFailedError("모든 소스 수집 실패")
+        with self.assertRaises(core.AllSourcesFailedError):
+            ai_quality_monitor.main()
+        send.assert_called_once()
+        self.assertIn("모든 소스", send.call_args.args[0])
+
+    @patch("jobs.ai_quality_monitor.send_telegram")
+    @patch("jobs.ai_quality_monitor.parse_args")
+    @patch("jobs.ai_quality_monitor.run_monitor")
+    def test_dry_run_does_not_send_a_failure_alert(self, monitor, args, send):
+        from jobs import ai_quality_monitor, core
+
+        args.return_value.mode = "dry-run"
+        monitor.side_effect = core.AllSourcesFailedError("목록 장애")
+        with self.assertRaises(core.AllSourcesFailedError):
+            ai_quality_monitor.main()
+        send.assert_not_called()
+
     def test_score_role_relevance_rewards_ai_quality_roles(self) -> None:
         score, matched, penalized = score_role_relevance(
             "AI 서비스 품질 및 안전성 평가 담당자 LLM Evaluation Prompt Evaluation Red Teaming"

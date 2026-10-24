@@ -2,8 +2,8 @@ name: "태스크7-2: AI 품질 채용공고 즉시 알림"
 
 on:
   schedule:
-    # 월·수·금 18:30 KST = UTC 09:30
-    - cron: "30 9 * * 1,3,5"
+    # 월·금 18:30 KST = UTC 09:30
+    - cron: "30 9 * * 1,5"
   workflow_dispatch:
     inputs:
       ignore_seen:
@@ -40,18 +40,20 @@ jobs:
       - name: Run AI quality immediate monitor
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
           OPENAI_TIMEOUT_SECONDS: ${{ vars.OPENAI_TIMEOUT_SECONDS }}
           OPENAI_MAX_RETRIES: ${{ vars.OPENAI_MAX_RETRIES }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL || secrets.TELEGRAM_MEMORY_BRIDGE_URL }}
           TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
-          JOB_FIT_REPORT_BRIDGE_URL: ${{ vars.JOB_FIT_REPORT_BRIDGE_URL }}
+          JOB_FIT_REPORT_BRIDGE_URL: ${{ vars.JOB_FIT_REPORT_BRIDGE_URL || secrets.JOB_FIT_REPORT_BRIDGE_URL }}
           JOB_FIT_REPORT_BRIDGE_TOKEN: ${{ secrets.JOB_FIT_REPORT_BRIDGE_TOKEN }}
           TELEGRAM_MEMORY_SOURCE: "ai-quality-job-monitor"
           WORKFLOW_IGNORE_SEEN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ignore_seen || 'false' }}
         run: |
+          test -n "$TELEGRAM_MEMORY_BRIDGE_URL" || { echo "::error::TELEGRAM_MEMORY_BRIDGE_URL이 비어 있습니다."; exit 1; }
+          test -n "$TELEGRAM_MEMORY_BRIDGE_TOKEN" || { echo "::error::TELEGRAM_MEMORY_BRIDGE_TOKEN이 비어 있습니다."; exit 1; }
           EXTRA_ARGS=""
           if [ "$WORKFLOW_IGNORE_SEEN" = "true" ]; then
             EXTRA_ARGS="--ignore-seen"

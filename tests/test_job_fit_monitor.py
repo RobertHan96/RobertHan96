@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from jobs import core
 from jobs.core import (
@@ -145,6 +145,38 @@ class JobFitMonitorTests(unittest.TestCase):
 
     def test_build_high_fit_titles_message_returns_empty_when_no_new_jobs(self) -> None:
         self.assertEqual("", build_high_fit_titles_message([]))
+
+    @patch("jobs.core.collect_browser_sources", return_value=([], ["Jobda timeout"]))
+    @patch("jobs.core.sync_playwright")
+    @patch("jobs.core.scrape_zighang", return_value=[])
+    def test_empty_successful_sources_are_not_a_total_failure(self, _zighang, browser, _sources):
+        browser.return_value.__enter__.return_value = MagicMock()
+        self.assertEqual([], core.run_monitor(5, 1, 0))
+
+    @patch("jobs.core.collect_browser_sources", return_value=([], ["InThisWork timeout", "Jobda timeout"]))
+    @patch("jobs.core.sync_playwright")
+    @patch("jobs.core.scrape_zighang", side_effect=TimeoutError("직행 timeout"))
+    def test_all_failed_sources_raise_collection_error(self, _zighang, _browser, _sources):
+        with self.assertRaises(core.AllSourcesFailedError):
+            core.run_monitor(5, 1, 0)
+
+    @patch("jobs.core.send_telegram")
+    @patch("jobs.core.parse_args")
+    @patch("jobs.core.run_monitor")
+    def test_main_alerts_only_for_total_collection_failure(self, monitor, _args, send):
+        _args.return_value.notify_high_fit_titles = True
+        monitor.side_effect = core.AllSourcesFailedError("모든 소스 수집 실패")
+        with self.assertRaises(core.AllSourcesFailedError):
+            core.main()
+        send.assert_called_once()
+        self.assertIn("모든 소스", send.call_args.args[0])
+
+    def test_warning_delivery_failure_does_not_mask_collection_failure(self) -> None:
+        with patch("jobs.core.parse_args"), patch(
+            "jobs.core.run_monitor", side_effect=core.AllSourcesFailedError("목록 장애"),
+        ), patch("jobs.core.send_telegram", side_effect=RuntimeError("텔레그램 장애")):
+            with self.assertRaisesRegex(core.AllSourcesFailedError, "목록 장애"):
+                core.main()
 
 
 if __name__ == "__main__":

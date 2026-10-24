@@ -6,7 +6,7 @@ from __future__ import annotations
 - 원티드 API로 AI/ML 관련 채용공고 검색
 - 직행 API로 AI/LLM/RAG 관련 채용공고 조회
 - 채용공고 본문에서 주요 업무 중심으로 요약해 전달
-- 월·수·금 10:00 KST 발송
+- 월·금 10:00 KST 발송
 """
 
 import html
@@ -42,7 +42,7 @@ PUBLIC_API_TIMEOUT_SECONDS = 25
 PUBLIC_DETAIL_TIMEOUT_SECONDS = 20
 WANTED_OLD_RESULT_STOP_COUNT = 3
 DEFAULT_PUBLIC_SOURCE_MAX_PAGES = 5
-DEFAULT_LOOKBACK_DAYS = 4
+DEFAULT_LOOKBACK_DAYS = 5
 SEEN_STATE_KEY = "job-monitor/notified-seen"
 SEEN_STATE_TTL_SECONDS = 180 * 24 * 60 * 60
 MAX_SEEN_JOB_KEYS = 5000
@@ -1055,30 +1055,7 @@ def build_message(results: dict[str, list], failed_labels: list[str] | None = No
     if not has_jobs:
         return ""
 
-    if failed_labels:
-        lines.append("⚠ 일부 소스 수집 실패")
-        for label in failed_labels:
-            lines.append(f"  • {html.escape(label)}")
-
     return "\n".join(lines).rstrip()
-
-
-def build_partial_failure_message(results: dict[str, list], failed_labels: list[str]) -> str:
-    """일부 소스 실패 시 오해 없는 상태 메시지 생성"""
-    now = datetime.now(KST).strftime("%Y-%m-%d")
-    successful_labels = [label for label in results if label not in set(failed_labels)]
-
-    lines = [f"<b>💼 채용공고 모니터링</b> ({now})", "", "⚠ 일부 소스 수집이 실패했습니다."]
-    for label in failed_labels:
-        lines.append(f"• {html.escape(label)}")
-
-    lines.append("")
-    if successful_labels:
-        lines.append("정상 수집된 소스 기준으로는 새로 알릴 채용공고가 없습니다.")
-    else:
-        lines.append("정상 수집된 소스가 없어 이번 결과를 확정할 수 없습니다.")
-    lines.append("외부 사이트 응답 지연 가능성이 있어 다음 실행에서 다시 확인합니다.")
-    return "\n".join(lines)
 
 
 def main():
@@ -1158,7 +1135,19 @@ def main():
                 failed_labels.append(keyword)
 
     if attempted and failures == attempted:
+        try:
+            send_telegram(
+                "<b>채용공고 수집 장애</b>\n\n"
+                "모든 소스 수집이 실패했습니다. 이번 실행의 공고를 확인할 수 없습니다.\n"
+                + "\n".join(f"• {html.escape(label)}" for label in failed_labels),
+                fail_on_error=False,
+            )
+        except Exception as exc:
+            print(f"전체 수집 실패 경고 전송 실패: {exc}")
         raise RuntimeError("채용공고 검색이 모두 실패했습니다.")
+
+    if failed_labels:
+        print("::warning::일부 소스 수집 실패: " + ", ".join(failed_labels))
 
     state_backend = JobMonitorStateBackend()
     stored_seen_keys = state_backend.get(SEEN_STATE_KEY, [])
@@ -1176,16 +1165,8 @@ def main():
         send_telegram(message)
         mark_job_keys_seen(state_backend, seen_keys, delivered_keys)
         print("채용공고 알림 발송 완료")
-    elif failed_labels:
-        send_telegram(build_partial_failure_message(results, failed_labels))
-        print("채용공고 부분 실패 알림 발송 완료")
     else:
-        no_jobs_message = (
-            f"<b>💼 채용공고 모니터링</b> ({datetime.now(KST).strftime('%Y-%m-%d')})\n\n"
-            "최근 조회 범위에서 새로 알릴 채용공고가 없습니다."
-        )
-        send_telegram(no_jobs_message)
-        print("새 채용공고 없음 알림 발송 완료")
+        print("신규 채용공고가 없어 텔레그램 알림을 생략합니다.")
 
 
 if __name__ == "__main__":

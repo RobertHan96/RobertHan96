@@ -86,6 +86,24 @@ UUID_RE = re.compile(r"^/recruitment/[0-9a-f-]{36}$")
 ARCHIVE_POST_RE = re.compile(r"^https://inthiswork\.com/archives/\d+/?$")
 
 
+class AllSourcesFailedError(RuntimeError):
+    """모든 목록 소스가 실패해 수집 결과를 확정할 수 없다."""
+
+
+def notify_collection_failure(label: str, sender) -> None:
+    if sender is None:
+        return
+    try:
+        sender(
+            f"<b>{label} 수집 장애</b>\n\n"
+            "모든 소스 수집이 실패했습니다. 이번 실행의 공고를 확인할 수 없습니다.\n"
+            "상세 원인은 GitHub Actions 로그에서 확인할 수 있습니다.",
+            fail_on_error=False,
+        )
+    except Exception as exc:
+        print(f"전체 수집 실패 경고 전송 실패: {exc}")
+
+
 @dataclass
 class JobPosting:
     source: str
@@ -875,6 +893,8 @@ def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[
     jobs.extend(zighang_jobs)
     if zighang_error:
         scrape_errors.append(zighang_error)
+    successful_sources = int(zighang_error is None)
+    browser_sources = [("InThisWork", scrape_inthiswork), ("Jobda", scrape_jobda)]
 
     try:
         with sync_playwright() as playwright:
@@ -882,11 +902,12 @@ def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[
             try:
                 browser_jobs, browser_errors = collect_browser_sources(
                     browser,
-                    [("InThisWork", scrape_inthiswork), ("Jobda", scrape_jobda)],
+                    browser_sources,
                     limit=limit_per_site,
                 )
                 jobs.extend(browser_jobs)
                 scrape_errors.extend(browser_errors)
+                successful_sources += len(browser_sources) - len(browser_errors)
             finally:
                 try:
                     browser.close()
@@ -898,8 +919,8 @@ def run_monitor(limit_per_site: int, detail_top_n: int, min_score: int) -> list[
         traceback.print_exception(type(exc), exc, exc.__traceback__)
         scrape_errors.append(message)
 
-    if not jobs and scrape_errors:
-        raise RuntimeError("채용공고 source 수집이 모두 실패했습니다.")
+    if successful_sources == 0:
+        raise AllSourcesFailedError("채용공고 source 수집이 모두 실패했습니다.")
 
     quick_ranked = sorted(
         jobs,
@@ -1258,11 +1279,16 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    matches = run_monitor(
-        limit_per_site=args.limit_per_site,
-        detail_top_n=args.detail_top_n,
-        min_score=args.min_score,
-    )
+    try:
+        matches = run_monitor(
+            limit_per_site=args.limit_per_site,
+            detail_top_n=args.detail_top_n,
+            min_score=args.min_score,
+        )
+    except AllSourcesFailedError:
+        if args.notify_high_fit_titles:
+            notify_collection_failure("채용 Fit 모니터링", send_telegram)
+        raise
     report = render_report(matches, limit=args.report_limit)
     path = save_report(report)
     if args.upload_report:

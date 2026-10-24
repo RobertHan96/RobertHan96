@@ -31,17 +31,19 @@ jobs:
       - name: Run AI quality daily summary
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || secrets.OPENAI_MODEL }}
           OPENAI_TIMEOUT_SECONDS: ${{ vars.OPENAI_TIMEOUT_SECONDS }}
           OPENAI_MAX_RETRIES: ${{ vars.OPENAI_MAX_RETRIES }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL }}
+          TELEGRAM_MEMORY_BRIDGE_URL: ${{ vars.TELEGRAM_MEMORY_BRIDGE_URL || secrets.TELEGRAM_MEMORY_BRIDGE_URL }}
           TELEGRAM_MEMORY_BRIDGE_TOKEN: ${{ secrets.TELEGRAM_MEMORY_BRIDGE_TOKEN }}
-          JOB_FIT_REPORT_BRIDGE_URL: ${{ vars.JOB_FIT_REPORT_BRIDGE_URL }}
+          JOB_FIT_REPORT_BRIDGE_URL: ${{ vars.JOB_FIT_REPORT_BRIDGE_URL || secrets.JOB_FIT_REPORT_BRIDGE_URL }}
           JOB_FIT_REPORT_BRIDGE_TOKEN: ${{ secrets.JOB_FIT_REPORT_BRIDGE_TOKEN }}
           TELEGRAM_MEMORY_SOURCE: "ai-quality-job-summary"
         run: |
+          test -n "$TELEGRAM_MEMORY_BRIDGE_URL" || { echo "::error::TELEGRAM_MEMORY_BRIDGE_URL이 비어 있습니다."; exit 1; }
+          test -n "$TELEGRAM_MEMORY_BRIDGE_TOKEN" || { echo "::error::TELEGRAM_MEMORY_BRIDGE_TOKEN이 비어 있습니다."; exit 1; }
           python -m jobs.run_ai_quality_job_monitor \
             --mode summary \
             --limit-per-site 20 \

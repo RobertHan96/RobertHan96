@@ -2,6 +2,7 @@ import sys
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "automation"))
@@ -10,7 +11,7 @@ import job_monitor  # noqa: E402
 
 
 class JobMonitorMessageTests(unittest.TestCase):
-    def test_build_message_appends_failed_source_notice(self) -> None:
+    def test_build_message_omits_partial_failure_notice(self) -> None:
         message = job_monitor.build_message(
             {
                 "AI 엔지니어": [
@@ -26,20 +27,8 @@ class JobMonitorMessageTests(unittest.TestCase):
             failed_labels=["클린아이 공공채용"],
         )
         self.assertIn("AI 품질 엔지니어", message)
-        self.assertIn("일부 소스 수집 실패", message)
-        self.assertIn("클린아이 공공채용", message)
-
-    def test_build_partial_failure_message_avoids_false_no_jobs_claim(self) -> None:
-        message = job_monitor.build_partial_failure_message(
-            {
-                "AI 엔지니어": [],
-                "클린아이 공공채용": [],
-            },
-            failed_labels=["클린아이 공공채용"],
-        )
-        self.assertIn("일부 소스 수집이 실패했습니다", message)
-        self.assertIn("정상 수집된 소스 기준으로는 새로 알릴 채용공고가 없습니다.", message)
-        self.assertNotIn("최근 조회 범위에서 새로 알릴 채용공고가 없습니다.", message)
+        self.assertNotIn("일부 소스 수집 실패", message)
+        self.assertNotIn("클린아이 공공채용", message)
 
     @patch("job_monitor.fetch_wanted_job_detail", return_value={})
     @patch("job_monitor.fetch_wanted_posted_date")
@@ -83,14 +72,14 @@ class JobMonitorMessageTests(unittest.TestCase):
                 {"id": 101, "position": "AI Builder", "company": {"name": "회사"}}
             ]
         }
-        posted_date_mock.return_value = datetime.now(job_monitor.KST) - timedelta(days=2)
+        posted_date_mock.return_value = datetime.now(job_monitor.KST) - timedelta(days=4)
 
         jobs = job_monitor.search_wanted_jobs(
             "AI",
             limit=50,
             size=50,
             today_only=True,
-            lookback_days=4,
+            lookback_days=5,
         )
 
         self.assertEqual([101], [job["id"] for job in jobs])
@@ -157,6 +146,70 @@ class JobMonitorMessageTests(unittest.TestCase):
         )
 
         self.assertEqual(3, cleaneye_request_mock.call_count)
+
+
+class JobMonitorDeliveryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        temp_dir = TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        self.backend = job_monitor.JobMonitorStateBackend(Path(temp_dir.name) / "seen.json")
+        self.backend.base_url = ""
+        self.backend.token = ""
+        self.config = self.start_patch("job_monitor.load_config")
+        self.config.return_value = {"job_monitor": {"sources": [
+            {"name": "zighang"}, {"name": "cleaneye"},
+        ]}}
+        self.zighang = self.start_patch("job_monitor.search_zighang_jobs")
+        self.zighang.return_value = ("직행", [])
+        self.cleaneye = self.start_patch("job_monitor.search_cleaneye_jobs")
+        self.cleaneye.return_value = ("클린아이", [])
+        self.send = self.start_patch("job_monitor.send_telegram")
+        self.send.return_value = True
+        self.start_patch("job_monitor.JobMonitorStateBackend").return_value = self.backend
+
+    def start_patch(self, target):
+        patcher = patch(target)
+        result = patcher.start()
+        self.addCleanup(patcher.stop)
+        return result
+
+    def test_no_new_jobs_does_not_send_telegram(self) -> None:
+        job_monitor.main()
+        self.send.assert_not_called()
+
+    def test_partial_failure_without_jobs_does_not_send_telegram(self) -> None:
+        self.cleaneye.side_effect = TimeoutError("느린 서버")
+        job_monitor.main()
+        self.send.assert_not_called()
+
+    def test_all_sources_fail_sends_one_warning_and_fails(self) -> None:
+        self.zighang.side_effect = TimeoutError("직행 응답 지연")
+        self.cleaneye.side_effect = TimeoutError("클린아이 응답 지연")
+        with self.assertRaisesRegex(RuntimeError, "모두 실패"):
+            job_monitor.main()
+        self.send.assert_called_once()
+        self.assertIn("모든 소스", self.send.call_args.args[0])
+
+    def test_existing_delivery_is_not_sent_again_on_next_run(self) -> None:
+        self.zighang.return_value = ("직행", [{
+            "id": "new", "source": "직행", "title": "AI Engineer",
+            "company": "회사", "link": "https://example.com/new", "summary": "LLM",
+        }])
+        self.cleaneye.side_effect = TimeoutError("느린 서버")
+        job_monitor.main()
+        job_monitor.main()
+        self.send.assert_called_once()
+        self.assertNotIn("수집 실패", self.send.call_args.args[0])
+
+    def test_delivery_failure_does_not_mark_jobs_as_seen(self) -> None:
+        self.zighang.return_value = ("직행", [{
+            "id": "new", "source": "직행", "title": "AI Engineer",
+            "company": "회사", "link": "https://example.com/new", "summary": "LLM",
+        }])
+        self.send.side_effect = RuntimeError("텔레그램 장애")
+        with self.assertRaises(RuntimeError):
+            job_monitor.main()
+        self.assertEqual([], self.backend.get(job_monitor.SEEN_STATE_KEY, []))
 
 
 if __name__ == "__main__":

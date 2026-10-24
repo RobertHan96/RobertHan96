@@ -65,14 +65,20 @@ python3 -m jobs.run_ai_quality_job_monitor --mode dry-run --limit-per-site 5 --d
 
 알림 정책:
 
-- `85점 이상`: 즉시 텔레그램 알림
-- `65점 이상`: 일일 요약 후보로 적재
-- 일일 요약 발송 시에는 이미 즉시 알림으로 보낸 `85점 이상` 공고를 제외하고 나머지만 보낸다
+- 일반 채용 모니터: 월·금 10:00 KST. 최근 5일 공고 중 미발송 공고만 전송한다.
+- Fit 리포트: 월·금 10:20 KST. `80점 이상` 미발송 공고 제목만 최대 5건 전송한다.
+- AI 품질·Builder: 월·금 18:30 KST. `65점 이상` 미발송 공고만 최대 5건 전송한다.
+- 요약 후보는 `60점 이상`부터 적재하며, 요약 워크플로는 수동 실행만 지원한다.
+- 신규 공고가 없으면 텔레그램을 보내지 않는다. 일부 소스 실패는 Actions 로그에만 남긴다.
+- 모든 목록 소스가 실패하면 텔레그램 경고를 보내고 실행을 실패 처리한다. 정상 조회 결과 0건은 실패로 보지 않는다.
 
 상태 저장:
 
 - GitHub Actions에서는 Cloudflare Worker KV를 사용
 - 로컬에서는 `data/job_monitors/ai_quality_state.json` 파일 fallback 사용
+- 채용 워크플로의 `TELEGRAM_MEMORY_BRIDGE_URL`과 `OPENAI_MODEL`은 GitHub Variable을 우선 읽고, 없으면 같은 이름의 Secret을 읽는다.
+- `TELEGRAM_MEMORY_BRIDGE_TOKEN`은 Secret에 등록한다. URL이나 토큰이 비어 있으면 Actions에서 수집을 시작하기 전에 실패 처리해 임시 로컬 상태로 인한 반복 발송을 막는다.
+- 기존 운영에서 발송 이력이 KV에 저장되지 않았다면 첫 실행에서 기존 공고가 한 차례 다시 발송될 수 있다.
 
 ## 참고
 
